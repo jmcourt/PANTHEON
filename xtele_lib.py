@@ -192,7 +192,7 @@ def boolval(data,reverse=True):
    if reverse:
       keyr=keyr[::-1]                                                     # Reverse the key range
 
-   mult=[1<<i for i in keyr]                                              # Mult is a list of all the powers of 2 from 2^0 to 2^(length of data)
+   mult=[2**i for i in keyr]                                              # Mult is a list of all the powers of 2 from 2^0 to 2^(length of data)
    data=array(data)*mult
    data=npsum(data,axis=1)                                                # Multiply Boolean list by mult, sum per row
 
@@ -845,7 +845,7 @@ def specald(filename):
    print 'Opening '+str(filename)
 
    readfile=open(filename,'rb')
-   data=cPickle.load(readfile)                                            # Unpickle the .speca file
+   data=cPickle.load(readfile)
 
    spcdata=data['data']                                                   # Unleash the beast! [open the file]
    good=array(data['good'])
