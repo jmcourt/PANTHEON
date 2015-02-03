@@ -69,8 +69,7 @@
 
 #-----Importing Modules------------------------------------------------------------------------------------------------
 
-import os,pickle
-import pickle
+import os,cPickle
 import pylab as pl
 from numpy import array, arange, ceil, exp, floor, log10, mean, sqrt, zeros
 from numpy import append as npappend
@@ -193,7 +192,7 @@ def boolval(data,reverse=True):
    if reverse:
       keyr=keyr[::-1]                                                     # Reverse the key range
 
-   mult=[2**i for i in keyr]                                              # Mult is a list of all the powers of 2 from 2^0 to 2^(length of data)
+   mult=[1<<i for i in keyr]                                              # Mult is a list of all the powers of 2 from 2^0 to 2^(length of data)
    data=array(data)*mult
    data=npsum(data,axis=1)                                                # Multiply Boolean list by mult, sum per row
 
@@ -846,7 +845,7 @@ def specald(filename):
    print 'Opening '+str(filename)
 
    readfile=open(filename,'rb')
-   data=pickle.load(readfile)
+   data=cPickle.load(readfile)                                            # Unpickle the .speca file
 
    spcdata=data['data']                                                   # Unleash the beast! [open the file]
    good=array(data['good'])
@@ -927,7 +926,7 @@ def specasv(filename,spcdata,good,phcts,npcus,bsz,bgest,foures,flavour):
    savedata['fres']=foures
    savedata['flav']=flavour
 
-   pickle.dump(savedata,wfile)                                            # Pickle the data (convert into bitstream) and dump to file
+   cPickle.dump(savedata,wfile)                                           # Pickle the data (convert into bitstream) and dump to file
 
    print "File saved to "+filename
 
