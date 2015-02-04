@@ -576,19 +576,18 @@ def lh2rms(leahy,rate,bg,const):
 
 #-----LHConst----------------------------------------------------------------------------------------------------------
 
-def lhconst(data,olen):
+def lhconst(data):
 
    '''LHS Const
 
    Decription:
 
     Finds the normalisation of white noise in a given power Leahy-normalised power spectrum.  Assumes
-    no spectral features in the range 1.5kHz to 4kHz.
+    no spectral features in the last 20% of the spectrum.
 
    Inputs:
 
-    freqs -  LIST: the left-hand side of the frequency bins associated with leahy-normalised spectrum.
-    data  -  LIST: the left-hand side of the frequency bins associated with leahy-normalised spectrum.
+    data  -  LIST: the data to be converted.
 
    Outputs:
 
@@ -596,8 +595,13 @@ def lhconst(data,olen):
 
    -J.M.Court, 2015'''
 
-   data=data[1500*olen:4000*olen]
+   olen=len(data)
+   olen=int(4.0/5.0*olen)
+   data=data[olen:]
    const=mean(data)
+   if const>2.5 or const<1.5:
+      print "WARNING: Could not find Leahy constant!"
+      const=2
    return const
 
 
@@ -668,6 +672,58 @@ def mxrebin(spcdata,spcerrs,xaxis,good,bfac):
       b_xaxis.append(xaxis[i*bfac])
 
    return b_spcdata,b_spcerrs,b_xaxis,b_good
+
+
+#-----PlotdSv----------------------------------------------------------------------------------------------------------
+
+def plotdsv(filename,times,counts,binsize,gti,mxpcus,bgest,flavour):
+
+   '''.Plotd Save
+
+   Description:
+
+    Takes the input of the data products required to create a .speca file (to read with specangel)
+    and creates a .speca file at a location given as the first input.
+
+   Inputs:
+
+    filename -     STRING: The absolute or relative path to the location of the file that will be 
+                           created.
+    times    -      ARRAY: An array, the elements of which are the left-hand edges of the time bins
+                           into which counts have been binned.  Units of seconds.
+    counts   -      ARRAY: The number of counts in each bin defined in 'times'.
+    binsize  -      FLOAT: The size of each bin in 'times'.  Saved for speed upon loading.
+    gti      - FITS TABLE: The table of GTI values from the event data .fits file.
+    mxpcus   -        INT: The maximum number of PCUs active at any one time during the observation.
+    bgest    -      FLOAT: An estimate of the count rate of the background flux during the full 
+                           observation, in counts per second.
+    flavour  -     STRING: A useful bit of text to put on plots to help identify them later on.
+
+   Outputs:
+
+    [none]
+
+   -J.M.Court, 2015'''
+
+   savedata={}                                                            # Open library object to save in file
+
+   savedata['time']=times                                                 # Dump each piece of data into an appropriate library element
+   savedata['flux']=counts
+   savedata['errs']=sqrt(abs(array(counts)))
+   savedata['bsiz']=binsize
+   savedata['gtis']=gti
+   savedata['pcus']=mxpcus
+   savedata['bkgr']=bgest
+   savedata['flav']=flavour
+
+   filename=uniqfname(filename,'plotd')                                   # Get the next available name of form filename(x).plotd
+   wfile = open(filename, 'wb')                                           # Open file to write to
+
+   cPickle.dump(savedata,wfile)                                           # Pickle the data (convert into bitstream) and dump to file
+
+   print "PlotDemon file saved to "+filename
+
+   wfile.close()                                                          # Close file
 
 
 #-----RMS_N------------------------------------------------------------------------------------------------------------
@@ -835,7 +891,7 @@ def specald(filename):
     bg       -  ARRAY: An estimate of the count rate of the background flux during the full observation,
                        in counts per second, multiplied by the number of PCUs active in the corresponding
                        row of specdata.
-    bsz      -  FLOAT: The size in seconds of the time bins used when converting event data into time
+    binsize  -  FLOAT: The size in seconds of the time bins used when converting event data into time
                        binned photon count data.
     foures   -  FLOAT: The length of time corresponding to a single row of spcdata, in seconds.
     flavour  - STRING: A useful bit of text to put on plots to help identify them later on.
@@ -851,7 +907,7 @@ def specald(filename):
    good=array(data['good'])
    rates=array(data['phct'])
    n_pcus=array(data['npcu'])
-   bsz=data['bsiz']
+   binsize=data['bsiz']
    bgest=data['bkgr']
    foures=data['fres']
    flavour=data['flav']
@@ -867,12 +923,12 @@ def specald(filename):
 
    bg=n_pcus*bgest
 
-   return spcdata,good,rates,bg,bsz,foures,flavour
+   return spcdata,good,rates,bg,binsize,foures,flavour
 
 
 #-----SpecaSv----------------------------------------------------------------------------------------------------------
 
-def specasv(filename,spcdata,good,phcts,npcus,bsz,bgest,foures,flavour):
+def specasv(filename,spcdata,good,phcts,npcus,binsize,bgest,foures,flavour):
 
    '''.Speca Save
 
@@ -895,7 +951,7 @@ def specasv(filename,spcdata,good,phcts,npcus,bsz,bgest,foures,flavour):
     npcus    -  ARRAY: An array of ints with as many elements as spcdata has columns.  States the number
                        of detectors that were active when the data represented by the corresponding row
                        of spcdata was recorded.
-    bsz      -  FLOAT: The size in seconds of the time bins used when converting event data into time
+    binsize  -  FLOAT: The size in seconds of the time bins used when converting event data into time
                        binned photon count data.
     bgest    -  FLOAT: An estimate of the count rate of the background flux during the full observation,
                        in counts per second.
@@ -908,27 +964,23 @@ def specasv(filename,spcdata,good,phcts,npcus,bsz,bgest,foures,flavour):
 
    -J.M.Court, 2015'''
 
-   filext=(filename.split('.')[-1])                                       # Identify file extension from the original filename
-   if filext!=filename:
-      filename=filename[:-len(filext)]                                    # Remove file extension, if present
-
-   filename=uniqfname(filename,'speca')                                   # Get the next available name of form filename(x).extension
-
-   wfile = open(filename, 'wb')                                           # Open file to write to
    savedata={}                                                            # Open library object to save in file
 
    savedata['data']=spcdata                                               # Dump each piece of data into an appropriate library element
    savedata['good']=good
    savedata['phct']=phcts
    savedata['npcu']=npcus
-   savedata['bsiz']=bsz
+   savedata['bsiz']=binsize
    savedata['bkgr']=bgest
    savedata['fres']=foures
    savedata['flav']=flavour
 
+   filename=uniqfname(filename,'speca')                                   # Get the next available name of form filename(x).speca
+   wfile = open(filename, 'wb')                                           # Open file to write to
+
    cPickle.dump(savedata,wfile)                                           # Pickle the data (convert into bitstream) and dump to file
 
-   print "File saved to "+filename
+   print "SpecAngel file saved to "+filename
 
    wfile.close()                                                          # Close file
 
@@ -1040,7 +1092,7 @@ def uniqfname(filename,extension):
    n=1
 
    while os.path.isfile(filenamex+'.'+extension):
-      if n==1: print filename+'.'+extension+' already exists!'
+      # print filename+'.'+extension+' already exists!                    # Can uncomment this for more verobisty.
       filenamex=filename+'('+str(n)+')'
       n+=1
 

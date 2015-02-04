@@ -38,6 +38,7 @@ from scipy.fftpack import fft
 
 lplresdefault=0.005                                                       # The best resolution, in log10 space, in which the data will be analysed
 
+
 #-----Welcoming Header-------------------------------------------------------------------------------------------------
 
 print ''
@@ -81,7 +82,7 @@ nulldat=zeros((datres/2)-1)                                               # Crea
 tf,null,null=xtl.lbinify(tfl[1:],nulldat,nulldat,lplres)                  # Fetch new array of bins to be output after lbinning
 
 spec=npsum(loadmatrix,axis=0)/float(sum(good))                            # Create the average Leahy spectrum
-const=xtl.lhconst(spec,foures)                                            # Calculate the normalisation of noise
+const=xtl.lhconst(spec)                                                   # Calculate the normalisation of noise
 
 print ''
 
@@ -431,9 +432,11 @@ while specopt not in ['quit','exit']:                                     # If t
 
    elif specopt=='rates':
 
+      print 'Average rate of',str(mean(rates[ogood]))+'c/s.'
+      print sum(rates[ogood])*foures,'total counts.'
+
       pl.figure('lc')
-      print len(rates),len(td[:-1])
-      pl.plot(td[:-1][ogood],rates[ogood])
+      pl.plot(td[:-1][ogood],rates[ogood],'ok')
       pl.xlabel('Time (s)')
       pl.ylabel('Flux (photons/s)')
       pl.title('Lightcurve')
