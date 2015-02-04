@@ -25,7 +25,7 @@ import sys,os,pickle
 import pylab as pl
 import xtele_lib as xtl
 from astropy.io import fits
-from numpy import array, arange, zeros, meshgrid, transpose
+from numpy import array, arange, mean, meshgrid, transpose, zeros
 from numpy import exp, histogram, linspace, log10, nonzero, sqrt
 from numpy import append as npappend                                      # Importing numpy append as npappend to avoid confusion with in-built append function
 from numpy import min as npmin
@@ -66,6 +66,7 @@ print 'Normalizing and binning...'
 if len(args)>2:                                                           # Check for lplres input, else request one
    try:
       lplres=float(args[2])
+      assert lplres>0
    except:
       lplres=lplresdefault
 else:
@@ -433,7 +434,7 @@ while specopt not in ['quit','exit']:                                     # If t
    elif specopt=='rates':
 
       print 'Average rate of',str(mean(rates[ogood]))+'c/s.'
-      print sum(rates[ogood])*foures,'total counts.'
+      print int(sum(rates[ogood])*foures),'total counts.'
 
       pl.figure('lc')
       pl.plot(td[:-1][ogood],rates[ogood],'ok')
