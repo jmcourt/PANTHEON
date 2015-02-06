@@ -676,6 +676,64 @@ def mxrebin(spcdata,spcerrs,xaxis,good,bfac):
    return b_spcdata,b_spcerrs,b_xaxis,b_good
 
 
+#-----PlotdLd----------------------------------------------------------------------------------------------------------
+
+def plotdld(filename,):
+
+   '''.Plotd Load
+
+   Description:
+
+    Opens a .plotd file and retrieves the useful data from it.
+
+   Inputs:
+
+    filename - STRING: The absolute or relative path to the location of the file that will be opened.
+
+   Outputs:
+
+    times    -      ARRAY: An array, the elements of which are the left-hand edges of the time bins
+                           into which counts have been binned.  Units of seconds.
+    counts   -      ARRAY: The number of counts in each bin defined in 'times'.
+    errors   -      ARRAY: The 1-sigma errors associated with each value in 'counts'
+    binsize  -      FLOAT: The size of each bin in 'times'.  Saved for speed upon loading.
+    gti      - FITS TABLE: The table of GTI values from the event data .fits file.
+    mxpcus   -        INT: The maximum number of PCUs active at any one time during the observation.
+    bgpcu    -      FLOAT: An estimate of the count rate of the background flux during the full 
+                           observation, in counts per second per PCU, multiplied by the number of
+                           PCUs.
+    flavour  -     STRING: A useful bit of text to put on plots to help identify them later on.
+
+   -J.M.Court, 2015'''
+
+   print 'Opening '+str(filename)
+
+   readfile=open(filename,'rb')
+   data=cPickle.load(readfile)                                            # Unpickle the .speca file
+
+   times=array(data['time'])                                              # Unleash the beast! [open the file]
+   counts=array(data['flux'])
+   errors=array(data['errs'])
+   binsize=data['bsiz']
+   gti=data['gtis']
+   mxpcus=data['pcus']
+   bgest=data['bkgr']
+   flavour=data['flav']
+
+   bgpcu=bgest*mxpcus                                                     # Collect background * PCUs
+
+   readfile.close()
+
+   print ''
+
+   print 'Power spectra taken over '+str(foures)+'s of data each'
+   print str(sum(good))+'/'+str(len(spcdata))+' power spectra are good'
+   if flavour!='':
+      print "Flavour is '"+str(flavour)+"'"                               # Only print flavour if there is a flavour to print
+
+   return times,counts,errors,binsize,gti,mxpcus,bgpcu,flavour
+
+
 #-----PlotdSv----------------------------------------------------------------------------------------------------------
 
 def plotdsv(filename,times,counts,binsize,gti,mxpcus,bgest,flavour):
@@ -684,8 +742,8 @@ def plotdsv(filename,times,counts,binsize,gti,mxpcus,bgest,flavour):
 
    Description:
 
-    Takes the input of the data products required to create a .speca file (to read with specangel)
-    and creates a .speca file at a location given as the first input.
+    Takes the input of the data products required to create a .plotd file (to read with plotdemon)
+    and creates a .plotd file at a location given as the first input.
 
    Inputs:
 
@@ -698,7 +756,7 @@ def plotdsv(filename,times,counts,binsize,gti,mxpcus,bgest,flavour):
     gti      - FITS TABLE: The table of GTI values from the event data .fits file.
     mxpcus   -        INT: The maximum number of PCUs active at any one time during the observation.
     bgest    -      FLOAT: An estimate of the count rate of the background flux during the full 
-                           observation, in counts per second.
+                           observation, in counts per second per PCU.
     flavour  -     STRING: A useful bit of text to put on plots to help identify them later on.
 
    Outputs:
@@ -879,7 +937,7 @@ def specald(filename):
 
    Inputs:
 
-    filename - STRING: The absolute or relative path to the location of the file that will be created.
+    filename - STRING: The absolute or relative path to the location of the file that will be opened.
 
    Outputs:
 
@@ -892,8 +950,8 @@ def specald(filename):
                        corresponding row of spcdata.
     phcts    -    INT: The total number of photons detected, overall.
     bg       -  ARRAY: An estimate of the count rate of the background flux during the full observation,
-                       in counts per second, multiplied by the number of PCUs active in the corresponding
-                       row of specdata.
+                       in counts per second per PCU, multiplied by the number of PCUs active in the
+                       corresponding row of specdata.
     binsize  -  FLOAT: The size in seconds of the time bins used when converting event data into time
                        binned photon count data.
     foures   -  FLOAT: The length of time corresponding to a single row of spcdata, in seconds.
@@ -961,7 +1019,7 @@ def specasv(filename,spcdata,good,rates,phcts,npcus,binsize,bgest,foures,flavour
     binsize  -  FLOAT: The size in seconds of the time bins used when converting event data into time
                        binned photon count data.
     bgest    -  FLOAT: An estimate of the count rate of the background flux during the full observation,
-                       in counts per second.
+                       in counts per second per PCU.
     foures   -  FLOAT: The length of time corresponding to a single row of spcdata, in seconds.
     flavour  - STRING: A useful bit of text to put on plots to help identify them later on.
 
