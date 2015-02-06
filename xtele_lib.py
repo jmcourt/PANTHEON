@@ -66,6 +66,8 @@
 #
 #  UNIQFNAME - checks if a proposed filename is currently in use and, if so, proposes an alternative
 #              filename to prevent overwrite.
+#
+#
 
 #-----Importing Modules------------------------------------------------------------------------------------------------
 
@@ -888,6 +890,7 @@ def specald(filename):
                        within the GTIs of the photon count data.
     rates    -  ARRAY: The count rate per second of photons in the time interval represented by the
                        corresponding row of spcdata.
+    phcts    -    INT: The total number of photons detected, overall.
     bg       -  ARRAY: An estimate of the count rate of the background flux during the full observation,
                        in counts per second, multiplied by the number of PCUs active in the corresponding
                        row of specdata.
@@ -905,7 +908,8 @@ def specald(filename):
 
    spcdata=data['data']                                                   # Unleash the beast! [open the file]
    good=array(data['good'])
-   rates=array(data['phct'])
+   rates=array(data['rate'])
+   phcts=data['phct']
    n_pcus=array(data['npcu'])
    binsize=data['bsiz']
    bgest=data['bkgr']
@@ -923,14 +927,16 @@ def specald(filename):
 
    bg=n_pcus*bgest
 
-   return spcdata,good,rates,bg,binsize,foures,flavour
+   return spcdata,good,rates,phcts,bg,binsize,foures,flavour
 
 
 #-----SpecaSv----------------------------------------------------------------------------------------------------------
 
-def specasv(filename,spcdata,good,phcts,npcus,binsize,bgest,foures,flavour):
+def specasv(filename,spcdata,good,rates,phcts,npcus,binsize,bgest,foures,flavour):
 
    '''.Speca Save
+
+   "Should've gone to SpecaSaver..."
 
    Description:
 
@@ -945,9 +951,10 @@ def specasv(filename,spcdata,good,phcts,npcus,binsize,bgest,foures,flavour):
     good     -  ARRAY: A Boolean array with as many elements as spcdata has columns.  Its entries are
                        True unless the corresponding row in spcdata does not correspond to a valid time
                        within the GTIs of the photon count data.
-    phcts    -  ARRAY: An array of floats with as many elements as spcdata has columns.  Denotes the
+    rates    -  ARRAY: An array of floats with as many elements as spcdata has columns.  Denotes the
                        total number of photon counts in the time interval represented by the corresponding
-                       row in spcdata.
+                       row in spcdata, divided by the width of a column in seconds.
+    phcts    -    INT: The total number of photons detected, overall.
     npcus    -  ARRAY: An array of ints with as many elements as spcdata has columns.  States the number
                        of detectors that were active when the data represented by the corresponding row
                        of spcdata was recorded.
@@ -968,6 +975,7 @@ def specasv(filename,spcdata,good,phcts,npcus,binsize,bgest,foures,flavour):
 
    savedata['data']=spcdata                                               # Dump each piece of data into an appropriate library element
    savedata['good']=good
+   savedata['rate']=rates
    savedata['phct']=phcts
    savedata['npcu']=npcus
    savedata['bsiz']=binsize

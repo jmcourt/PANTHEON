@@ -36,6 +36,7 @@
 #  [FLAVOUR]
 #   Optional: A useful bit of text to put on plots to help identify them later on.
 #
+#
 
 #-----Importing Modules------------------------------------------------------------------------------------------------
 
@@ -142,7 +143,10 @@ datas=datas[mask]                                                         # Appl
 olen=str(len(datas))
 datas=xtl.chrange(datas,lowc,highc,event[1].header['DATAMODE'])
 
-print str(len(datas))+'/'+olen+' photons fall within channel range!'
+phcts=len(datas)
+pcg=str(int(100*phcts/float(olen)))+'%'
+
+print str(phcts)+'/'+olen+' photons fall within channel range ('+pcg+')!'
 print ''
 
 times=datas.field(0)                                                      # Extracting list of photon incident times as a separate object
@@ -202,7 +206,7 @@ print ''
 fourgrlin=[]                                                              # Set up matrix
 bad=0                                                                     # Counter to count ranges which fall out of the GTIs
 good=[]                                                                   # Array to keep track of which ranges were good
-phcts=[]                                                                  # Array of count rates to be populated
+rates=[]                                                                  # Array of count rates to be populated
 npcus=[]                                                                 
 t=arange(0,foures+bsz,bsz)                                                # Setting up SpecAngel resolution time series per Fourier bin
 tc=arange(0,foures+bsz*ptdbinfac,bsz*ptdbinfac)                           # Setting up PlotDemon coarse resolution time series per Fourier bin
@@ -211,8 +215,8 @@ ta=arange(0,(foures*numstep),bsz*ptdbinfac)                               # Sett
 
 #-----Populating power spectra-----------------------------------------------------------------------------------------
 
-fullhist=[]
-fulltxis=[]
+fullhist=[]                                                               # Create empty flux array to pass to plotdemon
+tcounts=0                                                                 # Initiate photon counter
 
 for step in range(numstep):                                               ## For every [foures]s interval in the data:
    stpoint=step*foures                                                         #  Calculate the startpoint of the interval
@@ -241,7 +245,8 @@ for step in range(numstep):                                               ## For
       npcus.append(pcus)
 
       counts=sum(f)
-      phcts.append(float(counts)/foures)
+      tcounts+=counts
+      rates.append(float(counts)/foures)
 
       tsfdata=fft(f)                                                           #  Fourier transform the interval
 
@@ -252,7 +257,7 @@ for step in range(numstep):                                               ## For
 
       tsfdata=zeros(datres/2)
       npcus.append(0)
-      phcts.append(0)
+      rates.append(0)
       good.append(False)                                                       #  Flag this column as bad
 
    fourgrlin.append(tsfdata)                                                   #  Append the FT'd data to the matrix
@@ -261,6 +266,10 @@ for step in range(numstep):                                               ## For
    if (prog % 5)==0 or prog==numstep:
       print str(prog)+'/'+str(numstep)+' series analysed...'                   # Display progress every 5 series
 
+pcg=str(int(100*tcounts/float(phcts)))+'%'
+
+print ''
+print str(tcounts)+'/'+str(phcts)+' photons in GTI ('+pcg+')!'
 
 #-----Save .speca and .plotd files-------------------------------------------------------------------------------------
 
@@ -274,9 +283,9 @@ if filext!=filename:
 
 filename=filename+'_'+str(lowc)+'-'+str(highc)
 
-xtl.plotdsv(filename,ta,fullhist,bsz,gti,max(npcus),bgest,flavour)
-xtl.specasv(filename,fourgrlin,good,phcts,npcus,bsz,bgest,foures,flavour) # Save data, good array, counts array, #pcus array, background estimate, Fourier resolution,
-                                                                          #  and flavour as a pickled binary library object; see specasv in xtele_lib
+xtl.plotdsv(filename,ta,fullhist,bsz,gti,max(npcus),bgest,flavour)        # Save .plotd and .speca files
+xtl.specasv(filename,fourgrlin,good,rates,tcounts,npcus,bsz,bgest,foures,flavour)
+
 
 #-----Footer-----------------------------------------------------------------------------------------------------------
 

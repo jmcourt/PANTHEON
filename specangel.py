@@ -55,7 +55,7 @@ filename=args[1]                                                          # Fetc
 
 #-----Extracting data from file-----------------------------------------------------------------------------------------
 
-loadmatrix,good,rates,bg,bsz,foures,flavour=xtl.specald(filename)         # Use SpecaLd from xtele_lib to load data from file
+loadmatrix,good,rates,phcts,bg,bsz,foures,flavour=xtl.specald(filename)   # Use SpecaLd from xtele_lib to load data from file
 
 
 #-----Initially normalising data----------------------------------------------------------------------------------------
@@ -171,7 +171,7 @@ def give_inst():                                                          # Defi
    print '* "reset" to Reset data'
    print ''
    print 'SPECTROGRAM:'
-   print '* "plot" to plot the spectrogram currently being worked on'
+   print '* "sgram" to plot the spectrogram currently being worked on'
    print '* "sub" to Subtract a constant from all power readings, forcing any negative values to zero'
    print '* "log" to toggle Logarithmic spectrogram plotting'
    print ''
@@ -197,9 +197,9 @@ while specopt not in ['quit','exit']:                                     # If t
    specopt=raw_input('Give command [? for help]: ')                       # Fetch command from user
 
 
-   #-----'Plot' Option-------------------------------------------------------------------------------------------------
+   #-----'Sgram' Option------------------------------------------------------------------------------------------------
 
-   if specopt=='plot':                                                    # Plotting data
+   if specopt=='sgram':                                                   # Plotting data
 
       proce=True                                                          # Assume plot will be made
       npl=len(fourgrm[0,:])*len(fourgrm[:,0])                             # Check how large this plot will be
@@ -434,7 +434,7 @@ while specopt not in ['quit','exit']:                                     # If t
    elif specopt=='rates':
 
       print 'Average rate of',str(mean(rates[ogood]))+'c/s.'
-      print int(sum(rates[ogood])*foures),'total counts.'
+      print str(phcts),'total counts.'
 
       pl.figure('lc')
       pl.plot(td[:-1][ogood],rates[ogood],'ok')
