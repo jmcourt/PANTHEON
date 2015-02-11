@@ -23,6 +23,8 @@
 #
 #  EVMCHAN   - converts an RXTE channel ID into an E_125us_64M_0_1s DATAMODE channel range ID.
 #
+#  FLNCHECK  - checks to see whether a proposed input file has the correct file extension.
+#
 #  FOLDIFY   - takes a time series with its associated y-axis data and y-axis errors.  Folds this data
 #              over a time period of the user's choosing, and returns them as the tuple x,y,y_error.
 #
@@ -44,8 +46,14 @@
 #  MXREBIN   - takes a 2-dimensional set of data and corresponding errors linearly binned on the x-axis and
 #              rebins them by an integer binning factor of the user's choice.
 #
+#  PLOTDLD   - load and unpickle a .plotd file and extract its data.
+#
+#  PLOTDSV   - collect a selection of data products as a library, pickle it and save as a .plotd file.
+#
 #  RMS_N     - takes the raw power spectrum output from the scipy FFT algorithm and normalises it using
 #              (RMS/Mean)^2 normalisation.
+#
+#  SIGNOFF   - prints an dividing line with some space.  That's all it does.
 #
 #  SLPLOT    - plots an x-y line plot of two sets of data, and then below plots the same data on another
 #              set of axes in log-log space.
@@ -105,6 +113,7 @@ def argcheck(x,y):
 
    if len(x)<y:
       print 'Not enough arguments!'
+      signoff()
       exit()
 
 
@@ -163,7 +172,7 @@ def binify(x,y,ye,binsize):                                               # Defi
 
    yb[-1]=yb[-1]/binct                                                    ## Clean up final bin
    yeb[-1]=(sqrt(yeb[-1]))/binct
-   return xb,yb,yeb
+   return array(xb),array(yb),array(yeb)
 
 
 #-----BoolVal----------------------------------------------------------------------------------------------------------
@@ -340,6 +349,44 @@ def evmchan(chan):
    else:          n_chan=63
 
    return n_chan
+
+
+#-----FlnCheck---------------------------------------------------------------------------------------------------------
+
+def flncheck(filename,validext,cont=False):
+
+   '''Filename Checker
+
+   Description:
+
+    Takes a filename and a string representing the expected file extension.  If the extension of the
+    file does not match expectations, either kill the script or return 'False'.
+
+   Inputs:
+
+    filename - STRING: The filename to be checked.
+    validext - STRING: The extenstion expected for the file (WITHOUT the leading '.')
+    cont     -   BOOL: [Optional] if True, returns a value of False for an incorrect file extension.
+                       If False (default), kills the script upon finding an incorrect file extension.
+
+   Outputs:
+
+    iscorr   -   BOOL: True if the file has the correct extension, False otherwise
+
+   -J.M.Court, 2015'''
+
+   flext=(filename.split('.')[-1])
+
+   if flext != validext:
+      if cont:
+         return False
+      else:
+         print 'Invalid input file!  Must use .'+str(validext)+' file!'
+         signoff()
+         exit()
+   else:
+      return True
+
 
 #-----Foldify----------------------------------------------------------------------------------------------------------
 
@@ -676,9 +723,34 @@ def mxrebin(spcdata,spcerrs,xaxis,good,bfac):
    return b_spcdata,b_spcerrs,b_xaxis,b_good
 
 
+#-----PDColEx----------------------------------------------------------------------------------------------------------
+
+def pdcolex2(y1,y2,ye1,ye2):
+
+   flux=y1+y2
+   fluxe=sqrt(ye1**2+ye2**2)
+   col21=(y2/y1)
+   col21e=col21*sqrt( ((ye1/y1)**2)+((ye2/y2)**2) )
+
+   return flux,fluxe,col21,col21e
+
+def pdcolex3(y1,y2,y3,ye1,ye2,ye3):
+
+   flux=y1+y2+y3
+   fluxe=sqrt(ye1**2+ye2**2+ye3**2)
+   col21=(y2/y1)
+   col21e=col21*sqrt( ((ye1/y1)**2)+((ye2/y2)**2) )
+   col32=(y3/y2)
+   col32e=col32*sqrt( ((ye2/y2)**2)+((ye3/y3)**2) )
+   col31=(y3/y1)
+   col31e=col31*sqrt( ((ye1/y1)**2)+((ye3/y3)**2) )
+
+   return flux,fluxe,col21,col21e,col32,col32e,col31,col31e
+
+
 #-----PlotdLd----------------------------------------------------------------------------------------------------------
 
-def plotdld(filename,):
+def plotdld(filename):
 
    '''.Plotd Load
 
@@ -712,13 +784,15 @@ def plotdld(filename,):
    data=cPickle.load(readfile)                                            # Unpickle the .speca file
 
    times=array(data['time'])                                              # Unleash the beast! [open the file]
-   counts=array(data['flux'])
+   rates=array(data['flux'])
    errors=array(data['errs'])
+   tstart=data['tstr']
    binsize=data['bsiz']
    gti=data['gtis']
    mxpcus=data['pcus']
    bgest=data['bkgr']
    flavour=data['flav']
+   chanstr=data['chan']
 
    bgpcu=bgest*mxpcus                                                     # Collect background * PCUs
 
@@ -726,17 +800,15 @@ def plotdld(filename,):
 
    print ''
 
-   print 'Power spectra taken over '+str(foures)+'s of data each'
-   print str(sum(good))+'/'+str(len(spcdata))+' power spectra are good'
    if flavour!='':
       print "Flavour is '"+str(flavour)+"'"                               # Only print flavour if there is a flavour to print
 
-   return times,counts,errors,binsize,gti,mxpcus,bgpcu,flavour
+   return times,rates,errors,tstart,binsize,gti,mxpcus,bgpcu,flavour,chanstr
 
 
 #-----PlotdSv----------------------------------------------------------------------------------------------------------
 
-def plotdsv(filename,times,counts,binsize,gti,mxpcus,bgest,flavour):
+def plotdsv(filename,times,counts,tstart,binsize,gti,mxpcus,bgest,flavour,chanstr):
 
    '''.Plotd Save
 
@@ -768,13 +840,15 @@ def plotdsv(filename,times,counts,binsize,gti,mxpcus,bgest,flavour):
    savedata={}                                                            # Open library object to save in file
 
    savedata['time']=times                                                 # Dump each piece of data into an appropriate library element
-   savedata['flux']=counts
-   savedata['errs']=sqrt(abs(array(counts)))
+   savedata['flux']=array(counts)/float(binsize)
+   savedata['tstr']=tstart
+   savedata['errs']=sqrt(abs(array(counts)/float(binsize)))
    savedata['bsiz']=binsize
    savedata['gtis']=gti
    savedata['pcus']=mxpcus
    savedata['bkgr']=bgest
    savedata['flav']=flavour
+   savedata['chan']=chanstr
 
    filename=uniqfname(filename,'plotd')                                   # Get the next available name of form filename(x).plotd
    wfile = open(filename, 'wb')                                           # Open file to write to
@@ -817,6 +891,22 @@ def rms_n(data,counts,datres,rate,bg,const):
    leahy=leahyn(data,counts,datres)                                       # Leahy normalise the data
    rms=lh2rms(leahy,rate,bg,const)                                        # Convert to RMS
    return rms
+
+#-----SignOff----------------------------------------------------------------------------------------------------------
+
+def signoff():
+
+   '''Sign Off
+
+   Description:
+
+    Prints an underline with some spaces.  That's all.
+
+   -J.M.Court, 2015'''
+
+   print ''
+   print '------------------------------------------------'
+   print ''
 
 
 #-----SLPlot-----------------------------------------------------------------------------------------------------------
@@ -1158,7 +1248,7 @@ def uniqfname(filename,extension):
    n=1
 
    while os.path.isfile(filenamex+'.'+extension):
-      # print filename+'.'+extension+' already exists!                    # Can uncomment this for more verobisty.
+      # print filename+'.'+extension+' already exists!                    # Can uncomment this for more verbosity.
       filenamex=filename+'('+str(n)+')'
       n+=1
 

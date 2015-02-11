@@ -92,9 +92,10 @@ if highc>255: highc=255
 
 if lowc>highc:
    print 'Invalid channels!  Aborting!'                                   # Abort if user gives lowc>highc
-   print ''
-   print '------------------------------------------------'
+   xtl.signoff()
    exit()
+
+cs=str(lowc)+'-'+str(highc)
 
 if len(args)>4:
    bszt=float(args[4])                                                    # Collect binsize from inputs if given, else ask user, else use resolution encoded in .fits file
@@ -142,6 +143,7 @@ mask=datas['Event'][:,0]==True                                            # Crea
 datas=datas[mask]                                                         # Applying the mask
 olen=str(len(datas))
 datas=xtl.chrange(datas,lowc,highc,event[1].header['DATAMODE'])
+tstart=event[1].header['TSTART']
 
 phcts=len(datas)
 pcg=str(int(100*phcts/float(olen)))+'%'
@@ -235,7 +237,9 @@ for step in range(numstep):                                               ## For
    wrdrow=wrdrow[mask]
 
    fc,null=histogram(datrow,tc+step*foures)                                    #  Coarsely bin this subrange of event data
+   del null
    fullhist=fullhist+list(fc)
+   print len(fullhist)
 
    if in_gti:
 
@@ -281,16 +285,14 @@ filext=(filename.split('.')[-1])                                          # Iden
 if filext!=filename:
    filename=filename[:-len(filext)-1]                                     # Remove file extension, if present
 
-filename=filename+'_'+str(lowc)+'-'+str(highc)
+filename=filename+'_'+cs
 
-xtl.plotdsv(filename,ta,fullhist,bsz,gti,max(npcus),bgest,flavour)        # Save .plotd and .speca files
+xtl.plotdsv(filename,ta,fullhist,tstart,bsz*ptdbinfac,gti,max(npcus),bgest,flavour,cs)
 xtl.specasv(filename,fourgrlin,good,rates,tcounts,npcus,bsz,bgest,foures,flavour)
 
 
 #-----Footer-----------------------------------------------------------------------------------------------------------
 
-print ''
-print '------------------------------------------------'
-print ''
+xtl.signoff()
 
 

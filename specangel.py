@@ -51,6 +51,7 @@ args=sys.argv
 xtl.argcheck(args,2)                                                      # Must give at least 2 args (Filename and the function call)
 
 filename=args[1]                                                          # Fetch file name from arguments
+xtl.flncheck(filename,'speca')
 
 
 #-----Extracting data from file-----------------------------------------------------------------------------------------
@@ -81,6 +82,7 @@ datres=int(foures/bsz)
 tfl=linspace(0.0, (1.0/2.0)*datres/float(foures), datres/2)               # Create linearly spaced frequency domain up to the Nyquist frequency 1/2 (N/T)
 nulldat=zeros((datres/2)-1)                                               # Create null data with the same number of points as tfl
 tf,null,null=xtl.lbinify(tfl[1:],nulldat,nulldat,lplres)                  # Fetch new array of bins to be output after lbinning
+del null
 
 spec=npsum(loadmatrix,axis=0)/float(sum(good))                            # Create the average Leahy spectrum
 const=xtl.lhconst(spec)                                                   # Calculate the normalisation of noise
@@ -95,6 +97,7 @@ def lbin(lplres,prt=False):                                               # Defi
       tsfdata=xtl.lh2rms(tsfdata,rates[i],bg[i],const)                    # Convert to RMS-normalised data using the LH2RMS function from xtele_lib
       errs=xtl.lh2rms(zeros(len(tsfdata))+const,rates[i],bg[i],0)         # Errors of a Leahy spectrum = the Leahy noise constant
       null,fours,errs=xtl.lbinify(tfl[1:],tsfdata[1:]*tfl[1:],errs[1:]*tfl[1:],lplres) # Logarithmically bin the data using lbinify from xtele_lib
+      del null
       fourgr.append(fours)                                                # Populate the data matrix
       errgr.append(abs(errs))                                             # Populate the error matrix
 
@@ -266,6 +269,7 @@ while specopt not in ['quit','exit']:                                     # If t
       if lplres==newfbin:                                                 # Cancel binning if new bin is not greater than old bin
 
          tflm,null,null=xtl.lbinify(tfl[1:],nulldat,nulldat,lplres)       # Fetch new array of bins to be output after lbinning
+         del null
          fourgrm,errgrm=lbin(lplres,prt=True)                             # Re log-bin data
 
       if tbinmult!=1:                                                     # Cancel binning if new bin is not greater than old bin
@@ -460,7 +464,7 @@ while specopt not in ['quit','exit']:                                     # If t
 
       print 'Invalid command!'
 
-   if specopt!='quit':
+   if specopt not in ['quit','exit']:
       print ''
       print ' --------------------'
 
@@ -473,8 +477,6 @@ print 'Goodbye!'
 
 #-----Footer-----------------------------------------------------------------------------------------------------------
 
-print ''
-print '------------------------------------------------'
-print ''
+xtl.signoff()
 
 
