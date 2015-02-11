@@ -63,19 +63,17 @@ if nfiles>3: nfiles=3
 file1=args[1]
 xtl.flncheck(file1,'plotd')
 
-fac=1 ################################################################# I don't know why I need this factor but it doesn't work without it!!!
-
 x1r,y1r,ye1r,tst1,bsz1,gti,pcus1,bg1,flavour,ch1=xtl.plotdld(file1)       # Opening file 1
-y1r=fac*y1r/float(pcus1)                                                  # Normalising flux by dividing by the number of active PCUs and the binsize
-ye1r=fac*ye1r/float(pcus1)
+y1r=y1r/float(pcus1)                                                      # Normalising flux by dividing by the number of active PCUs and the binsize
+ye1r=ye1r/float(pcus1)
 
 if nfiles>1:
    file2=args[2]
    if xtl.flncheck(file2,'plotd'):
       x2r,y2r,ye2r,tst2,bsz2,null,pcus2,null,null,ch2=xtl.plotdld(file2)  # Opening file 2
       del null
-      y2r=fac*y2r/float(pcus2)                                            # Normalising flux by dividing by the number of active PCUs and the binsize
-      ye2r=fac*ye2r/float(pcus2)
+      y2r=y2r/float(pcus2)                                                # Normalising flux by dividing by the number of active PCUs and the binsize
+      ye2r=ye2r/float(pcus2)
    else:
       nfiles=1
       print 'Warning: File 2 of incorrect file type!'
@@ -87,8 +85,8 @@ if nfiles>2:
    if xtl.flncheck(file2,'plotd'):
       x3r,y3r,ye3r,tst3,bsz3,null,pcus3,null,null,ch3=xtl.plotdld(file3)  # Opening file 3
       del null
-      y3r=fac*y3r/float(pcus3)                                            # Normalising flux by dividing by the number of active PCUs and the binsize
-      ye3r=fac*ye3r/float(pcus3)
+      y3r=y3r/float(pcus3)                                                # Normalising flux by dividing by the number of active PCUs and the binsize
+      ye3r=ye3r/float(pcus3)
    else:
       nfiles=2
       print 'Warning: File 3 of incorrect file type!'
@@ -138,52 +136,32 @@ if nfiles>1:
 print 'Binning complete!'
 print ''
 
+gmask=xtl.gtimask(x1,gti)                                                 # A mask to blank values that fall outside of the GTIs
 
 #-----Fetch Colours----------------------------------------------------------------------------------------------------
 
 def colorget():
    print 'Analysing Data...'
+   times=x1[gmask]
    if nfiles==1:
-      flux=y1
-      fluxe=ye1
+      flux=y1[gmask]
+      fluxe=ye1[gmask]
       col21=col21e=col32=col32e=col31=col31e=None
    elif nfiles==2:
-      flux,fluxe,col21,col21e=xtl.pdcolex2(y1,y2,ye1,ye2)
+      flux,fluxe,col21,col21e=xtl.pdcolex2(y1,y2,ye1,ye2,gmask)
       col32=col32e=col31=col31e=None
    elif nfiles==3:
-      flux,fluxe,col21,col21e,col32,col32e,col31,col31e=xtl.pdcolex3(y1,y2,y3,ye1,ye2,ye3)
+      flux,fluxe,col21,col21e,col32,col32e,col31,col31e=xtl.pdcolex3(y1,y2,y3,ye1,ye2,ye3,gmask)
    else:
       print 'Error!  Too much data somehow.'
       exit()
-   return flux,fluxe,col21,col21e,col32,col32e,col31,col31e
+   return times,flux,fluxe,col21,col21e,col32,col32e,col31,col31e
 
-flux,fluxe,col21,col21e,col32,col32e,col31,col31e=colorget()
+times,flux,fluxe,col21,col21e,col32,col32e,col31,col31e=colorget()
 
 print 'Done!'
 print ''
 
-
-#-----User Menu--------------------------------------------------------------------------------------------------------
-
-def give_inst():                                                          # Define printing this list of instructions as a function
-   print 'COMMANDS: Enter a command to manipulate data.'
-   print ''
-   print 'DATA:'
-   print '* "rebin" to reset the data and load it with a different binning'
-   print ''
-   print '1-SET PLOTS:'
-   print '* "lc" to plot a simple graph of flux over time'
-   if nfiles>1:
-      print ''
-      print '2-SET PLOTS:'
-      print '* "hid21" to plot a hardness-intensity diagram of file2/file1 colour against total flux'
-   print ''
-   print 'TOGGLE OPTIONS:'
-   print '* "errors" to toggle whether to display errors in plots'
-
-give_inst()                                                               # Print the list of instructions
-print ''
-print ' --------------------'
 
 
 #-----Setting up plot environment--------------------------------------------------------------------------------------
@@ -193,16 +171,48 @@ es=True
 cs=False
 ls=False
 
-def doplot(x,xe,y,ye,xax,yax,ttl):
+def doplot(x,xe,y,ye):                                                    # Defining short function to determine whether errorbars are needed on the fly
 
    if es:
       pl.errorbar(x,y,xerr=xe,yerr=ye)
    else:
       pl.plot(x,y)
-   pl.xlabel(xax)
-   pl.ylabel(yax)
-   pl.title(ttl)
-   pl.show(block=False)
+
+
+#-----User Menu--------------------------------------------------------------------------------------------------------
+
+def give_inst():                                                          # Define printing this list of instructions as a function
+   print 'COMMANDS: Enter a command to manipulate data.'
+   print ''
+   print 'DATA:'
+   print '* "rebin" to reset the data and load it with a different binning'
+   print '* "fold" to fold data over a period of your choosing'
+   print ''
+   print '1+ DATASET PLOTS:'
+   print '* "lc" to plot a simple graph of flux over time'
+   if nfiles>1:
+      print ''
+      print '2+ DATASET PLOTS:'
+      print '* "hid21" to plot a hardness-intensity diagram of file2/file1 colour against total flux'
+      print '* "bands" to plot lightcurves of all bands on adjacent axes'
+      print '* "xbands" to plot lightcurves of all bands on the same axes'
+   if nfiles=3:
+      print ''
+      print '3 DATASET PLOTS:'
+      print '* "hid32" to plot a hardness-intensity diagram of file3/file2 colour against total flux'
+      print '* "hid31" to plot a hardness-intensity diagram of file3/file1 colour against total flux'
+      print '* "ccd" to plot a colour-colour diagram (3/1 colour against 2/1 colour)
+   print ''
+   print 'TOGGLE OPTIONS:'
+   print '* "errors" to toggle whether to display errors in plots'
+   print ''
+   print 'OTHER COMMANDS:'
+   print '* "help" or "?" to display this list of Instructions again'
+   print '* "quit" to Quit'
+
+give_inst()                                                               # Print the list of instructions
+print ''
+print ' --------------------'
 
 
 #-----Entering Interactive Mode----------------------------------------------------------------------------------------
@@ -234,19 +244,31 @@ while plotopt not in ['quit','exit']:                                     # If t
             print 'Binning File 3...'
             x3,y3,ye3=xtl.binify(x3r,y3r,ye3r,binning)                    # Bin File 3 using 'binify' in xtel_lib
 
+      gmask=xtl.gtimask(x1,gti)                                           # Re-establish gmask
+
       print 'Binning complete!'
       print ''
 
-      flux,fluxe,col21,col21e,col32,col32e,col31,col31e=colorget()        # Re-get colours
+      times,flux,fluxe,col21,col21e,col32,col32e,col31,col31e=colorget()  # Re-get colours
       print 'Done!'
       print ''
 
 
    #-----'lc' Option---------------------------------------------------------------------------------------------------
 
+   elif plotopt=='fold':                                                  # Fold lightcurve
+      print 'Not yet implemented!'
+
+   #-----'lc' Option---------------------------------------------------------------------------------------------------
+
    elif plotopt=='lc':                                                    # Plot lightcurve
 
-      doplot(x1,zeros(len(x1)),flux,fluxe,'Time (s)','Flux (counts)','t')
+      pl.figure()
+      doplot(times,zeros(len(times)),flux,fluxe)
+      pl.xlabel('Time (s)')
+      pl.ylabel('Flux (counts/s/PCU)')
+      pl.title('Lightcurve "'+flavour+'"')
+      pl.show(block=False)
       print ''
       print 'Lightcurve plotted!'
 
@@ -255,13 +277,123 @@ while plotopt not in ['quit','exit']:                                     # If t
 
    elif plotopt=='hid21':                                                 # Plot 2/1 HID
 
-      pl.errorbar(x1,col21,yerr=col21e)
-      pl.show(block=False)
+      pl.figure()
+      if nfiles>1:
+         doplot(col21,col21e,flux,fluxe)
+         pl.ylabel('Flux (counts/s/PCU)')
+         pl.xlabel('('+ch2+'/'+ch1+') colour')
+         pl.title('Hardness Intensity Diagram "'+flavour+'"')
+         pl.show(block=False)
+         print ''
+         print 'File2/File1 HID plotted!'
+      else:
+         print 'Not enough infiles for HID!'
 
+
+   #-----'hid32' Option------------------------------------------------------------------------------------------------
+
+   elif plotopt=='hid32':                                                 # Plot 3/2 HID
+
+      pl.figure()
+      if nfiles=3:
+         doplot(col32,col32e,flux,fluxe)
+         pl.ylabel('Flux (counts/s/PCU)')
+         pl.xlabel('('+ch3+'/'+ch2+') colour')
+         pl.title('Hardness Intensity Diagram "'+flavour+'"')
+         pl.show(block=False)
+         print ''
+         print 'File3/File2 HID plotted!'
+      else:
+         print 'Not enough infiles for hard HID!'
+
+
+   #-----'hid21' Option------------------------------------------------------------------------------------------------
+
+   elif plotopt=='hid31':                                                 # Plot 3/1 HID
+
+      pl.figure()
+      if nfiles=3:
+         doplot(col31,col31e,flux,fluxe)
+         pl.ylabel('Flux (counts/s/PCU)')
+         pl.xlabel('('+ch3+'/'+ch1+') colour')
+         pl.title('Hardness Intensity Diagram "'+flavour+'"')
+         pl.show(block=False)
+         print ''
+         print 'File3/File1 HID plotted!'
+      else:
+         print 'Not enough infiles for hard HID!'
+
+
+   #-----'ccd' Option--------------------------------------------------------------------------------------------------
+
+   elif plotopt=='ccd':                                                   # Plot 3/1 HID
+
+      pl.figure()
+      if nfiles=3:
+         doplot(col31,col31e,col21,col21e)
+         pl.xlabel('('+ch2+'/'+ch1+') colour')
+         pl.xlabel('('+ch3+'/'+ch1+') colour')
+         pl.title('Colour-Colour Diagram "'+flavour+'"')
+         pl.show(block=False)
+         print ''
+         print 'CCD plotted!'
+      else:
+         print 'Not enough infiles for CCD!'
+
+
+   #-----'bands' Option------------------------------------------------------------------------------------------------
+
+   elif plotopt=='bands':                                                 # Plot lightcurves of individual bands apart
+
+      pl.figure()
+      pl.subplot(nfiles,1,1) 
+      doplot(times,zeros(len(times)),y1[gmask],ye1[gmask])
+      pl.xlabel('Time (s)')
+      pl.ylabel('Flux (counts/s/PCU)')
+      pl.title(ch1+' Lightcurve "'+flavour+'"')
+      if nfiles>1:
+         pl.subplot(nfiles,1,2)
+         doplot(times,zeros(len(times)),y2[gmask],ye2[gmask])
+         pl.xlabel('Time (s)')
+         pl.ylabel('Flux (counts/s/PCU)')
+         pl.title(ch2+' Lightcurve "'+flavour+'"')
+      if nfiles>2:
+         pl.subplot(nfiles,1,3)
+         doplot(times,zeros(len(times)),y3[gmask],ye3[gmask])
+         pl.xlabel('Time (s)')
+         pl.ylabel('Flux (counts/s/PCU)')
+         pl.title(ch3+' Lightcurve "'+flavour+'"')
+      pl.show(block=False)
+      print ''
+      print 'Banded lightcurves plotted!'
+
+
+   #-----'xbands' Option------------------------------------------------------------------------------------------------
+
+   elif plotopt=='xbands':                                                # Plot lightcurves of individual bands together
+
+      pl.figure()
+      leg=[ch1]
+      doplot(times,zeros(len(times)),y1[gmask],ye1[gmask])
+      if nfiles>1:
+         doplot(times,zeros(len(times)),y2[gmask],ye2[gmask])
+         leg.append(ch2)
+      if nfiles>2:
+         doplot(times,zeros(len(times)),y3[gmask],ye3[gmask])
+         leg.append(ch3)
+      pl.legend(leg)
+      pl.xlabel('Time (s)')
+      pl.ylabel('Flux (counts/s/PCU)')
+      pl.title('Lightcurve "'+flavour+'"')
+      pl.show(block=False)
+      print ''
+      print 'Banded lightcurves plotted!'
 
    #-----'Errors' Option-----------------------------------------------------------------------------------------------
 
    elif plotopt=='errors':                                                # Toggle Errors
+
+      print ''
 
       if es:
          es=False
@@ -269,6 +401,16 @@ while plotopt not in ['quit','exit']:                                     # If t
       else:
          es=True
          print 'Errors displayed!'
+
+
+   #-----'Instructions' Option-----------------------------------------------------------------------------------------
+
+   elif plotopt in ['help','?']:                                          # Display instructions
+
+      print 'Instructions:'
+      print ''
+
+      give_inst()                                                         # Re-call the instructions list, defined as the get_inst() function in initialisation
 
 
    #-----'Quit' Option-------------------------------------------------------------------------------------------------

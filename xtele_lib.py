@@ -46,6 +46,8 @@
 #  MXREBIN   - takes a 2-dimensional set of data and corresponding errors linearly binned on the x-axis and
 #              rebins them by an integer binning factor of the user's choice.
 #
+#  PDCOLEX   - extracts colours from a set of 2 or 3 lightcurves
+#
 #  PLOTDLD   - load and unpickle a .plotd file and extract its data.
 #
 #  PLOTDSV   - collect a selection of data products as a library, pickle it and save as a .plotd file.
@@ -497,6 +499,19 @@ def getpcus(words,datamode):
       return pcus
 
 
+#-----GTIMask----------------------------------------------------------------------------------------------------------
+
+def gtimask(times,gtis):
+
+   mask=zeros(len(times),dtype=bool)
+   for i in range(len(times)):
+      for gti in gtis:
+         if gti[0]<=times[i]<=gti[1]:
+            mask[i]=True
+            break
+   return mask
+         
+
 #-----LBinify----------------------------------------------------------------------------------------------------------
 
 def lbinify(x,y,ye,logres):
@@ -685,7 +700,7 @@ def mxrebin(spcdata,spcerrs,xaxis,good,bfac):
     b_xaxis   - ARRAY: the rebinned x-axis
     b_good    - ARRAY: the rebinned 'good' array
 
-   -J.M.Court,2015'''
+   -J.M.Court, 2015'''
 
    spx=len(spcdata[:,0])                                                  # x-dimension of new matrix matches old matrix
    spy=int(len(spcdata[0,:])/bfac)                                        # y-dimension of new matrix equals the y dimension of the old matrix divided by the binning factor
@@ -725,7 +740,36 @@ def mxrebin(spcdata,spcerrs,xaxis,good,bfac):
 
 #-----PDColEx----------------------------------------------------------------------------------------------------------
 
-def pdcolex2(y1,y2,ye1,ye2):
+def pdcolex2(y1,y2,ye1,ye2,gmask):
+
+   '''Plot Demon Colour Extract (2D)
+
+   Description:
+
+    Takes two equally spaced flux series in the same set of time co-ordinates and constructs an array
+    representing the file2 / file1 colour over the same time period.  Also returns the sum of the flux
+    of the two series.
+
+   Inputs:
+
+    y1,y2   - ARRAYS: The first and second flux series respectively
+    ye1,ye2 - ARRAYS: The errors of the first and second flux series respectively
+    gmask   -  ARRAY: A mask of Boolean values with False at every point outside of a GTI in this
+                      time series
+
+   Outputs:
+
+    flux    -  ARRAY: The sum total flux from the two bands
+    fluxe   -  ARRAY: The errors of 'flux'
+    col21   -  ARRAY: The file2/file1 colour
+    col21e  -  ARRAY: The error on "col21"
+
+   -J.M.Court, 2015'''
+
+   y1=y1[gmask]
+   y2=y2[gmask]
+   ye1=ye1[gmask]
+   ye2=ye2[gmask]
 
    flux=y1+y2
    fluxe=sqrt(ye1**2+ye2**2)
@@ -734,7 +778,20 @@ def pdcolex2(y1,y2,ye1,ye2):
 
    return flux,fluxe,col21,col21e
 
-def pdcolex3(y1,y2,y3,ye1,ye2,ye3):
+def pdcolex3(y1,y2,y3,ye1,ye2,ye3,gmask):
+
+   '''Plot Demon Colour Extract (3D)
+
+   See help for Plot Demon Colour Extract (2D)
+
+   -J.M.Court, 2015'''
+
+   y1=y1[gmask]
+   y2=y2[gmask]
+   y3=y3[gmask]
+   ye1=ye1[gmask]
+   ye2=ye2[gmask]
+   ye3=ye3[gmask]
 
    flux=y1+y2+y3
    fluxe=sqrt(ye1**2+ye2**2+ye3**2)
@@ -797,11 +854,6 @@ def plotdld(filename):
    bgpcu=bgest*mxpcus                                                     # Collect background * PCUs
 
    readfile.close()
-
-   print ''
-
-   if flavour!='':
-      print "Flavour is '"+str(flavour)+"'"                               # Only print flavour if there is a flavour to print
 
    return times,rates,errors,tstart,binsize,gti,mxpcus,bgpcu,flavour,chanstr
 
@@ -1241,7 +1293,7 @@ def uniqfname(filename,extension):
 
     uniqname  - STRING: A string containing the best available unique filename.
 
-   -J.M.Court,2015'''
+   -J.M.Court, 2015'''
 
    filenamex=filename
 

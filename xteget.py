@@ -239,7 +239,6 @@ for step in range(numstep):                                               ## For
    fc,null=histogram(datrow,tc+step*foures)                                    #  Coarsely bin this subrange of event data
    del null
    fullhist=fullhist+list(fc)
-   print len(fullhist)
 
    if in_gti:
 
@@ -248,7 +247,7 @@ for step in range(numstep):                                               ## For
       pcus=xtl.getpcus(wrdrow,event[1].header['DATAMODE'])                     #  Count active PCUs by assuming any that recorded 0 events in the time period were inactive
       npcus.append(pcus)
 
-      counts=sum(f)
+      counts=sum(f)/float(pcus)
       tcounts+=counts
       rates.append(float(counts)/foures)
 
