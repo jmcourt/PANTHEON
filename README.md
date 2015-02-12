@@ -1,5 +1,5 @@
 #PANTHEON
-#####**P**ython **An**alysis **T**ools for **H**igh-energy **E**vent data Manipulati**on**
+_**P**ython **An**alysis **T**ools for **H**igh-energy **E**vent data Manipulati**on**_
 #####J.M.Court, 2015
 
 The new home of the former _XTE L-Extract_ project!
