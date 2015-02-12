@@ -136,32 +136,37 @@ if nfiles>1:
 print 'Binning complete!'
 print ''
 
+print 'Fetching GTI mask...'
+
 gmask=xtl.gtimask(x1,gti)                                                 # A mask to blank values that fall outside of the GTIs
+
+print str(int(100*sum(gmask)/len(gmask)))+'% of data within GTI!'
+print ''
 
 #-----Fetch Colours----------------------------------------------------------------------------------------------------
 
-def colorget():
+def colorget():                                                           # Define colorget to easily re-obtain colours if base data is modified
    print 'Analysing Data...'
    times=x1[gmask]
-   if nfiles==1:
-      flux=y1[gmask]
+   if nfiles==1:                                                          # If only one file given, flux and flux_error are just the flux and error of this one file
+      flux=y1[gmask]                                                      # Use gmask to clip out the areas outside of GTI
       fluxe=ye1[gmask]
-      col21=col21e=col32=col32e=col31=col31e=None
+      col21=col21e=col32=col32e=col31=col31e=None                         # Dump null values into other variables
    elif nfiles==2:
-      flux,fluxe,col21,col21e=xtl.pdcolex2(y1,y2,ye1,ye2,gmask)
-      col32=col32e=col31=col31e=None
+      flux,fluxe,col21,col21e=xtl.pdcolex2(y1,y2,ye1,ye2,gmask)           # Get 2/1 colour information using PDColEx in xtele_lib
+      col32=col32e=col31=col31e=None                                      # Dump null values into other variables
    elif nfiles==3:
       flux,fluxe,col21,col21e,col32,col32e,col31,col31e=xtl.pdcolex3(y1,y2,y3,ye1,ye2,ye3,gmask)
-   else:
-      print 'Error!  Too much data somehow.'
+   else:                                                                  # ^ get ALL colour values with 3D PDColEx
+      print 'Error!  Too much data somehow.'                              # This warning should never come up...
+      xtl.signoff()
       exit()
    return times,flux,fluxe,col21,col21e,col32,col32e,col31,col31e
 
-times,flux,fluxe,col21,col21e,col32,col32e,col31,col31e=colorget()
+times,flux,fluxe,col21,col21e,col32,col32e,col31,col31e=colorget()        # Use colorget
 
 print 'Done!'
 print ''
-
 
 
 #-----Setting up plot environment--------------------------------------------------------------------------------------
@@ -171,12 +176,26 @@ es=True
 cs=False
 ls=False
 
-def doplot(x,xe,y,ye):                                                    # Defining short function to determine whether errorbars are needed on the fly
+def doplot(x,xe,y,ye,ovr=False):                                          # Defining short function to determine whether errorbars are needed on the fly
+                                                                          # 'ovr' allows to override colour and line options, so lightcurves can be made differently
+
+   if ovr: formst='-k'                                                    # If override given, plot no points; just lines
+   elif ls: formst='-ok'                                                  # If deLineate mode on, connect points with lines and mark points
+   else: formst='ok'                                                      # If neither deLineate nor override on, just plot points.  No lines here, buddy
 
    if es:
-      pl.errorbar(x,y,xerr=xe,yerr=ye)
+      pl.errorbar(x,y,xerr=xe,yerr=ye,fmt=formst)                         # Plot errorbar plot if errors turned on
    else:
-      pl.plot(x,y)
+      pl.plot(x,y,formst)                                                 # Else plot regular graph
+   if cs and not ovr:                                                     # If coloured mode on, colour first 5 data points unless override given
+      if len(x)<5:                                                        # Abort if less than 5 data points present
+         print 'Not enough data to colour!'
+      else:
+         pl.plot(x[0],y[0],'or')                                          # Plot a round marker over each of the first five points with colour ascending red->blue
+         pl.plot(x[1],y[1],'oy')
+         pl.plot(x[2],y[2],'og')
+         pl.plot(x[3],y[3],'oc')
+         pl.plot(x[4],y[4],'ob')
 
 
 #-----User Menu--------------------------------------------------------------------------------------------------------
@@ -186,25 +205,28 @@ def give_inst():                                                          # Defi
    print ''
    print 'DATA:'
    print '* "rebin" to reset the data and load it with a different binning'
+   print '* "clip" to clip the data'
    print '* "fold" to fold data over a period of your choosing'
    print ''
    print '1+ DATASET PLOTS:'
    print '* "lc" to plot a simple graph of flux over time'
-   if nfiles>1:
+   if nfiles>1:                                                           # Only display 2-data-set instructions if 2+ datasets given
       print ''
       print '2+ DATASET PLOTS:'
       print '* "hid21" to plot a hardness-intensity diagram of file2/file1 colour against total flux'
       print '* "bands" to plot lightcurves of all bands on adjacent axes'
       print '* "xbands" to plot lightcurves of all bands on the same axes'
-   if nfiles=3:
+      print '* "all" to plot all available data products'
+   if nfiles==3:                                                           # Only display 3-data-set instructions if 3 datasets given
       print ''
       print '3 DATASET PLOTS:'
       print '* "hid32" to plot a hardness-intensity diagram of file3/file2 colour against total flux'
       print '* "hid31" to plot a hardness-intensity diagram of file3/file1 colour against total flux'
-      print '* "ccd" to plot a colour-colour diagram (3/1 colour against 2/1 colour)
+      print '* "ccd" to plot a colour-colour diagram (3/1 colour against 2/1 colour)'
    print ''
    print 'TOGGLE OPTIONS:'
    print '* "errors" to toggle whether to display errors in plots'
+   print '* "ckey" to toggle colour key (red-blue) for the first five points in all plots'
    print ''
    print 'OTHER COMMANDS:'
    print '* "help" or "?" to display this list of Instructions again'
@@ -223,7 +245,7 @@ while plotopt not in ['quit','exit']:                                     # If t
    plotopt=raw_input('Give command [? for help]: ')                       # Fetch command from user
 
 
-   #-----'Rebin' option------------------------------------------------------------------------------------------------
+   #-----'rebin' option------------------------------------------------------------------------------------------------
 
    if plotopt=='rebin':                                                   # Rebin data
 
@@ -254,17 +276,24 @@ while plotopt not in ['quit','exit']:                                     # If t
       print ''
 
 
-   #-----'lc' Option---------------------------------------------------------------------------------------------------
+   #-----'fold' Option-------------------------------------------------------------------------------------------------
 
    elif plotopt=='fold':                                                  # Fold lightcurve
       print 'Not yet implemented!'
+
+
+   #-----'clip' Option-------------------------------------------------------------------------------------------------
+
+   elif plotopt=='clip':                                                  # Clip lightcurve
+      print 'Not yet implemented!'
+
 
    #-----'lc' Option---------------------------------------------------------------------------------------------------
 
    elif plotopt=='lc':                                                    # Plot lightcurve
 
       pl.figure()
-      doplot(times,zeros(len(times)),flux,fluxe)
+      doplot(times,zeros(len(times)),flux,fluxe,ovr=True)
       pl.xlabel('Time (s)')
       pl.ylabel('Flux (counts/s/PCU)')
       pl.title('Lightcurve "'+flavour+'"')
@@ -277,8 +306,8 @@ while plotopt not in ['quit','exit']:                                     # If t
 
    elif plotopt=='hid21':                                                 # Plot 2/1 HID
 
-      pl.figure()
       if nfiles>1:
+         pl.figure()
          doplot(col21,col21e,flux,fluxe)
          pl.ylabel('Flux (counts/s/PCU)')
          pl.xlabel('('+ch2+'/'+ch1+') colour')
@@ -294,8 +323,8 @@ while plotopt not in ['quit','exit']:                                     # If t
 
    elif plotopt=='hid32':                                                 # Plot 3/2 HID
 
-      pl.figure()
-      if nfiles=3:
+      if nfiles==3:
+         pl.figure()
          doplot(col32,col32e,flux,fluxe)
          pl.ylabel('Flux (counts/s/PCU)')
          pl.xlabel('('+ch3+'/'+ch2+') colour')
@@ -311,8 +340,8 @@ while plotopt not in ['quit','exit']:                                     # If t
 
    elif plotopt=='hid31':                                                 # Plot 3/1 HID
 
-      pl.figure()
-      if nfiles=3:
+      if nfiles==3:
+         pl.figure()
          doplot(col31,col31e,flux,fluxe)
          pl.ylabel('Flux (counts/s/PCU)')
          pl.xlabel('('+ch3+'/'+ch1+') colour')
@@ -328,8 +357,8 @@ while plotopt not in ['quit','exit']:                                     # If t
 
    elif plotopt=='ccd':                                                   # Plot 3/1 HID
 
-      pl.figure()
-      if nfiles=3:
+      if nfiles==3:
+         pl.figure()
          doplot(col31,col31e,col21,col21e)
          pl.xlabel('('+ch2+'/'+ch1+') colour')
          pl.xlabel('('+ch3+'/'+ch1+') colour')
@@ -341,25 +370,67 @@ while plotopt not in ['quit','exit']:                                     # If t
          print 'Not enough infiles for CCD!'
 
 
+   #-----'all' Option--------------------------------------------------------------------------------------------------
+
+   elif plotopt=='all':
+
+      pl.figure()
+      if   nfiles==3: colexp=2; rowexp=2; gexp=4                          # If 3 files given, 4 graphs will be plotted in a 2x2 grid
+      elif nfiles==2: colexp=1; rowexp=2; gexp=2                          # If 2 files given, 2 grapgs will be plotted in a 2x1 grid
+      else:           colexp=1; rowexp=1; gexp=1                          # If 1 file given, only one graph can be plotted
+      
+      pl.subplot(rowexp,colexp,1)                                         # Create subplot in the first slot
+      doplot(times,zeros(len(times)),flux,fluxe,ovr=True)                 # Always plot the lightcurve
+      pl.xlabel('Time (s)')
+      pl.ylabel('Flux (counts/s/PCU)')
+      pl.title('Lightcurve "'+flavour+'"')
+
+      if nfiles>1:                                                        # If 2+ files given, plot 2+ file data products
+
+         pl.subplot(rowexp,colexp,2)                                      # Create subplot in the second slot
+         doplot(col21,col21e,flux,fluxe)                                  # Plot Soft HID
+         pl.ylabel('Flux (counts/s/PCU)')
+         pl.xlabel('('+ch2+'/'+ch1+') colour')
+         pl.title('Soft HID "'+flavour+'"')
+
+      if nfiles==3:                                                       # If 3 files given, plot 3 file data products
+
+         pl.subplot(rowexp,colexp,3)                                      # Create subplot in the third slot
+         doplot(col31,col31e,flux,fluxe)                                  # Plot Hard HID
+         pl.ylabel('Flux (counts/s/PCU)')
+         pl.xlabel('('+ch3+'/'+ch1+') colour')
+         pl.title('Hard HID "'+flavour+'"')
+
+         pl.subplot(rowexp,colexp,4)                                      # Create subplot in the fourth slot
+         doplot(col31,col31e,col21,col21e)                                # Plot CCD
+         pl.xlabel('('+ch2+'/'+ch1+') colour')
+         pl.xlabel('('+ch3+'/'+ch1+') colour')
+         pl.title('CCD"'+flavour+'"')
+
+      pl.show(block=False)
+      print ''
+      print 'All products plotted!'
+
+
    #-----'bands' Option------------------------------------------------------------------------------------------------
 
    elif plotopt=='bands':                                                 # Plot lightcurves of individual bands apart
 
       pl.figure()
       pl.subplot(nfiles,1,1) 
-      doplot(times,zeros(len(times)),y1[gmask],ye1[gmask])
+      doplot(times,zeros(len(times)),y1[gmask],ye1[gmask],ovr=True)
       pl.xlabel('Time (s)')
       pl.ylabel('Flux (counts/s/PCU)')
       pl.title(ch1+' Lightcurve "'+flavour+'"')
       if nfiles>1:
          pl.subplot(nfiles,1,2)
-         doplot(times,zeros(len(times)),y2[gmask],ye2[gmask])
+         doplot(times,zeros(len(times)),y2[gmask],ye2[gmask],ovr=True)
          pl.xlabel('Time (s)')
          pl.ylabel('Flux (counts/s/PCU)')
          pl.title(ch2+' Lightcurve "'+flavour+'"')
       if nfiles>2:
          pl.subplot(nfiles,1,3)
-         doplot(times,zeros(len(times)),y3[gmask],ye3[gmask])
+         doplot(times,zeros(len(times)),y3[gmask],ye3[gmask],ovr=True)
          pl.xlabel('Time (s)')
          pl.ylabel('Flux (counts/s/PCU)')
          pl.title(ch3+' Lightcurve "'+flavour+'"')
@@ -370,16 +441,18 @@ while plotopt not in ['quit','exit']:                                     # If t
 
    #-----'xbands' Option------------------------------------------------------------------------------------------------
 
+   # 'Same axes bands'
+
    elif plotopt=='xbands':                                                # Plot lightcurves of individual bands together
 
       pl.figure()
       leg=[ch1]
-      doplot(times,zeros(len(times)),y1[gmask],ye1[gmask])
+      doplot(times,zeros(len(times)),y1[gmask],ye1[gmask],ovr=True)
       if nfiles>1:
-         doplot(times,zeros(len(times)),y2[gmask],ye2[gmask])
+         doplot(times,zeros(len(times)),y2[gmask],ye2[gmask],ovr=True)
          leg.append(ch2)
       if nfiles>2:
-         doplot(times,zeros(len(times)),y3[gmask],ye3[gmask])
+         doplot(times,zeros(len(times)),y3[gmask],ye3[gmask],ovr=True)
          leg.append(ch3)
       pl.legend(leg)
       pl.xlabel('Time (s)')
@@ -389,7 +462,7 @@ while plotopt not in ['quit','exit']:                                     # If t
       print ''
       print 'Banded lightcurves plotted!'
 
-   #-----'Errors' Option-----------------------------------------------------------------------------------------------
+   #-----'errors' Option-----------------------------------------------------------------------------------------------
 
    elif plotopt=='errors':                                                # Toggle Errors
 
@@ -403,7 +476,37 @@ while plotopt not in ['quit','exit']:                                     # If t
          print 'Errors displayed!'
 
 
-   #-----'Instructions' Option-----------------------------------------------------------------------------------------
+   #-----'ckey' Option-------------------------------------------------------------------------------------------------
+
+   # 'Colour Key'
+
+   elif plotopt=='ckey':                                                  # Toggle Colour-key
+
+      print ''
+
+      if cs:
+         cs=False
+         print 'Colour key suppressed!'
+      else:
+         cs=True
+         print 'Colour key displayed!'
+
+
+   #-----'lines' Option-------------------------------------------------------------------------------------------------
+
+   elif plotopt=='lines':                                                 # Toggle Delineation
+
+      print ''
+
+      if ls:
+         ls=False
+         print 'Plot Lines suppressed!'
+      else:
+         ls=True
+         print 'Plot Lines displayed!'
+
+
+   #-----'help' Option-------------------------------------------------------------------------------------------------
 
    elif plotopt in ['help','?']:                                          # Display instructions
 
@@ -413,7 +516,7 @@ while plotopt not in ['quit','exit']:                                     # If t
       give_inst()                                                         # Re-call the instructions list, defined as the get_inst() function in initialisation
 
 
-   #-----'Quit' Option-------------------------------------------------------------------------------------------------
+   #-----'quit' Option-------------------------------------------------------------------------------------------------
 
    elif plotopt not in ['quit','exit']:                                   # Invalid command if none of the if statements triggered and no 'q' given
 

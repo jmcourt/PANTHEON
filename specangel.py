@@ -170,21 +170,21 @@ def give_inst():                                                          # Defi
    print ''
    print 'DATA:'
    print '* "rebin" to reset the data and load it with a different binning'
-   print '* "clip" to Clip the range of data'
-   print '* "reset" to Reset data'
+   print '* "clip" to clip the range of data'
+   print '* "reset" to reset data'
    print ''
    print 'SPECTROGRAM:'
    print '* "sgram" to plot the spectrogram currently being worked on'
-   print '* "sub" to Subtract a constant from all power readings, forcing any negative values to zero'
-   print '* "log" to toggle Logarithmic spectrogram plotting'
+   print '* "sub" to subtract a constant from all power readings, forcing any negative values to zero'
+   print '* "log" to toggle logarithmic spectrogram plotting'
    print ''
    print 'POWER SPECTRA:'
-   print '* "aspec" to plot the average Spectrum and return the frequency of its highest peak'
-   print '* "gspec" to Get an individual spectrum at any time and plot it'
+   print '* "aspec" to plot the average spectrum and return the frequency of its highest peak'
+   print '* "gspec" to get an individual spectrum at any time and plot it'
    print '* "rates" to get a simple lightcurve of the data'
    print ''
    print 'OTHER COMMANDS:'
-   print '* "help" or "?" to display this list of Instructions again'
+   print '* "help" or "?" to display this list of instructions again'
    print '* "quit" to Quit'
 
 give_inst()                                                               # Print the list of instructions
@@ -200,7 +200,9 @@ while specopt not in ['quit','exit']:                                     # If t
    specopt=raw_input('Give command [? for help]: ')                       # Fetch command from user
 
 
-   #-----'Sgram' Option------------------------------------------------------------------------------------------------
+   #-----'sgram' Option------------------------------------------------------------------------------------------------
+
+   # 'Spectrogram'
 
    if specopt=='sgram':                                                   # Plotting data
 
@@ -220,7 +222,7 @@ while specopt not in ['quit','exit']:                                     # If t
          spectrogram(tdgd,tfgd,fourgrm,szlabl,stitle)                     # Plot spectrogram 
 
 
-   #-----'reBin' Option------------------------------------------------------------------------------------------------
+   #-----'rebin' Option------------------------------------------------------------------------------------------------
 
    elif specopt=='rebin':                                                 # Rebinning data    
 
@@ -281,7 +283,9 @@ while specopt not in ['quit','exit']:                                     # If t
       print str(int(sum(good)))+'/'+str(len(good))+' power spectra are good'      
 
 
-   #-----'Subtract' Option---------------------------------------------------------------------------------------------
+   #-----'sub' Option--------------------------------------------------------------------------------------------------
+
+   # 'Subtract'
 
    elif specopt=='sub':                                                   # Subtracting constant from data:
 
@@ -302,7 +306,9 @@ while specopt not in ['quit','exit']:                                     # If t
          print 'Invalid constant!  No constant subtracted.'
 
 
-   #-----'Logarithm Option---------------------------------------------------------------------------------------------
+   #-----'log' Option--------------------------------------------------------------------------------------------------
+
+   # 'Logarithm'
 
    elif specopt=='log':                                                   # Taking or undoing log of data
 
@@ -337,7 +343,7 @@ while specopt not in ['quit','exit']:                                     # If t
          print 'Cannot take log of subtracted data!'
 
 
-   #-----'Clip' Option-------------------------------------------------------------------------------------------------
+   #-----'clip' Option-------------------------------------------------------------------------------------------------
 
    elif specopt=='clip':                                                  # Clipping data
 
@@ -363,7 +369,7 @@ while specopt not in ['quit','exit']:                                     # If t
       print 'Spectrogram clipped!'
 
 
-   #-----'Reset' Option------------------------------------------------------------------------------------------------
+   #-----'reset' Option------------------------------------------------------------------------------------------------
 
    elif specopt=='reset':                                                 # Resetting data
 
@@ -387,7 +393,9 @@ while specopt not in ['quit','exit']:                                     # If t
       print 'Spectrogram reset!'
 
 
-   #-----'Average Spec' Option-----------------------------------------------------------------------------------------
+   #-----'aspec' Option------------------------------------------------------------------------------------------------
+
+   # 'Average Spec'
 
    elif specopt=='aspec':                                                 # Find the time-averaged spectrum
 
@@ -400,7 +408,9 @@ while specopt not in ['quit','exit']:                                     # If t
 
       print 'Maximum power found at '+str(tflm[spec.argmax()])+'Hz!'      # Suggest a peak location
 
-   #-----'Get Spec' Option---------------------------------------------------------------------------------------------
+   #-----'gspec' Option------------------------------------------------------------------------------------------------
+
+   # 'Get Spec'
 
    elif specopt=='gspec':                                                 # Find the power spectrum at a specific point in time
 
@@ -433,7 +443,7 @@ while specopt not in ['quit','exit']:                                     # If t
          print 'Time not in range!'
 
 
-   #-----'Rates' Option------------------------------------------------------------------------------------------------
+   #-----'rates' Option------------------------------------------------------------------------------------------------
 
    elif specopt=='rates':
 
@@ -448,7 +458,7 @@ while specopt not in ['quit','exit']:                                     # If t
       pl.show(block=False)
 
 
-   #-----'Instructions' Option-----------------------------------------------------------------------------------------
+   #-----'help' Option-------------------------------------------------------------------------------------------------
 
    elif specopt in ['help','?']:                                          # Display instructions
 
@@ -458,7 +468,7 @@ while specopt not in ['quit','exit']:                                     # If t
       give_inst()                                                         # Re-call the instructions list, defined as the get_inst() function in initialisation
 
 
-   #-----'Quit' Option-------------------------------------------------------------------------------------------------
+   #-----'quit' Option-------------------------------------------------------------------------------------------------
 
    elif specopt not in ['quit','exit']:                                   # Invalid command if none of the if statements triggered and no 'q' given
 

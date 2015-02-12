@@ -30,6 +30,8 @@
 #
 #  GETPCUS   - return the total number of PCUs which contributed photons to a given set of event words.
 #
+#  GTIMASK   - returns a data mask when given a time series and a GTI object
+#
 #  LBINIFY   - takes a linearly binned x-series with associated y-axis data and y-axis errors and rebins
 #              them into bins of a constant width in logx space.  In places where the logarithmic bins
 #              would be finer than the linear bins, the linear bins are retained.
@@ -503,12 +505,32 @@ def getpcus(words,datamode):
 
 def gtimask(times,gtis):
 
-   mask=zeros(len(times),dtype=bool)
-   for i in range(len(times)):
-      for gti in gtis:
-         if gti[0]<=times[i]<=gti[1]:
-            mask[i]=True
-            break
+   '''GTI Mask
+
+   Description:
+
+    Takes a time series and a GTI file taken from FITS and creates a mask to place over the time series
+    with 'True' values over timestamps within the GTI and 'False' values elsewhere.
+
+   Inputs:
+
+    times -       LIST: A list of times, the x-axis of the data to be considered.  Must be in same
+                        physical units as GTI.
+    gtis  - FITS TABLE: A FITS table object containing a list of 2-element lists, each of which is
+                        the start and endpoint respectively of a good time index.
+
+   Outputs:
+
+    mask  -       LIST: A mask to put over data to hide values outside of the GTI.
+
+   -J.M.Court, 2015'''
+
+   times=array(times)
+   mask=zeros(len(times),dtype=bool)                                      # Set up initial blank list of 'False'
+
+   for gti in gtis:                                                       # For every GTI index:
+      smask=(times>gti[0]) & (times<gti[1])                               # Create a submask which is the 'and'ed product of times>gti_start and times<gti_end
+      mask=mask|smask                                                     # 'or' the submask with the main mask
    return mask
          
 
