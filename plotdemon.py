@@ -28,7 +28,7 @@
 
 import sys,os
 import pylab as pl
-import xtele_lib as xtl
+import pan_lib as pan
 
 from math import floor, log10, sqrt
 from numpy import array, zeros
@@ -36,7 +36,7 @@ from numpy import append as npappend                                      # Impo
 
 #-----User-set Parameters----------------------------------------------------------------------------------------------
 
-minbin=0.0625                                                             # The minimum bin size the code is allowed to attempt to use.  This can prevent long hang-ups
+minbin=0.015625                                                           # The minimum bin size the code is allowed to attempt to use.  This can prevent long hang-ups
 
 
 #-----Welcoming Header-------------------------------------------------------------------------------------------------
@@ -49,7 +49,7 @@ print ''
 #-----Opening Files----------------------------------------------------------------------------------------------------
 
 args=sys.argv                                                             # Fetching arguments; softest energy band first please
-xtl.argcheck(args,2)
+pan.argcheck(args,2)
 
 try:
    float(args[-1])                                                        # If the final argument can be converted to integer, assume user intends it as a binning 
@@ -61,16 +61,16 @@ nfiles=len(args)-isbininp-1                                               # Fetc
 if nfiles>3: nfiles=3
 
 file1=args[1]
-xtl.flncheck(file1,'plotd')
+pan.flncheck(file1,'plotd')
 
-x1r,y1r,ye1r,tst1,bsz1,gti,pcus1,bg1,flavour,ch1=xtl.plotdld(file1)       # Opening file 1
+x1r,y1r,ye1r,tst1,bsz1,gti,pcus1,bg1,flavour,ch1=pan.plotdld(file1)       # Opening file 1
 y1r=y1r/float(pcus1)                                                      # Normalising flux by dividing by the number of active PCUs and the binsize
 ye1r=ye1r/float(pcus1)
 
 if nfiles>1:
    file2=args[2]
-   if xtl.flncheck(file2,'plotd'):
-      x2r,y2r,ye2r,tst2,bsz2,null,pcus2,null,null,ch2=xtl.plotdld(file2)  # Opening file 2
+   if pan.flncheck(file2,'plotd'):
+      x2r,y2r,ye2r,tst2,bsz2,null,pcus2,null,null,ch2=pan.plotdld(file2)  # Opening file 2
       del null
       y2r=y2r/float(pcus2)                                                # Normalising flux by dividing by the number of active PCUs and the binsize
       ye2r=ye2r/float(pcus2)
@@ -82,8 +82,8 @@ else: x2r=y2r=ye2r=tst2=bsz2=None
 
 if nfiles>2:
    file3=args[3]
-   if xtl.flncheck(file2,'plotd'):
-      x3r,y3r,ye3r,tst3,bsz3,null,pcus3,null,null,ch3=xtl.plotdld(file3)  # Opening file 3
+   if pan.flncheck(file2,'plotd'):
+      x3r,y3r,ye3r,tst3,bsz3,null,pcus3,null,null,ch3=pan.plotdld(file3)  # Opening file 3
       del null
       y3r=y3r/float(pcus3)                                                # Normalising flux by dividing by the number of active PCUs and the binsize
       ye3r=ye3r/float(pcus3)
@@ -96,13 +96,13 @@ else: x3r=y3r=ye3r=tst3=bsz3=None
 if nfiles>1:                                                              # Checking that start-times of files 1 & 2 match
    if tst1!=tst2:
       print 'Starting times for files 1 & 2 do not match!  Aborting!'
-      xtl.signoff()
+      pan.signoff()
       exit()
 
 if nfiles>2:                                                              # Checking that start-times of files 1 & 3 match (and thus 2 & 3 also match)
    if tst1!=tst3:
       print 'Starting times for files 1 & 3 do not match!  Aborting!'
-      xtl.signoff()
+      pan.signoff()
       exit()
 
 
@@ -125,20 +125,20 @@ print ''
 print 'Bin size='+str(binning)+'s'  
 print 'Binning File 1...'
 
-x1,y1,ye1=xtl.binify(x1r,y1r,ye1r,binning)                                # Bin File 1 using 'binify' in xtel_lib
+x1,y1,ye1=pan.binify(x1r,y1r,ye1r,binning)                                # Bin File 1 using 'binify' in pan_lib
 if nfiles>1:
    print 'Binning File 2...'
-   x2,y2,ye2=xtl.binify(x2r,y2r,ye2r,binning)                             # Bin File 2 using 'binify' in xtel_lib
+   x2,y2,ye2=pan.binify(x2r,y2r,ye2r,binning)                             # Bin File 2 using 'binify' in pan_lib
    if nfiles>2:
       print 'Binning File 3...'
-      x3,y3,ye3=xtl.binify(x3r,y3r,ye3r,binning)                          # Bin File 3 using 'binify' in xtel_lib
+      x3,y3,ye3=pan.binify(x3r,y3r,ye3r,binning)                          # Bin File 3 using 'binify' in pan_lib
 
 print 'Binning complete!'
 print ''
 
 print 'Fetching GTI mask...'
 
-gmask=xtl.gtimask(x1,gti)                                                 # A mask to blank values that fall outside of the GTIs
+gmask=pan.gtimask(x1,gti)                                                 # A mask to blank values that fall outside of the GTIs
 
 print str(int(100*sum(gmask)/len(gmask)))+'% of data within GTI!'
 print ''
@@ -153,13 +153,13 @@ def colorget():                                                           # Defi
       fluxe=ye1[gmask]
       col21=col21e=col32=col32e=col31=col31e=None                         # Dump null values into other variables
    elif nfiles==2:
-      flux,fluxe,col21,col21e=xtl.pdcolex2(y1,y2,ye1,ye2,gmask)           # Get 2/1 colour information using PDColEx in xtele_lib
+      flux,fluxe,col21,col21e=pan.pdcolex2(y1,y2,ye1,ye2,gmask)           # Get 2/1 colour information using PDColEx in pan_lib
       col32=col32e=col31=col31e=None                                      # Dump null values into other variables
    elif nfiles==3:
-      flux,fluxe,col21,col21e,col32,col32e,col31,col31e=xtl.pdcolex3(y1,y2,y3,ye1,ye2,ye3,gmask)
+      flux,fluxe,col21,col21e,col32,col32e,col31,col31e=pan.pdcolex3(y1,y2,y3,ye1,ye2,ye3,gmask)
    else:                                                                  # ^ get ALL colour values with 3D PDColEx
       print 'Error!  Too much data somehow.'                              # This warning should never come up...
-      xtl.signoff()
+      pan.signoff()
       exit()
    return times,flux,fluxe,col21,col21e,col32,col32e,col31,col31e
 
@@ -258,15 +258,15 @@ while plotopt not in ['quit','exit']:                                     # If t
             print 'Invalid bin size input!'
 
       print 'Binning File 1...'
-      x1,y1,ye1=xtl.binify(x1r,y1r,ye1r,binning)                          # Bin File 1 using 'binify' in xtel_lib
+      x1,y1,ye1=pan.binify(x1r,y1r,ye1r,binning)                          # Bin File 1 using 'binify' in pan_lib
       if nfiles>1:
          print 'Binning File 2...'
-         x2,y2,ye2=xtl.binify(x2r,y2r,ye2r,binning)                       # Bin File 2 using 'binify' in xtel_lib
+         x2,y2,ye2=pan.binify(x2r,y2r,ye2r,binning)                       # Bin File 2 using 'binify' in pan_lib
          if nfiles>2:
             print 'Binning File 3...'
-            x3,y3,ye3=xtl.binify(x3r,y3r,ye3r,binning)                    # Bin File 3 using 'binify' in xtel_lib
+            x3,y3,ye3=pan.binify(x3r,y3r,ye3r,binning)                    # Bin File 3 using 'binify' in pan_lib
 
-      gmask=xtl.gtimask(x1,gti)                                           # Re-establish gmask
+      gmask=pan.gtimask(x1,gti)                                           # Re-establish gmask
 
       print 'Binning complete!'
       print ''
@@ -535,6 +535,6 @@ print 'Goodbye!'
 
 #-----Footer-----------------------------------------------------------------------------------------------------------
 
-xtl.signoff()
+pan.signoff()
 
 

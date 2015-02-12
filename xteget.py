@@ -1,10 +1,10 @@
 #!/usr/bin/python
 
 # |----------------------------------------------------------------------|
-# |-----------------------------XTE GET SPEC-----------------------------|
+# |--------------------------------XTE GET-------------------------------|
 # |----------------------------------------------------------------------|
 
-# Call as ./xtegetspec.py FILE1 [LCHAN] [HCHAN] [BINNING] [FOURIER RES] [BGEST] [FLAVOUR]
+# Call as ./xteget.py FILE1 [LCHAN] [HCHAN] [BINNING] [FOURIER RES] [BGEST] [FLAVOUR]
 
 # Takes 1 RXTE FITS Event file and produces an interactive spectrogram
 #
@@ -41,10 +41,11 @@
 #-----Importing Modules------------------------------------------------------------------------------------------------
 
 import sys
-import xtele_lib as xtl
+import pan_lib as pan
+import xtepan_lib as xtp
 from astropy.io import fits
 from math import log
-from numpy import arange, histogram, zeros
+from numpy import arange, array, histogram, sqrt, zeros
 from scipy.fftpack import fft
 import pylab as pl
 
@@ -65,7 +66,7 @@ print ''
 #-----Checking Validity of Arguments-----------------------------------------------------------------------------------
 
 args=sys.argv
-xtl.argcheck(args,2)                                                      # Must give at least 2 args (Filename and the function call)
+pan.argcheck(args,2)                                                      # Must give at least 2 args (Filename and the function call)
 
 filename=args[1]                                                          # Fetch file name from arguments
 
@@ -92,7 +93,7 @@ if highc>255: highc=255
 
 if lowc>highc:
    print 'Invalid channels!  Aborting!'                                   # Abort if user gives lowc>highc
-   xtl.signoff()
+   pan.signoff()
    exit()
 
 cs=str(lowc)+'-'+str(highc)
@@ -142,7 +143,7 @@ print 'Discarding photons outside of channel range '+str(lowc)+'-'+str(highc)+'.
 mask=datas['Event'][:,0]==True                                            # Creating a mask to obscure any data not labelled as photons
 datas=datas[mask]                                                         # Applying the mask
 olen=str(len(datas))
-datas=xtl.chrange(datas,lowc,highc,event[1].header['DATAMODE'])
+datas=xtp.chrange(datas,lowc,highc,event[1].header['DATAMODE'])
 tstart=event[1].header['TSTART']
 
 phcts=len(datas)
@@ -218,6 +219,7 @@ ta=arange(0,(foures*numstep),bsz*ptdbinfac)                               # Sett
 #-----Populating power spectra-----------------------------------------------------------------------------------------
 
 fullhist=[]                                                               # Create empty flux array to pass to plotdemon
+fullerrs=[]
 tcounts=0                                                                 # Initiate photon counter
 
 for step in range(numstep):                                               ## For every [foures]s interval in the data:
@@ -239,12 +241,13 @@ for step in range(numstep):                                               ## For
    fc,null=histogram(datrow,tc+step*foures)                                    #  Coarsely bin this subrange of event data
    del null
    fullhist=fullhist+list(fc)
+   fullerrs=fullerrs+list(sqrt(array(fc)))
 
    if in_gti:
 
       f,txis=histogram(datrow,t+step*foures)                                   #  Bin well this subrange of event data
 
-      pcus=xtl.getpcus(wrdrow,event[1].header['DATAMODE'])                     #  Count active PCUs by assuming any that recorded 0 events in the time period were inactive
+      pcus=pan.getpcus(wrdrow,event[1].header['DATAMODE'])                     #  Count active PCUs by assuming any that recorded 0 events in the time period were inactive
       npcus.append(pcus)
 
       counts=sum(f)/float(pcus)
@@ -253,7 +256,7 @@ for step in range(numstep):                                               ## For
 
       tsfdata=fft(f)                                                           #  Fourier transform the interval
 
-      tsfdata=xtl.leahyn(tsfdata,counts,datres)                                #  Normalise to Leahy Power
+      tsfdata=pan.leahyn(tsfdata,counts,datres)                                #  Normalise to Leahy Power
       good.append(True)                                                        #  Flag this column as good
 
    else:
@@ -286,12 +289,12 @@ if filext!=filename:
 
 filename=filename+'_'+cs
 
-xtl.plotdsv(filename,ta,fullhist,tstart,bsz*ptdbinfac,gti,max(npcus),bgest,flavour,cs)
-xtl.specasv(filename,fourgrlin,good,rates,tcounts,npcus,bsz,bgest,foures,flavour)
+pan.plotdsv(filename,ta,fullhist,fullerrs,tstart,bsz*ptdbinfac,gti,max(npcus),bgest,flavour,cs)
+pan.specasv(filename,fourgrlin,good,rates,tcounts,npcus,bsz,bgest,foures,flavour)
 
 
 #-----Footer-----------------------------------------------------------------------------------------------------------
 
-xtl.signoff()
+pan.signoff()
 
 

@@ -21,9 +21,9 @@
 
 #-----Importing Modules------------------------------------------------------------------------------------------------
 
-import sys,os,pickle
+import sys,os
 import pylab as pl
-import xtele_lib as xtl
+import pan_lib as pan
 from astropy.io import fits
 from numpy import array, arange, mean, meshgrid, transpose, zeros
 from numpy import exp, histogram, linspace, log10, nonzero, sqrt
@@ -48,15 +48,15 @@ print ''
 #-----Checking Validity of Arguments, Fetching File--------------------------------------------------------------------
 
 args=sys.argv
-xtl.argcheck(args,2)                                                      # Must give at least 2 args (Filename and the function call)
+pan.argcheck(args,2)                                                      # Must give at least 2 args (Filename and the function call)
 
 filename=args[1]                                                          # Fetch file name from arguments
-xtl.flncheck(filename,'speca')
+pan.flncheck(filename,'speca')
 
 
 #-----Extracting data from file-----------------------------------------------------------------------------------------
 
-loadmatrix,good,rates,phcts,bg,bsz,foures,flavour=xtl.specald(filename)   # Use SpecaLd from xtele_lib to load data from file
+loadmatrix,good,rates,phcts,bg,bsz,foures,flavour=pan.specald(filename)   # Use SpecaLd from pan_lib to load data from file
 
 
 #-----Initially normalising data----------------------------------------------------------------------------------------
@@ -81,11 +81,11 @@ numstep=len(loadmatrix)
 datres=int(foures/bsz)
 tfl=linspace(0.0, (1.0/2.0)*datres/float(foures), datres/2)               # Create linearly spaced frequency domain up to the Nyquist frequency 1/2 (N/T)
 nulldat=zeros((datres/2)-1)                                               # Create null data with the same number of points as tfl
-tf,null,null=xtl.lbinify(tfl[1:],nulldat,nulldat,lplres)                  # Fetch new array of bins to be output after lbinning
+tf,null,null=pan.lbinify(tfl[1:],nulldat,nulldat,lplres)                  # Fetch new array of bins to be output after lbinning
 del null
 
 spec=npsum(loadmatrix,axis=0)/float(sum(good))                            # Create the average Leahy spectrum
-const=xtl.lhconst(spec)                                                   # Calculate the normalisation of noise
+const=pan.lhconst(spec)                                                   # Calculate the normalisation of noise
 
 print ''
 
@@ -94,9 +94,9 @@ def lbin(lplres,prt=False):                                               # Defi
    fourgr=[]
    for i in range(numstep):
       tsfdata=loadmatrix[i]                                               # Load a row of data
-      tsfdata=xtl.lh2rms(tsfdata,rates[i],bg[i],const)                    # Convert to RMS-normalised data using the LH2RMS function from xtele_lib
-      errs=xtl.lh2rms(zeros(len(tsfdata))+const,rates[i],bg[i],0)         # Errors of a Leahy spectrum = the Leahy noise constant
-      null,fours,errs=xtl.lbinify(tfl[1:],tsfdata[1:]*tfl[1:],errs[1:]*tfl[1:],lplres) # Logarithmically bin the data using lbinify from xtele_lib
+      tsfdata=pan.lh2rms(tsfdata,rates[i],bg[i],const)                    # Convert to RMS-normalised data using the LH2RMS function from pan_lib
+      errs=pan.lh2rms(zeros(len(tsfdata))+const,rates[i],bg[i],0)         # Errors of a Leahy spectrum = the Leahy noise constant
+      null,fours,errs=pan.lbinify(tfl[1:],tsfdata[1:]*tfl[1:],errs[1:]*tfl[1:],lplres) # Logarithmically bin the data using lbinify from pan_lib
       del null
       fourgr.append(fours)                                                # Populate the data matrix
       errgr.append(abs(errs))                                             # Populate the error matrix
@@ -270,13 +270,13 @@ while specopt not in ['quit','exit']:                                     # If t
 
       if lplres==newfbin:                                                 # Cancel binning if new bin is not greater than old bin
 
-         tflm,null,null=xtl.lbinify(tfl[1:],nulldat,nulldat,lplres)       # Fetch new array of bins to be output after lbinning
+         tflm,null,null=pan.lbinify(tfl[1:],nulldat,nulldat,lplres)       # Fetch new array of bins to be output after lbinning
          del null
          fourgrm,errgrm=lbin(lplres,prt=True)                             # Re log-bin data
 
       if tbinmult!=1:                                                     # Cancel binning if new bin is not greater than old bin
 
-         fourgrm,errgrm,tdlm,good=xtl.mxrebin(fourgrm,errgrm,tdlm,good,tbinmult)
+         fourgrm,errgrm,tdlm,good=pan.mxrebin(fourgrm,errgrm,tdlm,good,tbinmult)
 
       tdgd,tfgd=meshgrid(tdlm,tflm)                                       # Recreate grid from rescaled axes
       print 'Data rebinned by '+str(tmdbin)+'s, '+str(lplres)+'Hz.'
@@ -355,8 +355,8 @@ while specopt not in ['quit','exit']:                                     # If t
       print ''
 
       print 'Please choose new range of data:'
-      mint,maxt=xtl.srinr(tdlm,tmdbin,'time')                             # Fetch new time domain endpoints using srinr function from xtele_lib
-      minf,maxf=xtl.srinr(tflm,frqbin,'freq')                             # Fetch new freq domain endpoints using srinr function from xtele_lib
+      mint,maxt=pan.srinr(tdlm,tmdbin,'time')                             # Fetch new time domain endpoints using srinr function from pan_lib
+      minf,maxf=pan.srinr(tflm,frqbin,'freq')                             # Fetch new freq domain endpoints using srinr function from pan_lib
 
       print 'Clipping...'
 
@@ -404,7 +404,7 @@ while specopt not in ['quit','exit']:                                     # If t
       spec=npsum(fourgrm, axis=1)/sum(good)                               # Sum all spectra in the matrix and divide by the number of good columns
       err=sqrt(npsum( array(errgrm)**2, axis=1)/sum(good))
       ttl='Average power density spectrum of '+flavour
-      xtl.slplot(tflm,spec,err,sxlab,sylab,ttl,'spc',typ='log')           # SLPlot from the XTELE_lib plots data on standard and log-log axes
+      pan.slplot(tflm,spec,err,sxlab,sylab,ttl,'spc',typ='log')           # SLPlot from the pan_lib plots data on standard and log-log axes
 
       print 'Maximum power found at '+str(tflm[spec.argmax()])+'Hz!'      # Suggest a peak location
 
@@ -434,7 +434,7 @@ while specopt not in ['quit','exit']:                                     # If t
             gsp=fourgrm[:,specid]                                         # Extract the lightcurve from this bin
             ger=errgrm[:,specid]
             ttl='Power density spectrum of '+flavour+' at +'+str(specid*tmdbin)+'s'
-            xtl.slplot(tflm,gsp,ger,sxlab,sylab,ttl,'spc',typ='log')      # SLPlot from the XTELE_lib plots data on standard and log-log axes
+            pan.slplot(tflm,gsp,ger,sxlab,sylab,ttl,'spc',typ='log')      # SLPlot from the pan_lib plots data on standard and log-log axes
             print 'Maximum power found at '+str(tflm[gsp.argmax()])+'Hz!' # Suggest a peak location
              
          else:
@@ -487,6 +487,6 @@ print 'Goodbye!'
 
 #-----Footer-----------------------------------------------------------------------------------------------------------
 
-xtl.signoff()
+pan.signoff()
 
 
