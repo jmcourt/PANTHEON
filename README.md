@@ -96,4 +96,4 @@ Contains useful XTE-specific functions used in the other scripts.  See documenta
 * Takes user input for period, and seeks a better fit.
 * Allows for plotting of light curves.
 
-_Have fun using ##PANTHEON!##_
+_Have fun using **PANTHEON!**_
