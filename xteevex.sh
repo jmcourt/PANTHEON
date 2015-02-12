@@ -1,10 +1,10 @@
 #!/bin/bash
 
 # |----------------------------------------------------------------------|
-# |------------------------------FITS EV-EX------------------------------|
+# |------------------------------XTE EV-EX-------------------------------|
 # |----------------------------------------------------------------------|
 
-# Call as ./fitsevex.sh
+# Call as ./xteevex.sh
 
 # Requirements:
 #  None!
@@ -20,7 +20,7 @@
 #-----Welcoming Header-------------------------------------------------------------------------------------------------
 
 echo ''
-echo '-------Running FITS Ev-Ex: J.M.Court, 2014-------'
+echo '-------Running XTE Ev-Ex: J.M.Court, 2014--------'
 echo ''
 
 
@@ -46,7 +46,7 @@ fi
 echo ''
 
 
-#-----Seek and Copy Standard Files-------------------------------------------------------------------------------------
+#-----Seek and Copy .evt Event Files-----------------------------------------------------------------------------------
 
 for f in *.evt;
 do
@@ -57,14 +57,14 @@ do
 done
 
 
-#-----Return Warnings and Clean Up if GoodXenon not Found-------------------------------------------------------------
+#-----Return Warnings and Clean Up if Event not Found------------------------------------------------------------------
 
-#if [ $ev0 == 0 ]
-#then
-#  rm -r event0                                                            # Remove event0 if no event data found
-#  echo 'No matching Event Data files found!'
-#  echo 'Removing event0 directory'
-#fi
+if [ $ev0 == 0 ]
+then
+  rm -r event0                                                            # Remove event0 if no event data found
+  echo 'No matching Event Data files found!'
+  echo 'Removing event0 directory'
+fi
 
 
 #-----Footer-----------------------------------------------------------------------------------------------------------
