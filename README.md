@@ -1,5 +1,6 @@
 #PANTHEON
-#####J.M.Court, 2015
+#####Python ANalysis Tools for High-energy Event data manipulatiON
+#####-J.M.Court, 2015
 
 The new home of the former _XTE L-Extract_ project!
 
@@ -96,4 +97,4 @@ Contains useful XTE-specific functions used in the other scripts.  See documenta
 * Takes user input for period, and seeks a better fit.
 * Allows for plotting of light curves.
 
-_Have fun using **PANTHEON!**_
+_Have fun using **PANTHEON**!_
