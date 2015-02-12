@@ -1,6 +1,6 @@
 #PANTHEON
-#####Python ANalysis Tools for High-energy Event data manipulatiON
-#####-J.M.Court, 2015
+#####**P**ython **An**alysis **T**ools for **H**igh-energy **E**vent data Manipulati**on**
+#####J.M.Court, 2015
 
 The new home of the former _XTE L-Extract_ project!
 
