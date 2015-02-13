@@ -2,7 +2,7 @@
 _**P**ython **An**alysis **T**ools for **H**igh-energy **E**vent data Manipulati**on**_
 #####J.M.Court, 2015
 
-The new home of the former _XTE L-Extract_ project!
+_The new home of the former_ XTE L-Extract _project!_
 
 _**PANTHEON**_ is an open-source suite of tools to help analyse and visualise raw X-Ray satellite data.  Comes with tools to sort relevant data out of pre-downloaded archives, construct a variety of products and manipulate these.  It's easy to use, with most instructions given in the form of on-screen prompts, and the various tools are able to function mostly independently of each other.
 
@@ -20,13 +20,13 @@ _**PANTHEON**_ is an open-source suite of tools to help analyse and visualise ra
   * scipy
   * sys
   * warnings
-* You must have the 'fkeyprint' and 'make\_se' tools from [HEASARC](http://heasarc.gsfc.nasa.gov/ftools/) in order to use _Xte Good-Xenon Extractor_ product.  If you do not intend to work with XTE GoodXenon files, or want to select the files manually, no HEASARC products are required.
+* You must have the 'fkeyprint' and 'make\_se' tools from [HEASARC](http://heasarc.gsfc.nasa.gov/ftools/)'s FTOOLS package in order to use _Xte GoodXenon-Extractor_.  If you do not intend to work with XTE GoodXenon files, or want to select the files manually, no HEASARC products are required.
 
 ##Mission-Independent Tools
 
 ###SpecAngel
 
-_specangel.py_
+>_specangel.py_
 
 See in-programme help for detailed instructions on specific commands.  Type 'help' to bring up a menu.
 
@@ -40,7 +40,7 @@ See in-programme help for detailed instructions on specific commands.  Type 'hel
 
 ###PlotDemon
 
-_plotdemon.py_
+>_plotdemon.py_
 
 See in-programme help for detailed instructions on specific commands.  Type 'help' to bring up a menu.
 
@@ -51,7 +51,7 @@ See in-programme help for detailed instructions on specific commands.  Type 'hel
 
 ###Pan_Lib
 
-_pan\_lib.py_
+>_pan\_lib.py_
 
 Contains useful mission-independant functions used in the other scripts.  See documentation in Pan_Lib for details on individual functions.
 
@@ -59,7 +59,7 @@ Contains useful mission-independant functions used in the other scripts.  See do
 
 ###XTE-Get
 
-_xteget.py_
+>_xteget.py_
 
 The all-in-one extractor for RXTE event files!  Currently implemented for _GoodXenon\_2s_ and _E\_125us\_64M\_0\_1s_ data types.
 
@@ -73,19 +73,19 @@ The all-in-one extractor for RXTE event files!  Currently implemented for _GoodX
 
 ###XTE Event-Extractor
 
-_xteevex.sh_
+>_xteevex.sh_
 
 When run in a directory, locates all event files saved in a .evt format and copies these into a new subdirectory named event0.
 
 ###XTE GoodXenon-Extractor
 
-_xtegxex.sh_
+>_xtegxex.sh_
 
 When run in a directory, locates both parts of all possible Good Xenon files, and then produces these combined Good Xenon files.  Copies these resultant files into a new subdirectory named gx0.
 
-###XTE-Pan_Lib
+###XTEPan_Lib
 
-_xtepan\_lib.py_
+>_xtepan\_lib.py_
 
 Contains useful XTE-specific functions used in the other scripts.  See documentation in XTEPan_Lib for details on individual functions.
 

@@ -31,7 +31,7 @@ import pylab as pl
 import pan_lib as pan
 
 from math import floor, log10, sqrt
-from numpy import array, zeros
+from numpy import array, ones, zeros
 from numpy import append as npappend                                      # Importing numpy append as npappend to avoid confusion with in-built append function
 
 #-----User-set Parameters----------------------------------------------------------------------------------------------
@@ -143,6 +143,7 @@ gmask=pan.gtimask(x1,gti)                                                 # A ma
 print str(int(100*sum(gmask)/len(gmask)))+'% of data within GTI!'
 print ''
 
+
 #-----Fetch Colours----------------------------------------------------------------------------------------------------
 
 def colorget():                                                           # Define colorget to easily re-obtain colours if base data is modified
@@ -172,9 +173,10 @@ print ''
 #-----Setting up plot environment--------------------------------------------------------------------------------------
 
 plotopt=''
-es=True
-cs=False
-ls=False
+es=True                                                                   # Options to keep track of what form the data is in.  'es': with error bars.
+cs=False                                                                  # 'cs' with colour key
+ls=False                                                                  # 'ls' with delineation
+folded=False                                                              # 'folded' has been folded over some period
 
 def doplot(x,xe,y,ye,ovr=False):                                          # Defining short function to determine whether errorbars are needed on the fly
                                                                           # 'ovr' allows to override colour and line options, so lightcurves can be made differently
@@ -243,6 +245,7 @@ while plotopt not in ['quit','exit']:                                     # If t
 
    print ''
    plotopt=raw_input('Give command [? for help]: ')                       # Fetch command from user
+   print ''
 
 
    #-----'rebin' option------------------------------------------------------------------------------------------------
@@ -253,6 +256,7 @@ while plotopt not in ['quit','exit']:                                     # If t
       while not goodbin:                                                  # Keep asking until a good response is given
          try:
             binning=float(raw_input("Enter bin size (s): "))              # Ask for binsize in dialogue box
+            assert binning>=minbin
             goodbin=True
          except:
             print 'Invalid bin size input!'
@@ -272,6 +276,7 @@ while plotopt not in ['quit','exit']:                                     # If t
       print ''
 
       times,flux,fluxe,col21,col21e,col32,col32e,col31,col31e=colorget()  # Re-get colours
+      folded=False                                                        # Re-allow clipping
       print 'Done!'
       print ''
 
@@ -279,13 +284,73 @@ while plotopt not in ['quit','exit']:                                     # If t
    #-----'fold' Option-------------------------------------------------------------------------------------------------
 
    elif plotopt=='fold':                                                  # Fold lightcurve
-      print 'Not yet implemented!'
+
+      goodfold=False                                                      # Keep asking user until they give a sensible period
+      while goodfold==False:
+         try:
+            period=float(raw_input('Input period to fold over (s): '))    # Fetch period from user
+            goodfold=True
+         except:
+            print "Invalid period!"                                       # Keep trying until they give a sensible input
+
+      x1=x1*gmask;y1=y1*gmask;ye1=ye1*gmask                               # Zeroing all data points outside of GTI
+      x1,y1,ye1=pan.smfold(x1,y1,ye1,period,binning,'ch. '+ch1)           # Fold using smfold function from pan_lib
+
+      if nfiles>1:
+         x2=x2*gmask;y2=y2*gmask;ye2=ye2*gmask                            # Zeroing all data points outside of GTI
+         x2,y2,ye2=pan.smfold(x2,y2,ye2,period,binning,'ch. '+ch2)        # Fold data of file 2 if present
+
+      if nfiles==3:
+         x3=x3*gmask;y3=y3*gmask;ye3=ye3*gmask                            # Zeroing all data points outside of GTI
+         x3,y3,ye3=pan.smfold(x3,y3,ye3,period,binning,'ch. '+ch3)        # Fold data of file 3 if present
+
+      gmask=ones(len(x1),dtype=bool)                                      # Re-establish gmask
+      times,flux,fluxe,col21,col21e,col32,col32e,col31,col31e=colorget()
+      folded=True
+
+      print 'Folding Complete!'
+      print ''
 
 
    #-----'clip' Option-------------------------------------------------------------------------------------------------
 
-   elif plotopt=='clip':                                                  # Clip lightcurve
-      print 'Not yet implemented!'
+   elif plotopt=='clip':                                                  # Clipping data
+
+      if folded:
+         print 'Cannot clip folded data!'
+
+      else:
+
+         print 'Clipping data'
+         print ''
+
+         print 'Time range is '+str(x1[0])+'s - '+str(x1[-1])+'s'
+
+         print 'Please choose new range of data:'
+         mint,maxt=pan.srinr(times,binning,'time')                        # Fetch new time domain endpoints using srinr function from pan_lib
+
+         print 'Clipping...'
+
+         x1=x1[mint:maxt]                                                 # Clip file 1
+         y1=y1[mint:maxt]
+         ye1=ye1[mint:maxt]
+
+         if nfiles>1:
+
+            x2=x2[mint:maxt]                                              # Clip file 2
+            y2=y2[mint:maxt]
+            ye2=ye2[mint:maxt]
+
+         if nfiles==3:
+
+            x3=x3[mint:maxt]                                              # Clip file 3
+            y3=y3[mint:maxt]
+            ye3=ye3[mint:maxt]
+
+         gmask=pan.gtimask(x1,gti)                                        # Re-establish gmask
+         times,flux,fluxe,col21,col21e,col32,col32e,col31,col31e=colorget()
+
+         print 'Data clipped!'
 
 
    #-----'lc' Option---------------------------------------------------------------------------------------------------
@@ -298,7 +363,6 @@ while plotopt not in ['quit','exit']:                                     # If t
       pl.ylabel('Flux (counts/s/PCU)')
       pl.title('Lightcurve "'+flavour+'"')
       pl.show(block=False)
-      print ''
       print 'Lightcurve plotted!'
 
 
@@ -313,7 +377,6 @@ while plotopt not in ['quit','exit']:                                     # If t
          pl.xlabel('('+ch2+'/'+ch1+') colour')
          pl.title('Hardness Intensity Diagram "'+flavour+'"')
          pl.show(block=False)
-         print ''
          print 'File2/File1 HID plotted!'
       else:
          print 'Not enough infiles for HID!'
@@ -330,7 +393,6 @@ while plotopt not in ['quit','exit']:                                     # If t
          pl.xlabel('('+ch3+'/'+ch2+') colour')
          pl.title('Hardness Intensity Diagram "'+flavour+'"')
          pl.show(block=False)
-         print ''
          print 'File3/File2 HID plotted!'
       else:
          print 'Not enough infiles for hard HID!'
@@ -347,7 +409,6 @@ while plotopt not in ['quit','exit']:                                     # If t
          pl.xlabel('('+ch3+'/'+ch1+') colour')
          pl.title('Hardness Intensity Diagram "'+flavour+'"')
          pl.show(block=False)
-         print ''
          print 'File3/File1 HID plotted!'
       else:
          print 'Not enough infiles for hard HID!'
@@ -364,7 +425,6 @@ while plotopt not in ['quit','exit']:                                     # If t
          pl.xlabel('('+ch3+'/'+ch1+') colour')
          pl.title('Colour-Colour Diagram "'+flavour+'"')
          pl.show(block=False)
-         print ''
          print 'CCD plotted!'
       else:
          print 'Not enough infiles for CCD!'
@@ -379,6 +439,8 @@ while plotopt not in ['quit','exit']:                                     # If t
       elif nfiles==2: colexp=1; rowexp=2; gexp=2                          # If 2 files given, 2 grapgs will be plotted in a 2x1 grid
       else:           colexp=1; rowexp=1; gexp=1                          # If 1 file given, only one graph can be plotted
       
+      print 'Plotting Lightcurve...'
+
       pl.subplot(rowexp,colexp,1)                                         # Create subplot in the first slot
       doplot(times,zeros(len(times)),flux,fluxe,ovr=True)                 # Always plot the lightcurve
       pl.xlabel('Time (s)')
@@ -387,6 +449,8 @@ while plotopt not in ['quit','exit']:                                     # If t
 
       if nfiles>1:                                                        # If 2+ files given, plot 2+ file data products
 
+         print 'Plotting Soft Hardness-Intensity Diagram...'
+
          pl.subplot(rowexp,colexp,2)                                      # Create subplot in the second slot
          doplot(col21,col21e,flux,fluxe)                                  # Plot Soft HID
          pl.ylabel('Flux (counts/s/PCU)')
@@ -394,6 +458,9 @@ while plotopt not in ['quit','exit']:                                     # If t
          pl.title('Soft HID "'+flavour+'"')
 
       if nfiles==3:                                                       # If 3 files given, plot 3 file data products
+
+         print 'Plotting Hard Hardness-Intensity Diagram...'
+         print 'Plotting Colour-Colour Diagram...'
 
          pl.subplot(rowexp,colexp,3)                                      # Create subplot in the third slot
          doplot(col31,col31e,flux,fluxe)                                  # Plot Hard HID
@@ -407,8 +474,8 @@ while plotopt not in ['quit','exit']:                                     # If t
          pl.xlabel('('+ch3+'/'+ch1+') colour')
          pl.title('CCD"'+flavour+'"')
 
-      pl.show(block=False)
       print ''
+      pl.show(block=False)
       print 'All products plotted!'
 
 
@@ -418,24 +485,23 @@ while plotopt not in ['quit','exit']:                                     # If t
 
       pl.figure()
       pl.subplot(nfiles,1,1) 
-      doplot(times,zeros(len(times)),y1[gmask],ye1[gmask],ovr=True)
+      doplot(times,zeros(len(times)),y1[gmask],ye1[gmask],ovr=True)       # Plot the lowest band
       pl.xlabel('Time (s)')
       pl.ylabel('Flux (counts/s/PCU)')
       pl.title(ch1+' Lightcurve "'+flavour+'"')
       if nfiles>1:
          pl.subplot(nfiles,1,2)
-         doplot(times,zeros(len(times)),y2[gmask],ye2[gmask],ovr=True)
+         doplot(times,zeros(len(times)),y2[gmask],ye2[gmask],ovr=True)    # Plot the second band
          pl.xlabel('Time (s)')
          pl.ylabel('Flux (counts/s/PCU)')
          pl.title(ch2+' Lightcurve "'+flavour+'"')
       if nfiles>2:
          pl.subplot(nfiles,1,3)
-         doplot(times,zeros(len(times)),y3[gmask],ye3[gmask],ovr=True)
+         doplot(times,zeros(len(times)),y3[gmask],ye3[gmask],ovr=True)    # Plot the third band
          pl.xlabel('Time (s)')
          pl.ylabel('Flux (counts/s/PCU)')
          pl.title(ch3+' Lightcurve "'+flavour+'"')
       pl.show(block=False)
-      print ''
       print 'Banded lightcurves plotted!'
 
 
@@ -446,27 +512,24 @@ while plotopt not in ['quit','exit']:                                     # If t
    elif plotopt=='xbands':                                                # Plot lightcurves of individual bands together
 
       pl.figure()
-      leg=[ch1]
-      doplot(times,zeros(len(times)),y1[gmask],ye1[gmask],ovr=True)
+      leg=[ch1]                                                           # Create a legend array to populate with channel names
+      doplot(times,zeros(len(times)),y1[gmask],ye1[gmask],ovr=True)       # Plot the lowest band
       if nfiles>1:
-         doplot(times,zeros(len(times)),y2[gmask],ye2[gmask],ovr=True)
-         leg.append(ch2)
+         doplot(times,zeros(len(times)),y2[gmask],ye2[gmask],ovr=True)    # Plot the second band
+         leg.append(ch2)                                                  # Append name of second channel to key
       if nfiles>2:
-         doplot(times,zeros(len(times)),y3[gmask],ye3[gmask],ovr=True)
-         leg.append(ch3)
-      pl.legend(leg)
+         doplot(times,zeros(len(times)),y3[gmask],ye3[gmask],ovr=True)    # Plot the third band
+         leg.append(ch3)                                                  # Append name of third channel to key
+      pl.legend(leg)                                                      # Create key on plot
       pl.xlabel('Time (s)')
       pl.ylabel('Flux (counts/s/PCU)')
       pl.title('Lightcurve "'+flavour+'"')
       pl.show(block=False)
-      print ''
       print 'Banded lightcurves plotted!'
 
    #-----'errors' Option-----------------------------------------------------------------------------------------------
 
    elif plotopt=='errors':                                                # Toggle Errors
-
-      print ''
 
       if es:
          es=False
@@ -482,8 +545,6 @@ while plotopt not in ['quit','exit']:                                     # If t
 
    elif plotopt=='ckey':                                                  # Toggle Colour-key
 
-      print ''
-
       if cs:
          cs=False
          print 'Colour key suppressed!'
@@ -495,8 +556,6 @@ while plotopt not in ['quit','exit']:                                     # If t
    #-----'lines' Option-------------------------------------------------------------------------------------------------
 
    elif plotopt=='lines':                                                 # Toggle Delineation
-
-      print ''
 
       if ls:
          ls=False

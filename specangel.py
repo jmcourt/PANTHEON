@@ -198,6 +198,7 @@ while specopt not in ['quit','exit']:                                     # If t
 
    print ''
    specopt=raw_input('Give command [? for help]: ')                       # Fetch command from user
+   print ''
 
 
    #-----'sgram' Option------------------------------------------------------------------------------------------------
@@ -347,7 +348,7 @@ while specopt not in ['quit','exit']:                                     # If t
 
    elif specopt=='clip':                                                  # Clipping data
 
-      print 'Clipping spectrogram'
+      print 'Clipping data'
       print ''
 
       print 'Time range is '+str(tdlm[0])+'s - '+str(tdlm[-2]+foures)+'s'
@@ -366,7 +367,7 @@ while specopt not in ['quit','exit']:                                     # If t
       errgrm=errgrm[minf:maxf,mint:maxt]
       tdgd,tfgd=meshgrid(tdlm,tflm)                                       # Recreate grid from rescaled axes
 
-      print 'Spectrogram clipped!'
+      print 'Data clipped!'
 
 
    #-----'reset' Option------------------------------------------------------------------------------------------------
