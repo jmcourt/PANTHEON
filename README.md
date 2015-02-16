@@ -22,6 +22,8 @@ _**PANTHEON**_ is an open-source suite of tools to help analyse and visualise ra
   * warnings
 * You must have the 'fkeyprint' and 'make\_se' tools from [HEASARC](http://heasarc.gsfc.nasa.gov/ftools/)'s FTOOLS package in order to use _Xte GoodXenon-Extractor_.  If you do not intend to work with XTE _GoodXenon_ files, or want to select the files manually, no HEASARC products are required.
 
+_____
+
 ##Mission-Independent Tools
 
 ###FITSGenie
@@ -96,6 +98,8 @@ _____
 >_pan\_lib.py_
 
 Contains useful mission-independent functions used in the other scripts.  See documentation in Pan_Lib for details on individual functions.
+
+_____
 
 ##Instrument-Specific Tools
 
