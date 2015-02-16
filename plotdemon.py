@@ -331,6 +331,8 @@ while plotopt not in ['quit','exit']:                                     # If t
 
          print 'Clipping...'
 
+         print x1[mint],x1[maxt]
+
          x1=x1[mint:maxt]                                                 # Clip file 1
          y1=y1[mint:maxt]
          ye1=ye1[mint:maxt]

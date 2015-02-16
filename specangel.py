@@ -184,8 +184,11 @@ def give_inst():                                                          # Defi
    print '* "rates" to get a simple lightcurve of the data'
    print ''
    print 'OTHER COMMANDS:'
+   print '* "errors" to toggle errorbars on power spectra plots'
    print '* "help" or "?" to display this list of instructions again'
    print '* "quit" to Quit'
+
+es=True                                                                   # Start with errors on by default
 
 give_inst()                                                               # Print the list of instructions
 print ''
@@ -405,7 +408,7 @@ while specopt not in ['quit','exit']:                                     # If t
       spec=npsum(fourgrm, axis=1)/sum(good)                               # Sum all spectra in the matrix and divide by the number of good columns
       err=sqrt(npsum( array(errgrm)**2, axis=1)/sum(good))
       ttl='Average power density spectrum of '+flavour
-      pan.slplot(tflm,spec,err,sxlab,sylab,ttl,'spc',typ='log')           # SLPlot from the pan_lib plots data on standard and log-log axes
+      pan.slplot(tflm,spec,err,sxlab,sylab,ttl,'spc',typ='log',errors=es) # SLPlot from the pan_lib plots data on standard and log-log axes
 
       print 'Maximum power found at '+str(tflm[spec.argmax()])+'Hz!'      # Suggest a peak location
 
@@ -435,7 +438,7 @@ while specopt not in ['quit','exit']:                                     # If t
             gsp=fourgrm[:,specid]                                         # Extract the lightcurve from this bin
             ger=errgrm[:,specid]
             ttl='Power density spectrum of '+flavour+' at +'+str(specid*tmdbin)+'s'
-            pan.slplot(tflm,gsp,ger,sxlab,sylab,ttl,'spc',typ='log')      # SLPlot from the pan_lib plots data on standard and log-log axes
+            pan.slplot(tflm,gsp,ger,sxlab,sylab,ttl,'spc',typ='log',errors=es)
             print 'Maximum power found at '+str(tflm[gsp.argmax()])+'Hz!' # Suggest a peak location
              
          else:
@@ -457,6 +460,18 @@ while specopt not in ['quit','exit']:                                     # If t
       pl.ylabel('Flux (photons/s)')
       pl.title('Lightcurve')
       pl.show(block=False)
+
+
+   #-----'errors' Option-----------------------------------------------------------------------------------------------
+
+   elif specopt=='errors':                                                # Toggle Errors
+
+      if es:
+         es=False
+         print 'Errors suppressed!'
+      else:
+         es=True
+         print 'Errors displayed!'
 
 
    #-----'help' Option-------------------------------------------------------------------------------------------------

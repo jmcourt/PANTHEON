@@ -1,12 +1,13 @@
 #!/usr/bin/python
 
 # |----------------------------------------------------------------------|
-# |--------------------------------XTE GET-------------------------------|
+# |-----------------------------FITS GENIE-------------------------------|
 # |----------------------------------------------------------------------|
 
-# Call as ./xteget.py FILE1 [LCHAN] [HCHAN] [BINNING] [FOURIER RES] [BGEST] [FLAVOUR]
+# Call as ./fitsgenie.py FILE1 [LCHAN] [HCHAN] [BINNING] [FOURIER RES] [BGEST] [FLAVOUR]
 
-# Takes 1 RXTE FITS Event file and produces an interactive spectrogram
+# Takes 1 FITS Event file and produces .speca and .plotd formatted products to be analysed by plotdemon
+# and specangel.
 #
 # Arguments:
 #
@@ -42,7 +43,6 @@
 
 import sys
 import pan_lib as pan
-import xtepan_lib as xtp
 from astropy.io import fits
 from math import log
 from numpy import arange, array, histogram, sqrt, zeros
@@ -59,40 +59,75 @@ ptdbinfac=16                                                              # To s
 #-----Welcoming Header-------------------------------------------------------------------------------------------------
 
 print ''
-print '-------Running XTEGetSpec: J.M.Court, 2015------'
+print '-------Running XTEGet: J.M.Court, 2015------'
 print ''
 
 
-#-----Checking Validity of Arguments-----------------------------------------------------------------------------------
+#-----Checking Validity of Filename------------------------------------------------------------------------------------
 
 args=sys.argv
 pan.argcheck(args,2)                                                      # Must give at least 2 args (Filename and the function call)
 
 filename=args[1]                                                          # Fetch file name from arguments
 
+
+#-----Opening FITS file, identifying mission---------------------------------------------------------------------------
+
+event=fits.open(filename)                                                 # Unleash the beast! [open the file]
+mission=event[1].header['TELESCOP']                                       # Fetch the name of the telescope
+
+if mission in ['XTE','SUZAKU']:
+   print mission,'data detected!'
+else:
+   print mission,'data not yet supported!'
+   pan.signoff()
+   exit()
+
+if mission == 'XTE' :
+   etype='channel'                                                        # XTE requires an input of channel IDs
+   escale=''
+   escaleb=''
+   import xtepan_lib as inst                                              # Import XTE extraction functions
+elif mission == 'SUZAKU':
+   etype='energy'                                                         # SUZAKU requires an input of raw energies
+   escale='eV'
+   escaleb=' (eV)'
+   import szkpan_lib as inst                                              # Import SUZAKU extraction functions
+else:
+   print "This error shouldn't happen...  sorry 'bout that!"
+   pan.signoff()
+   exit()
+
+print ''
+
+
+#-----Checking validity of remaining inputs----------------------------------------------------------------------------
+
+maxen=inst.maxen()                                                        # Get the value of the highest energy or channel for the instrument
+
 if len(args)>2:
    lowc=int(args[2])                                                      # Collect minimum channel label from user
 else:
    try:
-      lowc=int(raw_input("Minimum Channel: "))
+      lowc=int(raw_input("Minimum "+etype+escaleb+": "))
    except:
       lowc=0
-      print "Using min channel of 0!"
+      print "Using min "+etype+" of 0"+escale+"!"
 
 if len(args)>3:
    highc=int(args[3])                                                     # Collect maximum channel label from user
 else:
    try:
-      highc=int(raw_input("Maximum Channel: "))
+      highc=int(raw_input("Maximum "+etype+escaleb+": "))
    except:
-      highc=0
-      print "Using max channel of 255!"
+      highc=maxen
+      print "Using max "+etype+" of "+str(maxen)+escale+"!"
 
 if lowc<0:    lowc=0                                                      # Force channels to be in range 0,255
-if highc>255: highc=255
+if highc>maxen: highc=maxen
 
 if lowc>highc:
-   print 'Invalid channels!  Aborting!'                                   # Abort if user gives lowc>highc
+   print 'Invalid '+etype+'"!  Aborting!'                                 # Abort if user gives lowc>highc
    pan.signoff()
    exit()
 
@@ -132,35 +167,40 @@ else:
    flavour=''
 
 
-#-----Opening FITS file, masking---------------------------------------------------------------------------------------
+#-----Masking data---------------------------------------------------------------------------------------
 
-event=fits.open(filename)                                                 # Unleash the beast! [open the file]
-gti=event[2].data                                                         # Extract GTI indices
-datas=event[1].data                                                       # Extract event data
+gti=inst.getgti(event)                                                    # Extract GTI indices
+datas=inst.getdat(event)                                                  # Extract event data
 
-print 'Discarding photons outside of channel range '+str(lowc)+'-'+str(highc)+'...'
+print 'Discarding photons outside of '+etype+' range '+str(lowc)+escale+'-'+str(highc)+escale+'...'
 
-mask=datas['Event'][:,0]==True                                            # Creating a mask to obscure any data not labelled as photons
-datas=datas[mask]                                                         # Applying the mask
+datas=inst.discnev(datas)
 olen=str(len(datas))
-datas=xtp.chrange(datas,lowc,highc,event[1].header['DATAMODE'])
-tstart=event[1].header['TSTART']
+datas=inst.chrange(datas,lowc,highc,event[1].header['DATAMODE'])
+tstart=inst.getini(event)
 
 phcts=len(datas)
 pcg=str(int(100*phcts/float(olen)))+'%'
 
-print str(phcts)+'/'+olen+' photons fall within channel range ('+pcg+')!'
+print str(phcts)+'/'+olen+' photons fall within '+etype+' range ('+pcg+')!'
+
+if phcts==0:
+   print 'Aborting!'
+   pan.signoff()
+   exit()
+
 print ''
 
-times=datas.field(0)                                                      # Extracting list of photon incident times as a separate object
-words=datas.field(1)
+times=inst.gettim(datas)                                                  # Extracting list of photon incident times as a separate object
+pcwrds=inst.getwrd(datas)
 sttim=times[0]
+print sttim
 times=times-sttim
 
 
 #-----Fetching Bin Size------------------------------------------------------------------------------------------------
 
-bsz=event[1].header['TIMEDEL']                                            # Fetch 'Binning' as the time resolution of the data
+bsz=inst.getbin(event)                                                    # Fetch 'Binning' as the time resolution of the data
 
 if bszt>bsz:                                                              # If user enters a lower binning resolution than maximum, use that instead
    bsz=bszt
@@ -179,7 +219,7 @@ print 'PlotDemon binsize rounded to 2^'+str(n+int(log(ptdbinfac,2)))+'s ('+str(b
 if foures>max(times):
    foures=128
 
-n=0                                                                       # Rounding fourez to the nearest (greater) power of 2
+n=0                                                                       # Rounding foures to the nearest (greater) power of 2
 while (2**n)<foures:
    n+=1
 foures=2**n
@@ -196,8 +236,6 @@ for j in range(len(gti)):
 
 
 #-----Setting up power spectra-----------------------------------------------------------------------------------------
-
-#print event[1].header['DATAMODE'],event[1].header['TEVTB2']              # Leaving this here for diagnostics; if something looks odd, check the event word
 
 ndat=int(max(times)/bsz)
 datres=int(foures/bsz)                                                    # Work out how many data points corresponds to the user given time interval 'foures'
@@ -233,7 +271,7 @@ for step in range(numstep):                                               ## For
 
    mask=times>=stpoint
    datrow=times[mask]                                                          #  Take all photons in the event data which occurred after the start point
-   wrdrow=words[mask]
+   wrdrow=pcwrds[mask]
    mask=datrow<edpoint
    datrow=datrow[mask]                                                         #  Remove all photons which occurred after the end point
    wrdrow=wrdrow[mask]
@@ -247,10 +285,10 @@ for step in range(numstep):                                               ## For
 
       f,txis=histogram(datrow,t+step*foures)                                   #  Bin well this subrange of event data
 
-      pcus=pan.getpcus(wrdrow,event[1].header['DATAMODE'])                     #  Count active PCUs by assuming any that recorded 0 events in the time period were inactive
+      pcus=inst.getpcu(wrdrow,event[1].header['DATAMODE'])                     #  Count active PCUs by assuming any that recorded 0 events in the time period were inactive
       npcus.append(pcus)
 
-      counts=sum(f)/float(pcus)
+      counts=sum(f)
       tcounts+=counts
       rates.append(float(counts)/foures)
 
@@ -276,6 +314,12 @@ pcg=str(int(100*tcounts/float(phcts)))+'%'
 
 print ''
 print str(tcounts)+'/'+str(phcts)+' photons in GTI ('+pcg+')!'
+
+if tcounts==0:
+   print 'Aborting!'
+   pan.signoff()
+   exit()
+
 
 #-----Save .speca and .plotd files-------------------------------------------------------------------------------------
 

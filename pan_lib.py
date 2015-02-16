@@ -23,8 +23,6 @@
 #  FOLDIFY   - takes a time series with its associated y-axis data and y-axis errors.  Folds this data
 #              over a time period of the user's choosing, and returns them as the tuple x,y,y_error.
 #
-#  GETPCUS   - return the total number of PCUs which contributed photons to a given set of event words.
-#
 #  GTIMASK   - returns a data mask when given a time series and a GTI object
 #
 #  LBINIFY   - takes a linearly binned x-series with associated y-axis data and y-axis errors and rebins
@@ -306,56 +304,6 @@ def foldify(t,y,ye,period,binsize):                                       # Defi
    return newt, newy, newye
 
 
-#-----Get PCUs---------------------------------------------------------------------------------------------------------
-
-def getpcus(words,datamode):
-
-   '''Get PCUs
-
-   Description:
-
-    If given a list of RXTE event words, and the data-mode in which their associated data is stored,
-    returns the number of PCUs that contributed photons to the dataset.  Currently works for two
-    datamodes: GoodXenon_2s and E_125us_64M_0_1s with the intention to eventually generalise it to
-    any event data.
-
-   Inputs:
-
-    words    - 2D ARRAY: The array of event words, each of which is an array of True/False statements.
-    datamode -   STRING: The DATAMODE in which the data to be analysed is stored.
-
-   Outputs:
-
-    pcus     -      INT: The number of PCUs active when the data was taken.  If a non-recognised event
-                         word is given, 1 is returned instead along with an error message.
-
-   -J.M.Court, 2015'''
-
-   if datamode=='E_125us_64M_0_1s':
-      r=1,4
-   elif datamode=='GoodXenon_2s':
-      r=7,10
-   else:
-      print datamode,'not yet supported!'
-      return 1
-
-   pcus=0
-
-   words=(words[:,r[0]:r[1]]).tolist()
-
-   if [False,False,False] in words: pcus+=1
-   if [False,False,True] in words: pcus+=1
-   if [False,True,False] in words: pcus+=1
-   if [False,True,True] in words: pcus+=1
-   if [True,False,False] in words: pcus+=1
-
-   if pcus==0:
-      print 'Error!  0 PCUs present in data!'
-      return 1
-   else:
-      return pcus
-
-
 #-----GTIMask----------------------------------------------------------------------------------------------------------
 
 def gtimask(times,gtis):
@@ -537,7 +485,7 @@ def lhconst(data):
    -J.M.Court, 2015'''
 
    olen=len(data)
-   olen=int(4.0/5.0*olen)
+   olen=int((4.0/5.0)*olen)
    data=data[olen:]
    const=mean(data)
    if const>2.5 or const<1.5:
@@ -844,7 +792,7 @@ def signoff():
 
 #-----SLPlot-----------------------------------------------------------------------------------------------------------
 
-def slplot(x,y,ye,xlabel,ylabel,title,figid="",typ='both'):
+def slplot(x,y,ye,xlabel,ylabel,title,figid="",typ='both',errors=True):
 
    '''Standard/Log Plotter
 
@@ -860,9 +808,10 @@ def slplot(x,y,ye,xlabel,ylabel,title,figid="",typ='both'):
     xlabel - STRING: The title of the x-axis on the graphs.
     ylabel - STRING: The title of the y-axis on the graphs.
     title  - STRING: The title of the figure.
-    figid  - STRING: [optional] gives the Figure a name such that it can be easily manipulated or
-                     closed outside of this function.
-    typ    - STRING: [optional] user can input 'log' or 'lin' to only display plot of that type.
+    figid  - STRING: Gives the Figure a name such that it can be easily manipulated or closed outside
+                     of this function.
+    typ    - STRING: User can input 'log' or 'lin' to only display plot of that type.
+    errors -   BOOL: True or False: whether to display errorbars on plots
 
    Outputs:
 
@@ -883,7 +832,10 @@ def slplot(x,y,ye,xlabel,ylabel,title,figid="",typ='both'):
       pl.xlabel(xlabel)
       pl.ylabel(ylabel)
       pl.title(title)
-      pl.errorbar(x,y,ye)                                                 # Plot data
+      if errors:
+         pl.errorbar(x,y,ye)                                              # Plot data
+      else:
+         pl.plot(x,y)
       pl.plot([x[0],x[-1]],[0,0])
 
    if typ in ('log','both'):
@@ -895,7 +847,10 @@ def slplot(x,y,ye,xlabel,ylabel,title,figid="",typ='both'):
       pl.xlabel(xlabel)
       pl.ylabel(ylabel)
       pl.title('Log '+str(title))
-      pl.errorbar(x,abs(y),ye)                                            # Plot log-log data
+      if errors:
+         pl.errorbar(x,abs(y),ye)                                         # Plot data
+      else:
+         pl.plot(x,abs(y))                                                # Plot log-log data
       ax.set_xscale('log')
       ax.set_yscale('log')
       pl.grid(True,which="both")
@@ -1104,7 +1059,7 @@ def srinr(t,binning,domain):
 
    try:
       new_mn=float(raw_input('Minimum '+domain+': '))                     # Fetch new min value from user
-      new_mn=len(t[t<new_mn])  
+      new_mn=len(t[t<new_mn]) 
    except:
       new_mn=old_mn                                                       # Treat garbage input as 'no change'
 
