@@ -172,6 +172,7 @@ def give_inst():                                                          # Defi
    print '* "rebin" to reset the data and load it with a different binning'
    print '* "clip" to clip the range of data'
    print '* "reset" to reset data'
+   print '* "leahy" to print the Leahy Constant'
    print ''
    print 'SPECTROGRAM:'
    print '* "sgram" to plot the spectrogram currently being worked on'
@@ -395,6 +396,13 @@ while specopt not in ['quit','exit']:                                     # If t
       good=ogood                                                          # Reload original 'good' list
 
       print 'Spectrogram reset!'
+
+
+   #-----'leahy' Option------------------------------------------------------------------------------------------------
+
+   elif specopt=='leahy':                                                 # Print Leahy constant
+
+      print 'Leahy constant is',const
 
 
    #-----'aspec' Option------------------------------------------------------------------------------------------------

@@ -131,7 +131,7 @@ if lowc>highc:
    pan.signoff()
    exit()
 
-cs=str(lowc)+'-'+str(highc)
+cs=str(int(lowc))+'-'+str(int(highc))
 
 if len(args)>4:
    bszt=float(args[4])                                                    # Collect binsize from inputs if given, else ask user, else use resolution encoded in .fits file
@@ -194,7 +194,6 @@ print ''
 times=inst.gettim(datas)                                                  # Extracting list of photon incident times as a separate object
 pcwrds=inst.getwrd(datas)
 sttim=times[0]
-print sttim
 times=times-sttim
 
 
