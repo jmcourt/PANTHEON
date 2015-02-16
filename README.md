@@ -28,7 +28,7 @@ _**PANTHEON**_ is an open-source suite of tools to help analyse and visualise ra
 
 >_fitsgenie.py_
 
-The all-in-one extractor for event files!  Currently implemented for _GoodXenon\_2s_ and _E\_125us\_64M\_0\_1s_ data types from PCA on RXTE and .evt data types from XIS on SUZAKU (_beta_).
+The all-in-one extractor for event files!  Currently implemented for _GoodXenon\_2s_ and _E\_125us\_64M\_0\_1s_ data types from PCA on RXTE and .evt data types from XIS on SUZAKU (_Beta_).
 
 #####Functions:
 
@@ -49,6 +49,8 @@ Arguments can be given with the function call, else they will the user will be p
 * Time per Fourier Spectrum: the size of the chunks the data will be divided into for Fourier analysis of saved data with _SpecAngel_.
 * Estimate of background: an estimate of the background count rate in cts/s.
 
+_____
+
 ###SpecAngel
 
 >_specangel.py_
@@ -68,6 +70,8 @@ The power spectral analysis software for visualising time-domain variability!  S
 Arguments can be given with the function call, else they will the user will be prompted to enter them by the software.  They are as follows:
 * Logarithmic binning Factor: the value of _x_; two adjacent logarithmic bins in time will have their left-hand edges separated by no less than a multiplicative factor of 10^_x_.
 
+_____
+
 ###PlotDemon
 
 >_plotdemon.py_
@@ -78,12 +82,14 @@ The lightcurve and colour analysis software for hardness and intensity plotting!
 * Opens up to 3 .plotd files and allows creation of a large number of plots comparing them.
 * Allows plotting and manipulation of lightcurves, colour-colour diagrams and hardness-intensity diagrams.
 * Lets users plot lightcurves of multiple different energy bands alongside each other to see how they correlate.
-* Allows folding of data over a period of the user's selection (_beta_).
+* Allows folding of data over a period of the user's selection (_Beta_).
 
 #####Arguments:
 
 Arguments can be given with the function call, else they will the user will be prompted to enter them by the software.  They are as follows:
 * Binsize: the size of the binning, in time, for lightcurves and colour curves.
+
+_____
 
 ###Pan_Lib
 
@@ -99,17 +105,23 @@ Contains useful mission-independent functions used in the other scripts.  See do
 
 When run in a directory, locates all event files saved in a .evt format and copies these into a new subdirectory named event0.
 
+_____
+
 ###XTE GoodXenon-Extractor
 
 >_xtegxex.sh_
 
 When run in a directory, locates both parts of all possible Good Xenon files, and then produces these combined Good Xenon files.  Copies these resultant files into a new subdirectory named gx0.
 
+_____
+
 ###XTEPan_Lib
 
 >_xtepan\_lib.py_
 
 Contains useful XTE-specific functions used in the other scripts.  See documentation in XTEPan_Lib for details on individual functions.
+
+_____
 
 ###SzkPan_Lib
 
