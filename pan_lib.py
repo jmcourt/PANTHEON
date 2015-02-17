@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#! /usr/bin/env python
 
 # |----------------------------------------------------------------------|
 # |-------------------------------PAN_LIB--------------------------------|
@@ -72,6 +72,8 @@
 #  UNIQFNAME - checks if a proposed filename is currently in use and, if so, proposes an alternative
 #              filename to prevent overwrite.
 #
+#  XTRFILLOC - takes a filepath and outputs the file name and its absolute(ish) location
+#
 #
 
 #-----Importing Modules------------------------------------------------------------------------------------------------
@@ -80,6 +82,7 @@ import os,cPickle
 import pylab as pl
 import warnings
 import scipy.optimize as optm
+from numba import jit
 from numpy import array, arange, ceil, exp, floor, log10, mean, ones, sqrt, zeros
 from numpy import append as npappend
 from numpy import sum as npsum
@@ -118,6 +121,7 @@ def argcheck(x,y):
 
 #-----Binify-----------------------------------------------------------------------------------------------------------
 
+@jit
 def binify(x,y,ye,binsize):                                               # Defining 'binify' subscript
 
    '''Binify
@@ -248,6 +252,7 @@ def flncheck(filename,validext,cont=False):
 
 #-----Foldify----------------------------------------------------------------------------------------------------------
 
+@jit
 def foldify(t,y,ye,period,binsize):                                       # Defining 'foldify' subscript
 
    '''Foldify
@@ -307,6 +312,7 @@ def foldify(t,y,ye,period,binsize):                                       # Defi
 
 #-----GTIMask----------------------------------------------------------------------------------------------------------
 
+@jit
 def gtimask(times,gtis):
 
    '''GTI Mask
@@ -340,6 +346,7 @@ def gtimask(times,gtis):
 
 #-----LBinify----------------------------------------------------------------------------------------------------------
 
+@jit
 def lbinify(x,y,ye,logres):
 
    '''Logarithmic Binify
@@ -500,6 +507,7 @@ def lhconst(data):
 
 #-----MXRebin----------------------------------------------------------------------------------------------------------
 
+@jit
 def mxrebin(spcdata,spcerrs,xaxis,good,bfac):
 
    '''Matrix X-Rebin
@@ -569,6 +577,7 @@ def mxrebin(spcdata,spcerrs,xaxis,good,bfac):
 
 #-----PDColEx----------------------------------------------------------------------------------------------------------
 
+@jit
 def pdcolex2(y1,y2,ye1,ye2,gmask):
 
    '''Plot Demon Colour Extract (2D)
@@ -597,18 +606,29 @@ def pdcolex2(y1,y2,ye1,ye2,gmask):
 
    warnings.filterwarnings("ignore")                                      # Div 0 errors are a real possibility.  This is me ignoring them...
 
-   y1=y1[gmask]                                                           # Mask data
-   y2=y2[gmask]
-   ye1=ye1[gmask]
-   ye2=ye2[gmask]
+   y=   {}                                                                # Prepare libraries for data
+   ye=  {}
+   col= {}
+   cole={}
 
-   flux=y1+y2                                                             # Get total flux
-   fluxe=sqrt(ye1**2+ye2**2)                                              # Get flux error
-   col21=(y2/y1)                                                          # Get 2/1 colour
-   col21e=col21*sqrt( ((ye1/y1)**2)+((ye2/y2)**2) )                       # Get 2/1 colour error
+   y[1]=y1[gmask]                                                         # Mask data, store in library
+   y[2]=y2[gmask]
+   ye[1]=ye1[gmask]
+   ye[2]=ye2[gmask]
 
-   return flux,fluxe,col21,col21e
+   flux=y[1]+y[2]                                                         # Get total flux
+   fluxe=sqrt(ye[1]**2+ye[2]**2)                                          # Get flux error
 
+   for i in range(1,3):                                                   # For the ith possible numerator band
+      for j in range(1,3):                                                # For the jth possible denominator band
+         if j!=i:                                                         # Prevents taking x/x colour
+            ld=int(str(i)+str(j))
+            col[ld]=(y[i]/y[j])                                           # Fetch colour
+            cole[ld]=col[ld]*sqrt(((ye[i]/y[i])**2)+((ye[j]/y[j])**2))    # Fetch colour error
+
+   return flux,fluxe,col,cole
+
+@jit
 def pdcolex3(y1,y2,y3,ye1,ye2,ye3,gmask):
 
    '''Plot Demon Colour Extract (3D)
@@ -619,27 +639,34 @@ def pdcolex3(y1,y2,y3,ye1,ye2,ye3,gmask):
 
    warnings.filterwarnings("ignore")                                      # Div 0 errors are a real possibility.  This is me ignoring them...
 
-   y1=y1[gmask]                                                           # Mask data
-   y2=y2[gmask]
-   y3=y3[gmask]
-   ye1=ye1[gmask]
-   ye2=ye2[gmask]
-   ye3=ye3[gmask]
+   y=   {}                                                                # Prepare libraries for data
+   ye=  {}
+   col= {}
+   cole={}
 
-   flux=y1+y2+y3                                                          # Get total flux
-   fluxe=sqrt(ye1**2+ye2**2+ye3**2)
-   col21=(y2/y1)                                                          # Get 2/1 colour
-   col21e=col21*sqrt( ((ye1/y1)**2)+((ye2/y2)**2) )                       # Get 2/1 colour error
-   col32=(y3/y2)                                                          # Get 3/2 colour
-   col32e=col32*sqrt( ((ye2/y2)**2)+((ye3/y3)**2) )                       # Get 3/2 colour error
-   col31=(y3/y1)                                                          # Get 3/1 colour
-   col31e=col31*sqrt( ((ye1/y1)**2)+((ye3/y3)**2) )                       # Get 3/1 colour error
+   y[1]=y1[gmask]                                                         # Mask data, store in library
+   y[2]=y2[gmask]
+   y[3]=y3[gmask]
+   ye[1]=ye1[gmask]
+   ye[2]=ye2[gmask]
+   ye[3]=ye3[gmask]
 
-   return flux,fluxe,col21,col21e,col32,col32e,col31,col31e
+   flux=y[1]+y[2]+y[3]                                                    # Get total flux
+   fluxe=sqrt(ye[1]**2+ye[2]**2+ye[3]**2)                                 # Get flux error
+
+   for i in range(1,4):                                                   # For the ith possible numerator band
+      for j in range(1,4):                                                # For the jth possible denominator band
+         if j!=i:                                                         # Prevents taking x/x colour
+            ld=int(str(i)+str(j))
+            col[ld]=(y[i]/y[j])                                           # Fetch colour
+            cole[ld]=col[ld]*sqrt(((ye[i]/y[i])**2)+((ye[j]/y[j])**2))    # Fetch colour error
+
+   return flux,fluxe,col,cole
 
 
 #-----PlotdLd----------------------------------------------------------------------------------------------------------
 
+@jit
 def plotdld(filename):
 
    '''.Plotd Load
@@ -668,8 +695,6 @@ def plotdld(filename):
 
    -J.M.Court, 2015'''
 
-   print 'Opening '+str(filename)
-
    readfile=open(filename,'rb')
    data=cPickle.load(readfile)                                            # Unpickle the .speca file
 
@@ -683,17 +708,18 @@ def plotdld(filename):
    bgest=data['bkgr']
    flavour=data['flav']
    chanstr=data['chan']
+   mission=data['miss']
 
    bgpcu=bgest*mxpcus                                                     # Collect background * PCUs
 
    readfile.close()
 
-   return times,rates,errors,tstart,binsize,gti,mxpcus,bgpcu,flavour,chanstr
+   return times,rates,errors,tstart,binsize,gti,mxpcus,bgpcu,flavour,chanstr,mission
 
 
 #-----PlotdSv----------------------------------------------------------------------------------------------------------
 
-def plotdsv(filename,times,counts,errors,tstart,binsize,gti,mxpcus,bgest,flavour,chanstr):
+def plotdsv(filename,times,counts,errors,tstart,binsize,gti,mxpcus,bgest,flavour,chanstr,mission):
 
    '''.Plotd Save
 
@@ -734,6 +760,7 @@ def plotdsv(filename,times,counts,errors,tstart,binsize,gti,mxpcus,bgest,flavour
    savedata['bkgr']=bgest
    savedata['flav']=flavour
    savedata['chan']=chanstr
+   savedata['miss']=mission
 
    filename=uniqfname(filename,'plotd')                                   # Get the next available name of form filename(x).plotd
    wfile = open(filename, 'wb')                                           # Open file to write to
@@ -941,8 +968,6 @@ def specald(filename):
 
    -J.M.Court, 2015'''
 
-   print 'Opening '+str(filename)
-
    readfile=open(filename,'rb')
    data=cPickle.load(readfile)                                            # Unpickle the .speca file
 
@@ -955,6 +980,8 @@ def specald(filename):
    bgest=data['bkgr']
    foures=data['fres']
    flavour=data['flav']
+   cs=data['chan']
+   mission=data['miss']
 
    readfile.close()
 
@@ -967,12 +994,12 @@ def specald(filename):
 
    bg=n_pcus*bgest
 
-   return spcdata,good,rates,phcts,bg,binsize,foures,flavour
+   return spcdata,good,rates,phcts,bg,binsize,foures,bgest,flavour,cs,mission
 
 
 #-----SpecaSv----------------------------------------------------------------------------------------------------------
 
-def specasv(filename,spcdata,good,rates,phcts,npcus,binsize,bgest,foures,flavour):
+def specasv(filename,spcdata,good,rates,phcts,npcus,binsize,bgest,foures,flavour,cs,mission):
 
    '''.Speca Save
 
@@ -1022,6 +1049,8 @@ def specasv(filename,spcdata,good,rates,phcts,npcus,binsize,bgest,foures,flavour
    savedata['bkgr']=bgest
    savedata['fres']=foures
    savedata['flav']=flavour
+   savedata['chan']=cs
+   savedata['miss']=mission
 
    filename=uniqfname(filename,'speca')                                   # Get the next available name of form filename(x).speca
    wfile = open(filename, 'wb')                                           # Open file to write to
@@ -1147,5 +1176,39 @@ def uniqfname(filename,extension):
    uniqname=filenamex+'.'+extension
 
    return uniqname
+
+
+#-----XtrFilLoc--------------------------------------------------------------------------------------------------------
+
+def xtrfilloc(filepath):
+
+   '''Extract File Location
+
+   Description:
+
+    Given the relative path to a file, extracts the file name and it's location.
+
+   Inputs:
+
+    filepath - STRING: The path to a file
+
+   Outputs:
+
+    filename - STRING: The name of the file
+    fileloca - STRING: The location of the file
+
+   -J.M.Court, 2015'''
+
+   filename=(filepath.split('/')[-1])                                     # Identify filename without directory
+
+   if filename!=filepath:
+      fileloca=filepath[:-len(filename)]                                  # Fetch directory
+   else:
+      fileloca=os.getcwd()
+
+   if fileloca[0]!='/':
+      fileloca=os.getcwd()+fileloca[1:]                                   # Dump current directory onto the front to make this absolute
+
+   return filename,fileloca
 
 

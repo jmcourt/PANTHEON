@@ -14,6 +14,7 @@ _**PANTHEON**_ is an open-source suite of tools to help analyse and visualise ra
   * astropy
   * cPickle
   * math
+  * numba
   * numpy
   * os
   * pylab

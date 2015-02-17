@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#! /usr/bin/env python
 
 # |----------------------------------------------------------------------|
 # |------------------------------SPEC ANGEL------------------------------|
@@ -56,7 +56,8 @@ pan.flncheck(filename,'speca')
 
 #-----Extracting data from file-----------------------------------------------------------------------------------------
 
-loadmatrix,good,rates,phcts,bg,bsz,foures,flavour=pan.specald(filename)   # Use SpecaLd from pan_lib to load data from file
+print 'Opening '+str(filename)                                            # Use SpecaLd from pan_lib to load data from file
+loadmatrix,good,rates,phcts,bg,bsz,foures,bgest,flavour,cs,mis=pan.specald(filename)
 
 
 #-----Initially normalising data----------------------------------------------------------------------------------------
@@ -84,8 +85,8 @@ nulldat=zeros((datres/2)-1)                                               # Crea
 tf,null,null=pan.lbinify(tfl[1:],nulldat,nulldat,lplres)                  # Fetch new array of bins to be output after lbinning
 del null
 
-spec=npsum(loadmatrix,axis=0)/float(sum(good))                            # Create the average Leahy spectrum
-const=pan.lhconst(spec)                                                   # Calculate the normalisation of noise
+lspec=npsum(loadmatrix,axis=0)/float(sum(good))                           # Create the average Leahy spectrum
+const=pan.lhconst(lspec)                                                  # Calculate the normalisation of noise
 
 print ''
 
@@ -144,6 +145,8 @@ print ''
 
 #-----Setting up Spectrogram Environment-------------------------------------------------------------------------------
 
+es=True                                                                   # Start with errors on by default
+
 def spectrogram(td,tfc,fourgr,zlabel=defzlabl,title=deftitle):            # Defining the creation of the spectrogram plot 's' as a function for clarity later
    pl.close('Spectrogram')                                                # Close any previous spectrograms that may be open
    fg=pl.figure('Spectrogram')
@@ -184,12 +187,13 @@ def give_inst():                                                          # Defi
    print '* "gspec" to get an individual spectrum at any time and plot it'
    print '* "rates" to get a simple lightcurve of the data'
    print ''
-   print 'OTHER COMMANDS:'
+   print 'TOGGLE OPTIONS:'
    print '* "errors" to toggle errorbars on power spectra plots'
+   print ''
+   print 'OTHER COMMANDS:'
+   print '* "info" to display a list of facts and figures about the current SpecAngel session'
    print '* "help" or "?" to display this list of instructions again'
    print '* "quit" to Quit'
-
-es=True                                                                   # Start with errors on by default
 
 give_inst()                                                               # Print the list of instructions
 print ''
@@ -480,6 +484,31 @@ while specopt not in ['quit','exit']:                                     # If t
       else:
          es=True
          print 'Errors displayed!'
+
+
+   #-----'info' Option-------------------------------------------------------------------------------------------------
+
+   elif specopt=='info':
+
+      print '1 file loaded:'
+      print ''
+      filn,loca=pan.xtrfilloc(filename)
+      print 'File 1:'
+      print ' Filename       = ',filn
+      print ' Location       = ',loca
+      print ' Mission        = ',mis
+      if mis in ['SUZAKU']:
+         print ' Energy         = ',cs,'eV'
+      else:
+         print ' Channel        = ',cs
+      print ' Resolution     = ',str(bsz)+'s'
+      print ' Flavour        = ',flavour
+      print ''
+      print 'Other Info:'
+      print ' Time. Bin-size = ',str(tmdbin)+'s'
+      print ' Freq. Bin-size = ',lplres
+      print ' Background     = ',str(bgest)+'cts/s/PCU'
+      print ' Errorbars      = ',es
 
 
    #-----'help' Option-------------------------------------------------------------------------------------------------

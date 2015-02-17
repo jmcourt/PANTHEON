@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#! /usr/bin/env python
 
 # |----------------------------------------------------------------------|
 # |-----------------------------FITS GENIE-------------------------------|
@@ -105,8 +105,12 @@ print ''
 
 maxen=inst.maxen()                                                        # Get the value of the highest energy or channel for the instrument
 
+print 'Inputs:'
+print ''
+
 if len(args)>2:
    lowc=int(args[2])                                                      # Collect minimum channel label from user
+   print 'Min Channel =',lowc
 else:
    try:
       lowc=int(raw_input("Minimum "+etype+escaleb+": "))
@@ -116,6 +120,7 @@ else:
 
 if len(args)>3:
    highc=int(args[3])                                                     # Collect maximum channel label from user
+   print 'Max Channel =',highc
 else:
    try:
       highc=int(raw_input("Maximum "+etype+escaleb+": "))
@@ -135,6 +140,7 @@ cs=str(int(lowc))+'-'+str(int(highc))
 
 if len(args)>4:
    bszt=float(args[4])                                                    # Collect binsize from inputs if given, else ask user, else use resolution encoded in .fits file
+   print 'Bin size (s)=',bszt
 else:
    try:
       bszt=float(raw_input("Photon count bin-size (s): "))
@@ -144,6 +150,7 @@ else:
 
 if len(args)>5:
    foures=float(args[5])                                                  # Collect Fourier resolution from inputs if given, else ask user, else use 128s
+   print 'Fourier Res.=',foures
 else:
    try:
       foures=float(raw_input("Length of time per Fourier spectrum (s): "))
@@ -153,6 +160,7 @@ else:
 
 if len(args)>6:
    bgest=float(args[6])                                                   # Collect background estimate from inputs if given, else ask user, else use 30c/s
+   print 'Background  =',bgest
 else:
    try:
       bgest=float(raw_input("Estimate of background (c/s): "))
@@ -163,9 +171,11 @@ else:
 
 if len(args)>7:
    flavour=args[7]                                                        # Collect flavour if given, else flavourless
+   print 'Flavour     =',flavour
 else:
    flavour=''
 
+print ''
 
 #-----Masking data---------------------------------------------------------------------------------------
 
@@ -332,8 +342,8 @@ if filext!=filename:
 
 filename=filename+'_'+cs
 
-pan.plotdsv(filename,ta,fullhist,fullerrs,tstart,bsz*ptdbinfac,gti,max(npcus),bgest,flavour,cs)
-pan.specasv(filename,fourgrlin,good,rates,tcounts,npcus,bsz,bgest,foures,flavour)
+pan.plotdsv(filename,ta,fullhist,fullerrs,tstart,bsz*ptdbinfac,gti,max(npcus),bgest,flavour,cs,mission)
+pan.specasv(filename,fourgrlin,good,rates,tcounts,npcus,bsz,bgest,foures,flavour,cs,mission)
 
 
 #-----Footer-----------------------------------------------------------------------------------------------------------

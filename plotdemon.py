@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#! /usr/bin/env python
 
 # |----------------------------------------------------------------------|
 # |------------------------------PLOT DEMON------------------------------|
@@ -63,14 +63,18 @@ if nfiles>3: nfiles=3
 file1=args[1]
 pan.flncheck(file1,'plotd')
 
-x1r,y1r,ye1r,tst1,bsz1,gti,pcus1,bg1,flavour,ch1=pan.plotdld(file1)       # Opening file 1
+ch={}                                                                     # Save channel info in a library
+
+print 'Opening',file1
+x1r,y1r,ye1r,tst1,bsz1,gti,pcus1,bg,flavour,ch[1],mis1=pan.plotdld(file1) # Opening file 1
 y1r=y1r/float(pcus1)                                                      # Normalising flux by dividing by the number of active PCUs and the binsize
 ye1r=ye1r/float(pcus1)
 
 if nfiles>1:
    file2=args[2]
    if pan.flncheck(file2,'plotd'):
-      x2r,y2r,ye2r,tst2,bsz2,null,pcus2,null,null,ch2=pan.plotdld(file2)  # Opening file 2
+      print 'Opening',file2                                               # Opening file 2
+      x2r,y2r,ye2r,tst2,bsz2,null,pcus2,null,flv2,ch[2],mis2=pan.plotdld(file2)
       del null
       y2r=y2r/float(pcus2)                                                # Normalising flux by dividing by the number of active PCUs and the binsize
       ye2r=ye2r/float(pcus2)
@@ -83,7 +87,8 @@ else: x2r=y2r=ye2r=tst2=bsz2=None
 if nfiles>2:
    file3=args[3]
    if pan.flncheck(file2,'plotd'):
-      x3r,y3r,ye3r,tst3,bsz3,null,pcus3,null,null,ch3=pan.plotdld(file3)  # Opening file 3
+      print 'Opening',file3                                               # Opening file 3
+      x3r,y3r,ye3r,tst3,bsz3,null,pcus3,null,flv3,ch[3],mis3=pan.plotdld(file3)
       del null
       y3r=y3r/float(pcus3)                                                # Normalising flux by dividing by the number of active PCUs and the binsize
       ye3r=ye3r/float(pcus3)
@@ -149,22 +154,22 @@ print ''
 def colorget():                                                           # Define colorget to easily re-obtain colours if base data is modified
    print 'Analysing Data...'
    times=x1[gmask]
+   col={}
+   cole={}
    if nfiles==1:                                                          # If only one file given, flux and flux_error are just the flux and error of this one file
       flux=y1[gmask]                                                      # Use gmask to clip out the areas outside of GTI
       fluxe=ye1[gmask]
-      col21=col21e=col32=col32e=col31=col31e=None                         # Dump null values into other variables
    elif nfiles==2:
-      flux,fluxe,col21,col21e=pan.pdcolex2(y1,y2,ye1,ye2,gmask)           # Get 2/1 colour information using PDColEx in pan_lib
-      col32=col32e=col31=col31e=None                                      # Dump null values into other variables
+      flux,fluxe,col,cole=pan.pdcolex2(y1,y2,ye1,ye2,gmask)               # Get 2/1 and 1/2 colour information using PDColEx in pan_lib
    elif nfiles==3:
-      flux,fluxe,col21,col21e,col32,col32e,col31,col31e=pan.pdcolex3(y1,y2,y3,ye1,ye2,ye3,gmask)
-   else:                                                                  # ^ get ALL colour values with 3D PDColEx
+      flux,fluxe,col,cole=pan.pdcolex3(y1,y2,y3,ye1,ye2,ye3,gmask)        # Get ALL colour values with 3D PDColEx
+   else:
       print 'Error!  Too much data somehow.'                              # This warning should never come up...
       pan.signoff()
       exit()
-   return times,flux,fluxe,col21,col21e,col32,col32e,col31,col31e
+   return times,flux,fluxe,col,cole
 
-times,flux,fluxe,col21,col21e,col32,col32e,col31,col31e=colorget()        # Use colorget
+times,flux,fluxe,col,cole=colorget()                                      # Use colorget
 
 print 'Done!'
 print ''
@@ -216,6 +221,9 @@ def give_inst():                                                          # Defi
       print ''
       print '2+ DATASET PLOTS:'
       print '* "hid21" to plot a hardness-intensity diagram of file2/file1 colour against total flux'
+      print '* "hid12" to plot a hardness-intensity diagram of file1/file2 colour against total flux'
+      print '* "col21" to plot file2/file1 colour against time'
+      print '* "col12" to plot file1/file2 colour against time'
       print '* "bands" to plot lightcurves of all bands on adjacent axes'
       print '* "xbands" to plot lightcurves of all bands on the same axes'
       print '* "all" to plot all available data products'
@@ -223,14 +231,22 @@ def give_inst():                                                          # Defi
       print ''
       print '3 DATASET PLOTS:'
       print '* "hid32" to plot a hardness-intensity diagram of file3/file2 colour against total flux'
+      print '* "hid23" to plot a hardness-intensity diagram of file2/file3 colour against total flux'
       print '* "hid31" to plot a hardness-intensity diagram of file3/file1 colour against total flux'
+      print '* "hid13" to plot a hardness-intensity diagram of file1/file3 colour against total flux'
+      print '* "col32" to plot file3/file2 colour against time'
+      print '* "col23" to plot file2/file3 colour against time'
+      print '* "col31" to plot file3/file1 colour against time'
+      print '* "col13" to plot file1/file3 colour against time'
       print '* "ccd" to plot a colour-colour diagram (3/1 colour against 2/1 colour)'
    print ''
    print 'TOGGLE OPTIONS:'
    print '* "errors" to toggle whether to display errors in plots'
+   print '* "lines" to toggle lines joining points in graphs'
    print '* "ckey" to toggle colour key (red-blue) for the first five points in all plots'
    print ''
    print 'OTHER COMMANDS:'
+   print '* "info" to display a list of facts and figures about the current PlotDemon session'
    print '* "help" or "?" to display this list of Instructions again'
    print '* "quit" to Quit'
 
@@ -275,7 +291,7 @@ while plotopt not in ['quit','exit']:                                     # If t
       print 'Binning complete!'
       print ''
 
-      times,flux,fluxe,col21,col21e,col32,col32e,col31,col31e=colorget()  # Re-get colours
+      times,flux,fluxe,col,cole=colorget()                                # Re-get colours
       folded=False                                                        # Re-allow clipping
       print 'Done!'
       print ''
@@ -294,18 +310,18 @@ while plotopt not in ['quit','exit']:                                     # If t
             print "Invalid period!"                                       # Keep trying until they give a sensible input
 
       x1=x1*gmask;y1=y1*gmask;ye1=ye1*gmask                               # Zeroing all data points outside of GTI
-      x1,y1,ye1=pan.smfold(x1,y1,ye1,period,binning,'ch. '+ch1)           # Fold using smfold function from pan_lib
+      x1,y1,ye1=pan.smfold(x1,y1,ye1,period,binning,'ch. '+ch[1])         # Fold using smfold function from pan_lib
 
       if nfiles>1:
          x2=x2*gmask;y2=y2*gmask;ye2=ye2*gmask                            # Zeroing all data points outside of GTI
-         x2,y2,ye2=pan.smfold(x2,y2,ye2,period,binning,'ch. '+ch2)        # Fold data of file 2 if present
+         x2,y2,ye2=pan.smfold(x2,y2,ye2,period,binning,'ch. '+ch[2])      # Fold data of file 2 if present
 
       if nfiles==3:
          x3=x3*gmask;y3=y3*gmask;ye3=ye3*gmask                            # Zeroing all data points outside of GTI
-         x3,y3,ye3=pan.smfold(x3,y3,ye3,period,binning,'ch. '+ch3)        # Fold data of file 3 if present
+         x3,y3,ye3=pan.smfold(x3,y3,ye3,period,binning,'ch. '+ch[3])      # Fold data of file 3 if present
 
       gmask=ones(len(x1),dtype=bool)                                      # Re-establish gmask
-      times,flux,fluxe,col21,col21e,col32,col32e,col31,col31e=colorget()
+      times,flux,fluxe,col,cole=colorget()
       folded=True
 
       print 'Folding Complete!'
@@ -331,8 +347,6 @@ while plotopt not in ['quit','exit']:                                     # If t
 
          print 'Clipping...'
 
-         print x1[mint],x1[maxt]
-
          x1=x1[mint:maxt]                                                 # Clip file 1
          y1=y1[mint:maxt]
          ye1=ye1[mint:maxt]
@@ -350,7 +364,7 @@ while plotopt not in ['quit','exit']:                                     # If t
             ye3=ye3[mint:maxt]
 
          gmask=pan.gtimask(x1,gti)                                        # Re-establish gmask
-         times,flux,fluxe,col21,col21e,col32,col32e,col31,col31e=colorget()
+         times,flux,fluxe,col,cole=colorget()
 
          print 'Data clipped!'
 
@@ -368,52 +382,90 @@ while plotopt not in ['quit','exit']:                                     # If t
       print 'Lightcurve plotted!'
 
 
-   #-----'hid21' Option------------------------------------------------------------------------------------------------
+   #-----'hidxy' Option------------------------------------------------------------------------------------------------
 
-   elif plotopt=='hid21':                                                 # Plot 2/1 HID
+   elif plotopt[:3]=='hid':                                                # Plot x/y HID
+
+      ht=plotopt[3:]                                                       # Collect the xy token from the user
 
       if nfiles>1:
-         pl.figure()
-         doplot(col21,col21e,flux,fluxe)
-         pl.ylabel('Flux (counts/s/PCU)')
-         pl.xlabel('('+ch2+'/'+ch1+') colour')
-         pl.title('Hardness Intensity Diagram "'+flavour+'"')
-         pl.show(block=False)
-         print 'File2/File1 HID plotted!'
+         if not (ht in ['12','13','21','23','31','32']):                   # Check that the token is 2 long and contains two different characters of the set [1,2,3]
+
+            print 'Invalid command!'
+            print ''
+            print 'Did you mean...'
+            print ''
+            print 'HID options:'
+            print '*"hid12" for 2/1 colour'
+            print '*"hid21" for 1/2 colour'
+            if nfiles==3:
+               print '*"hid32" for 3/2 colour'
+               print '*"hid23" for 2/3 colour'
+               print '*"hid31" for 3/1 colour'
+               print '*"hid13" for 1/3 colour'
+
+         elif ('3' in ht) and (nfiles<3):
+
+            print 'Not enough infiles for advanced HID!'                  # If token contains a 3 but only 2 infiles are used, abort!
+
+         else:
+
+            h1=int(ht[0])                                                 # Extract numerator file number
+            h2=int(ht[1])                                                 # Extract denominator file number
+            ht=int(ht)
+            pl.figure()
+            doplot(col[ht],cole[ht],flux,fluxe)                           # Collect colours from col library and plot
+            pl.ylabel('Flux (counts/s/PCU)')
+            pl.xlabel('('+ch[h1]+'/'+ch[h2]+') colour')
+            pl.title('Hardness Intensity Diagram "'+flavour+'"')
+            pl.show(block=False)
+            print 'File'+str(h1)+'/File'+str(h2)+' HID plotted!'
+
       else:
          print 'Not enough infiles for HID!'
 
 
-   #-----'hid32' Option------------------------------------------------------------------------------------------------
+   #-----'colxy' Option------------------------------------------------------------------------------------------------
 
-   elif plotopt=='hid32':                                                 # Plot 3/2 HID
+   elif plotopt[:3]=='col':                                                # Plot x/y colour/t
 
-      if nfiles==3:
-         pl.figure()
-         doplot(col32,col32e,flux,fluxe)
-         pl.ylabel('Flux (counts/s/PCU)')
-         pl.xlabel('('+ch3+'/'+ch2+') colour')
-         pl.title('Hardness Intensity Diagram "'+flavour+'"')
-         pl.show(block=False)
-         print 'File3/File2 HID plotted!'
+      ht=plotopt[3:]                                                       # Collect the xy token from the user
+
+      if nfiles>1:
+         if not (ht in ['12','13','21','23','31','32']):                   # Check that the token is 2 long and contains two different characters of the set [1,2,3]
+
+            print 'Invalid command!'
+            print ''
+            print 'Did you mean...'
+            print ''
+            print 'Col/t plot options:'
+            print '*"col12" for 2/1 colour'
+            print '*"col21" for 1/2 colour'
+            if nfiles==3:
+               print '*"col32" for 3/2 colour'
+               print '*"col23" for 2/3 colour'
+               print '*"col31" for 3/1 colour'
+               print '*"col13" for 1/3 colour'
+
+         elif ('3' in ht) and (nfiles<3):
+
+            print 'Not enough infiles for advanced Col/t plot!'           # If token contains a 3 but only 2 infiles are used, abort!
+
+         else:
+
+            h1=int(ht[0])                                                 # Extract numerator file number
+            h2=int(ht[1])                                                 # Extract denominator file number
+            ht=int(ht)
+            pl.figure()
+            doplot(times,zeros(len(times)),col[ht],cole[ht],ovr=True)     # Collect colours from col library and plot
+            pl.xlabel('Time (s)')
+            pl.ylabel('('+ch[h1]+'/'+ch[h2]+') colour')
+            pl.title('Colour over Time Diagram "'+flavour+'"')
+            pl.show(block=False)
+            print 'File'+str(h1)+'/File'+str(h2)+' Colour over Time Diagram plotted!'
+
       else:
-         print 'Not enough infiles for hard HID!'
-
-
-   #-----'hid21' Option------------------------------------------------------------------------------------------------
-
-   elif plotopt=='hid31':                                                 # Plot 3/1 HID
-
-      if nfiles==3:
-         pl.figure()
-         doplot(col31,col31e,flux,fluxe)
-         pl.ylabel('Flux (counts/s/PCU)')
-         pl.xlabel('('+ch3+'/'+ch1+') colour')
-         pl.title('Hardness Intensity Diagram "'+flavour+'"')
-         pl.show(block=False)
-         print 'File3/File1 HID plotted!'
-      else:
-         print 'Not enough infiles for hard HID!'
+         print 'Not enough infiles for Col/t plot!'
 
 
    #-----'ccd' Option--------------------------------------------------------------------------------------------------
@@ -422,9 +474,9 @@ while plotopt not in ['quit','exit']:                                     # If t
 
       if nfiles==3:
          pl.figure()
-         doplot(col31,col31e,col21,col21e)
-         pl.xlabel('('+ch2+'/'+ch1+') colour')
-         pl.xlabel('('+ch3+'/'+ch1+') colour')
+         doplot(col[31],cole[31],col[21],cole[21])
+         pl.xlabel('('+ch[2]+'/'+ch[1]+') colour')
+         pl.ylabel('('+ch[3]+'/'+ch[1]+') colour')
          pl.title('Colour-Colour Diagram "'+flavour+'"')
          pl.show(block=False)
          print 'CCD plotted!'
@@ -454,9 +506,9 @@ while plotopt not in ['quit','exit']:                                     # If t
          print 'Plotting Soft Hardness-Intensity Diagram...'
 
          pl.subplot(rowexp,colexp,2)                                      # Create subplot in the second slot
-         doplot(col21,col21e,flux,fluxe)                                  # Plot Soft HID
+         doplot(col[21],cole[21],flux,fluxe)                              # Plot Soft HID
          pl.ylabel('Flux (counts/s/PCU)')
-         pl.xlabel('('+ch2+'/'+ch1+') colour')
+         pl.xlabel('('+ch[2]+'/'+ch[1]+') colour')
          pl.title('Soft HID "'+flavour+'"')
 
       if nfiles==3:                                                       # If 3 files given, plot 3 file data products
@@ -465,15 +517,15 @@ while plotopt not in ['quit','exit']:                                     # If t
          print 'Plotting Colour-Colour Diagram...'
 
          pl.subplot(rowexp,colexp,3)                                      # Create subplot in the third slot
-         doplot(col31,col31e,flux,fluxe)                                  # Plot Hard HID
+         doplot(col[31],cole[31],flux,fluxe)                              # Plot Hard HID
          pl.ylabel('Flux (counts/s/PCU)')
-         pl.xlabel('('+ch3+'/'+ch1+') colour')
+         pl.xlabel('('+ch[3]+'/'+ch[1]+') colour')
          pl.title('Hard HID "'+flavour+'"')
 
          pl.subplot(rowexp,colexp,4)                                      # Create subplot in the fourth slot
-         doplot(col31,col31e,col21,col21e)                                # Plot CCD
-         pl.xlabel('('+ch2+'/'+ch1+') colour')
-         pl.xlabel('('+ch3+'/'+ch1+') colour')
+         doplot(col[31],cole[31],col[21],cole[21])                        # Plot CCD
+         pl.ylabel('('+ch[2]+'/'+ch[1]+') colour')
+         pl.xlabel('('+ch[3]+'/'+ch[1]+') colour')
          pl.title('CCD"'+flavour+'"')
 
       print ''
@@ -490,19 +542,19 @@ while plotopt not in ['quit','exit']:                                     # If t
       doplot(times,zeros(len(times)),y1[gmask],ye1[gmask],ovr=True)       # Plot the lowest band
       pl.xlabel('Time (s)')
       pl.ylabel('Flux (counts/s/PCU)')
-      pl.title(ch1+' Lightcurve "'+flavour+'"')
+      pl.title(ch[1]+' Lightcurve "'+flavour+'"')
       if nfiles>1:
          pl.subplot(nfiles,1,2)
          doplot(times,zeros(len(times)),y2[gmask],ye2[gmask],ovr=True)    # Plot the second band
          pl.xlabel('Time (s)')
          pl.ylabel('Flux (counts/s/PCU)')
-         pl.title(ch2+' Lightcurve "'+flavour+'"')
+         pl.title(ch[2]+' Lightcurve "'+flavour+'"')
       if nfiles>2:
          pl.subplot(nfiles,1,3)
          doplot(times,zeros(len(times)),y3[gmask],ye3[gmask],ovr=True)    # Plot the third band
          pl.xlabel('Time (s)')
          pl.ylabel('Flux (counts/s/PCU)')
-         pl.title(ch3+' Lightcurve "'+flavour+'"')
+         pl.title(ch[3]+' Lightcurve "'+flavour+'"')
       pl.show(block=False)
       print 'Banded lightcurves plotted!'
 
@@ -514,14 +566,14 @@ while plotopt not in ['quit','exit']:                                     # If t
    elif plotopt=='xbands':                                                # Plot lightcurves of individual bands together
 
       pl.figure()
-      leg=[ch1]                                                           # Create a legend array to populate with channel names
+      leg=[ch[1]]                                                         # Create a legend array to populate with channel names
       doplot(times,zeros(len(times)),y1[gmask],ye1[gmask],ovr=True)       # Plot the lowest band
       if nfiles>1:
          doplot(times,zeros(len(times)),y2[gmask],ye2[gmask],ovr=True)    # Plot the second band
-         leg.append(ch2)                                                  # Append name of second channel to key
+         leg.append(ch[2])                                                # Append name of second channel to key
       if nfiles>2:
          doplot(times,zeros(len(times)),y3[gmask],ye3[gmask],ovr=True)    # Plot the third band
-         leg.append(ch3)                                                  # Append name of third channel to key
+         leg.append(ch[3])                                                # Append name of third channel to key
       pl.legend(leg)                                                      # Create key on plot
       pl.xlabel('Time (s)')
       pl.ylabel('Flux (counts/s/PCU)')
@@ -566,6 +618,81 @@ while plotopt not in ['quit','exit']:                                     # If t
          ls=True
          print 'Plot Lines displayed!'
 
+
+   #-----'info' Option-------------------------------------------------------------------------------------------------
+
+   elif plotopt=='info':
+
+      xit1=x1r[-1]
+
+      if nfiles>1:
+         xit2=x2r[-1]
+      else:
+         xit2=None
+
+      if nfiles==3:
+         xit3=x3r[-1]
+      else:
+         xit3=None
+
+      oet=max(xit1,xit2,xit3)                                             # Fetch the observation end time
+      dst=times[0]
+      det=times[-1]
+
+      print nfiles,'files loaded:'
+      print ''
+      filn1,loca1=pan.xtrfilloc(file1)
+      print 'File 1:'
+      print ' Filename       = ',filn1
+      print ' Location       = ',loca1
+      print ' Mission        = ',mis1
+      if mis1 in ['SUZAKU']:
+         print ' Energy         = ',ch[1],'eV'
+      else:
+         print ' Channel        = ',ch[1]
+      print ' Resolution     = ',str(bsz1)+'s'
+      print ' No. of PCUs    = ',pcus1
+      print ' Flavour        = ',flavour
+      if nfiles>1:
+         filn2,loca2=pan.xtrfilloc(file2)
+         print ''
+         print 'File 2:'
+         print ' Filename       = ',filn2
+         print ' Location       = ',loca2
+         print ' Mission        = ',mis2
+         if mis2 in ['SUZAKU']:
+            print ' Energy         = ',ch[2],'eV'
+         else:
+            print ' Channel        = ',ch[2]
+         print ' Resolution     = ',str(bsz2)+'s'
+         print ' No. of PCUs    = ',pcus2
+         print ' Flavour        = ',flv2
+      if nfiles==3:
+         filn3,loca3=pan.xtrfilloc(file3)
+         print ''
+         print 'File 3:'
+         print ' Filename       = ',filn3
+         print ' Location       = ',loca3
+         print ' Mission        = ',mis3
+         if mis3 in ['SUZAKU']:
+            print ' Energy         = ',ch[3],'eV'
+         else:
+            print ' Channel        = ',ch[3]
+         print ' Resolution     = ',str(bsz3)+'s'
+         print ' No. of PCUs    = ',pcus3
+         print ' Flavour        = ',flv3
+      print ''
+      print 'Other Info:'
+      print ' Obs. Starttime = ',str(tst1)+'s (0.0s)'                     # The start of the observation
+      print ' Obs. Endtime   = ',str(oet+tst1)+'s ('+str(oet)+'s)'        # The end of the observation
+      print ' Data Starttime = ',str(dst+tst1)+'s ('+str(dst)+'s)'        # The start of the data set (i.e. after GTI considerations and clipping)
+      print ' Data Endtime   = ',str(det+tst1)+'s ('+str(det)+'s)'        # The end of the data set
+      print ' Bin-size       = ',str(binning)+'s'
+      print ' Background     = ',str(bg)+'cts/s/PCU'
+      print ' Folded         = ',folded
+      print ' Errorbars      = ',es
+      print ' Delineated     = ',ls
+      print ' Colour-coded   = ',cs
 
    #-----'help' Option-------------------------------------------------------------------------------------------------
 
