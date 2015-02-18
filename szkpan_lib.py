@@ -184,6 +184,21 @@ def getini(event):
    return ini
 
 
+#-----Get Obs----------------------------------------------------------------------------------------------------------
+
+def getobs(event,datamode,filename):
+
+   '''Get Obs
+
+   Description:
+
+    Fetches a tuple consisting of the object and obs_id of the observation.'''
+
+   obsdata=(event[1].header['OBJECT'],event[1].header['OBS_ID'])
+
+   return obsdata
+
+
 #-----Get PCU----------------------------------------------------------------------------------------------------------
 
 def getpcu(words,datamode):

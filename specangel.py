@@ -57,7 +57,8 @@ pan.flncheck(filename,'speca')
 #-----Extracting data from file-----------------------------------------------------------------------------------------
 
 print 'Opening '+str(filename)                                            # Use SpecaLd from pan_lib to load data from file
-loadmatrix,good,rates,phcts,bg,bsz,foures,bgest,flavour,cs,mis=pan.specald(filename)
+loadmatrix,good,rates,phcts,bg,bsz,foures,bgest,flv,cs,mis,obsd=pan.specald(filename)
+flavour=flv
 
 
 #-----Initially normalising data----------------------------------------------------------------------------------------
@@ -80,9 +81,10 @@ else:
 numstep=len(loadmatrix)
 
 datres=int(foures/bsz)
-tfl=linspace(0.0, (1.0/2.0)*datres/float(foures), datres/2)               # Create linearly spaced frequency domain up to the Nyquist frequency 1/2 (N/T)
-nulldat=zeros((datres/2)-1)                                               # Create null data with the same number of points as tfl
-tf,null,null=pan.lbinify(tfl[1:],nulldat,nulldat,lplres)                  # Fetch new array of bins to be output after lbinning
+tfl=linspace(0.0, (1.0/2.0)*datres/float(foures), (datres/2)+1)           # Create linearly spaced frequency domain up to the Nyquist frequency 1/2 (N/T)
+tfl=tfl[:-1]
+nulldat=zeros((datres/2))                                                 # Create null data with the same number of points as tfl
+tf,null,null=pan.lbinify(tfl[1:],nulldat[1:],nulldat[1:],lplres)          # Fetch new array of bins to be output after lbinning
 del null
 
 lspec=npsum(loadmatrix,axis=0)/float(sum(good))                           # Create the average Leahy spectrum
@@ -97,8 +99,7 @@ def lbin(lplres,prt=False):                                               # Defi
       tsfdata=loadmatrix[i]                                               # Load a row of data
       tsfdata=pan.lh2rms(tsfdata,rates[i],bg[i],const)                    # Convert to RMS-normalised data using the LH2RMS function from pan_lib
       errs=pan.lh2rms(zeros(len(tsfdata))+const,rates[i],bg[i],0)         # Errors of a Leahy spectrum = the Leahy noise constant
-      null,fours,errs=pan.lbinify(tfl[1:],tsfdata[1:]*tfl[1:],errs[1:]*tfl[1:],lplres) # Logarithmically bin the data using lbinify from pan_lib
-      del null
+      tf,fours,errs=pan.lbinify(tfl[1:],tsfdata[1:]*tfl[1:],errs[1:]*tfl[1:],lplres) # Logarithmically bin the data using lbinify from pan_lib
       fourgr.append(fours)                                                # Populate the data matrix
       errgr.append(abs(errs))                                             # Populate the error matrix
 
@@ -115,8 +116,8 @@ fourgr,errgr=lbin(lplres,prt=True)
 print ''
 print 'Preparing spectrogram...'
 
-deftitle='Spectrogram of '+flavour                                        # Define default title for spectrogram
-defzlabl='Leahy Power (Hz^-1)'                                            # Define default key label for spectrogram
+deftitle='Spectrogram "'+flavour+'"'                                      # Define default title for spectrogram
+defzlabl='Frequency x RMS Normalised Power'                               # Define default key label for spectrogram
 
 
 fourgrm=fourgr                                                            # Storing a copy of the matrix in memory so it can be reset
@@ -166,7 +167,7 @@ def spectrogram(td,tfc,fourgr,zlabel=defzlabl,title=deftitle):            # Defi
    pl.show(block=False)
 
 sxlab='Frequency (Hz)'
-sylab='RMS Normalised Power (Hz^-1)'
+sylab='Frequency x RMS Normalised Power'
 
 def give_inst():                                                          # Define printing this list of instructions as a function
    print 'COMMANDS: Enter a command to manipulate data.'
@@ -175,7 +176,7 @@ def give_inst():                                                          # Defi
    print '* "rebin" to reset the data and load it with a different binning'
    print '* "clip" to clip the range of data'
    print '* "reset" to reset data'
-   print '* "leahy" to print the Leahy Constant'
+   print '* "leahy" to plot Leahy-normalised data and print the Leahy Constant'
    print ''
    print 'SPECTROGRAM:'
    print '* "sgram" to plot the spectrogram currently being worked on'
@@ -192,6 +193,7 @@ def give_inst():                                                          # Defi
    print ''
    print 'OTHER COMMANDS:'
    print '* "info" to display a list of facts and figures about the current SpecAngel session'
+   print '* "reflav" to rewrite the flavour text used for graph titles'
    print '* "help" or "?" to display this list of instructions again'
    print '* "quit" to Quit'
 
@@ -406,6 +408,13 @@ while specopt not in ['quit','exit']:                                     # If t
 
    elif specopt=='leahy':                                                 # Print Leahy constant
 
+      ttl='Leahy-normed Average power density spectrum "'+flavour+'"'
+
+      pl.plot(tfl[1:],lspec[1:])
+      pl.xlabel('Frequencyt (Hz)')
+      pl.ylabel('Leahy power (Hz^-1)')
+      pl.title(ttl)
+      pl.show(block=False)
       print 'Leahy constant is',const
 
 
@@ -419,7 +428,7 @@ while specopt not in ['quit','exit']:                                     # If t
 
       spec=npsum(fourgrm, axis=1)/sum(good)                               # Sum all spectra in the matrix and divide by the number of good columns
       err=sqrt(npsum( array(errgrm)**2, axis=1)/sum(good))
-      ttl='Average power density spectrum of '+flavour
+      ttl='Average power density spectrum "'+flavour+'"'
       pan.slplot(tflm,spec,err,sxlab,sylab,ttl,'spc',typ='log',errors=es) # SLPlot from the pan_lib plots data on standard and log-log axes
 
       print 'Maximum power found at '+str(tflm[spec.argmax()])+'Hz!'      # Suggest a peak location
@@ -449,7 +458,7 @@ while specopt not in ['quit','exit']:                                     # If t
 
             gsp=fourgrm[:,specid]                                         # Extract the lightcurve from this bin
             ger=errgrm[:,specid]
-            ttl='Power density spectrum of '+flavour+' at +'+str(specid*tmdbin)+'s'
+            ttl='Power density spectrum "'+flavour+'" at +'+str(specid*tmdbin)+'s'
             pan.slplot(tflm,gsp,ger,sxlab,sylab,ttl,'spc',typ='log',errors=es)
             print 'Maximum power found at '+str(tflm[gsp.argmax()])+'Hz!' # Suggest a peak location
              
@@ -470,7 +479,7 @@ while specopt not in ['quit','exit']:                                     # If t
       pl.plot(td[:-1][ogood],rates[ogood],'ok')
       pl.xlabel('Time (s)')
       pl.ylabel('Flux (photons/s)')
-      pl.title('Lightcurve')
+      pl.title('Lightcurve "'+flavour+'"')
       pl.show(block=False)
 
 
@@ -497,18 +506,39 @@ while specopt not in ['quit','exit']:                                     # If t
       print ' Filename       = ',filn
       print ' Location       = ',loca
       print ' Mission        = ',mis
+      print ' Object         = ',obsd[0]
+      print ' Obs_ID         = ',obsd[1]
       if mis in ['SUZAKU']:
          print ' Energy         = ',cs,'eV'
       else:
          print ' Channel        = ',cs
       print ' Resolution     = ',str(bsz)+'s'
-      print ' Flavour        = ',flavour
+      print ' Flavour        = ',flv
       print ''
       print 'Other Info:'
+      print ' Main Flavour   = ',flavour
       print ' Time. Bin-size = ',str(tmdbin)+'s'
       print ' Freq. Bin-size = ',lplres
+      print ' Avg. Rates     = ',str(mean(rates[ogood]))
+      print ' Total photons  = ',phcts
       print ' Background     = ',str(bgest)+'cts/s/PCU'
       print ' Errorbars      = ',es
+      print ' Leahy constant = ',const
+
+
+   #-----'reflav' Option-----------------------------------------------------------------------------------------------
+
+   elif specopt=='reflav':
+
+      print 'Please give a new flavour.'
+
+      try:
+         nflavour=raw_input('Flavour: ')
+         assert nflavour!=''
+         flavour=nflavour
+         print 'Flavour set to "'+flavour+'"'
+      except:
+         print 'Invalid flavour!  Flavour remains "'+flavour+'"'
 
 
    #-----'help' Option-------------------------------------------------------------------------------------------------

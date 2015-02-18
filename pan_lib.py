@@ -692,6 +692,10 @@ def plotdld(filename):
                            observation, in counts per second per PCU, multiplied by the number of
                            PCUs.
     flavour  -     STRING: A useful bit of text to put on plots to help identify them later on.
+    chanstr  -     STRING: A string containing the high and low channel numbers separated by a dash.
+    mission  -     STRING: The name of the satellite
+    pbsdata  -      TUPLE: The first element is the name of the object, the second is the observation
+                           ID.
 
    -J.M.Court, 2015'''
 
@@ -709,17 +713,19 @@ def plotdld(filename):
    flavour=data['flav']
    chanstr=data['chan']
    mission=data['miss']
+   obsdata=data['obsd']
 
    bgpcu=bgest*mxpcus                                                     # Collect background * PCUs
 
    readfile.close()
 
-   return times,rates,errors,tstart,binsize,gti,mxpcus,bgpcu,flavour,chanstr,mission
+   return times,rates,errors,tstart,binsize,gti,mxpcus,bgpcu,flavour,chanstr,mission,obsdata
 
 
 #-----PlotdSv----------------------------------------------------------------------------------------------------------
 
-def plotdsv(filename,times,counts,errors,tstart,binsize,gti,mxpcus,bgest,flavour,chanstr,mission):
+@jit
+def plotdsv(filename,times,counts,errors,tstart,binsize,gti,mxpcus,bgest,flavour,chanstr,mission,obsdata):
 
    '''.Plotd Save
 
@@ -741,6 +747,10 @@ def plotdsv(filename,times,counts,errors,tstart,binsize,gti,mxpcus,bgest,flavour
     bgest    -      FLOAT: An estimate of the count rate of the background flux during the full 
                            observation, in counts per second per PCU.
     flavour  -     STRING: A useful bit of text to put on plots to help identify them later on.
+    chanstr  -     STRING: A string containing the high and low channel numbers separated by a dash.
+    mission  -     STRING: The name of the satellite
+    pbsdata  -      TUPLE: The first element is the name of the object, the second is the observation
+                           ID.
 
    Outputs:
 
@@ -761,15 +771,15 @@ def plotdsv(filename,times,counts,errors,tstart,binsize,gti,mxpcus,bgest,flavour
    savedata['flav']=flavour
    savedata['chan']=chanstr
    savedata['miss']=mission
+   savedata['obsd']=obsdata
 
    filename=uniqfname(filename,'plotd')                                   # Get the next available name of form filename(x).plotd
    wfile = open(filename, 'wb')                                           # Open file to write to
 
    cPickle.dump(savedata,wfile)                                           # Pickle the data (convert into bitstream) and dump to file
-
-   print "PlotDemon file saved to "+filename
-
    wfile.close()                                                          # Close file
+
+   return filename
 
 
 #-----RMS_N------------------------------------------------------------------------------------------------------------
@@ -846,7 +856,7 @@ def slplot(x,y,ye,xlabel,ylabel,title,figid="",typ='both',errors=True):
 
    Outputs:
 
-    [none]
+    filename - STRING: The filename actually used when saving
 
    -J.M.Court, 2015'''
 
@@ -965,6 +975,9 @@ def specald(filename):
                        binned photon count data.
     foures   -  FLOAT: The length of time corresponding to a single row of spcdata, in seconds.
     flavour  - STRING: A useful bit of text to put on plots to help identify them later on.
+    chanstr  - STRING: A string containing the high and low channel numbers separated by a dash.
+    mission  - STRING: The name of the satellite
+    pbsdata  -  TUPLE: The first element is the name of the object, the second is the observation ID.
 
    -J.M.Court, 2015'''
 
@@ -982,6 +995,7 @@ def specald(filename):
    flavour=data['flav']
    cs=data['chan']
    mission=data['miss']
+   obsdata=data['obsd']
 
    readfile.close()
 
@@ -994,12 +1008,13 @@ def specald(filename):
 
    bg=n_pcus*bgest
 
-   return spcdata,good,rates,phcts,bg,binsize,foures,bgest,flavour,cs,mission
+   return spcdata,good,rates,phcts,bg,binsize,foures,bgest,flavour,cs,mission,obsdata
 
 
 #-----SpecaSv----------------------------------------------------------------------------------------------------------
 
-def specasv(filename,spcdata,good,rates,phcts,npcus,binsize,bgest,foures,flavour,cs,mission):
+@jit
+def specasv(filename,spcdata,good,rates,phcts,npcus,binsize,bgest,foures,flavour,cs,mission,obsdata):
 
    '''.Speca Save
 
@@ -1031,10 +1046,13 @@ def specasv(filename,spcdata,good,rates,phcts,npcus,binsize,bgest,foures,flavour
                        in counts per second per PCU.
     foures   -  FLOAT: The length of time corresponding to a single row of spcdata, in seconds.
     flavour  - STRING: A useful bit of text to put on plots to help identify them later on.
+    chanstr  - STRING: A string containing the high and low channel numbers separated by a dash.
+    mission  - STRING: The name of the satellite
+    pbsdata  -  TUPLE: The first element is the name of the object, the second is the observation ID.
 
    Outputs:
 
-    [none]
+    filename - STRING: The filename actually used when saving
 
    -J.M.Court, 2015'''
 
@@ -1051,15 +1069,15 @@ def specasv(filename,spcdata,good,rates,phcts,npcus,binsize,bgest,foures,flavour
    savedata['flav']=flavour
    savedata['chan']=cs
    savedata['miss']=mission
+   savedata['obsd']=obsdata
 
    filename=uniqfname(filename,'speca')                                   # Get the next available name of form filename(x).speca
    wfile = open(filename, 'wb')                                           # Open file to write to
 
    cPickle.dump(savedata,wfile)                                           # Pickle the data (convert into bitstream) and dump to file
-
-   print "SpecAngel file saved to "+filename
-
    wfile.close()                                                          # Close file
+
+   return filename
 
 
 #-----SRinR------------------------------------------------------------------------------------------------------------

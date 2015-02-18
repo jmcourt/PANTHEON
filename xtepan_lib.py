@@ -288,6 +288,31 @@ def getini(event):
    return ini
 
 
+#-----Get Obs----------------------------------------------------------------------------------------------------------
+
+def getobs(event,datamode,filepath):
+
+   '''Get Obs
+
+   Description:
+
+    Fetches a tuple consisting of the object and obs_id of the observation.'''
+
+   if datamode=='GoodXenon_2s':
+      try:
+         obsid=(filepath.split('/')[-4])                                  # GoodXenon for XTE doesnt store obs_id for some reason
+      except:
+         obsid=''
+   elif datamode=='E_125us_64M_0_1s':
+      obsid=event[1].header['OBS_ID']
+   else:
+      obsid=''
+
+   obsdata=(event[1].header['OBJECT'],obsid)
+
+   return obsdata
+
+
 #-----Get PCU----------------------------------------------------------------------------------------------------------
 
 def getpcu(words,datamode):

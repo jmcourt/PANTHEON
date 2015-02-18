@@ -54,6 +54,7 @@ import pylab as pl
 
 ptdbinfac=16                                                              # To save space and time, the time bins for saved plotdemon data will be greater than the time
                                                                           # bins for the not-saved specangel data by this factor.  Must be power of 2.
+usrmin=-13                                                                # The smallest time resolution to consider is 2^usrmin seconds
 
 
 #-----Welcoming Header-------------------------------------------------------------------------------------------------
@@ -98,10 +99,14 @@ else:
    pan.signoff()
    exit()
 
-print ''
+obsdata=inst.getobs(event,event[1].header['DATAMODE'],filename)           # Fetch object and Obs_ID
 
 
 #-----Checking validity of remaining inputs----------------------------------------------------------------------------
+
+print 'Object =',obsdata[0]
+print 'Obs_ID =',obsdata[1]
+print ''
 
 maxen=inst.maxen()                                                        # Get the value of the highest energy or channel for the instrument
 
@@ -214,7 +219,7 @@ bsz=inst.getbin(event)                                                    # Fetc
 if bszt>bsz:                                                              # If user enters a lower binning resolution than maximum, use that instead
    bsz=bszt
 
-n=-15                                                                     # Rounding bsz to the nearest (greater) power of 2
+n=usrmin                                                                  # Rounding bsz to the nearest (greater) power of 2
 while (2**n)<bsz:
    n+=1
 bsz=2**n
@@ -342,9 +347,10 @@ if filext!=filename:
 
 filename=filename+'_'+cs
 
-pan.plotdsv(filename,ta,fullhist,fullerrs,tstart,bsz*ptdbinfac,gti,max(npcus),bgest,flavour,cs,mission)
-pan.specasv(filename,fourgrlin,good,rates,tcounts,npcus,bsz,bgest,foures,flavour,cs,mission)
-
+pfilename=pan.plotdsv(filename,ta,fullhist,fullerrs,tstart,bsz*ptdbinfac,gti,max(npcus),bgest,flavour,cs,mission,obsdata)
+print "PlotDemon file saved to "+pfilename
+sfilename=pan.specasv(filename,fourgrlin,good,rates,tcounts,npcus,bsz,bgest,foures,flavour,cs,mission,obsdata)
+print "SpecAngel file saved to "+sfilename
 
 #-----Footer-----------------------------------------------------------------------------------------------------------
 

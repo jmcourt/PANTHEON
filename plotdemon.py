@@ -65,16 +65,18 @@ pan.flncheck(file1,'plotd')
 
 ch={}                                                                     # Save channel info in a library
 
-print 'Opening',file1
-x1r,y1r,ye1r,tst1,bsz1,gti,pcus1,bg,flavour,ch[1],mis1=pan.plotdld(file1) # Opening file 1
+print 'Opening',file1                                                     # Opening file 1
+x1r,y1r,ye1r,tst1,bsz1,gti,pcus1,bg,flv1,ch[1],mis1,obsd1=pan.plotdld(file1)
 y1r=y1r/float(pcus1)                                                      # Normalising flux by dividing by the number of active PCUs and the binsize
 ye1r=ye1r/float(pcus1)
+
+flavour=flv1
 
 if nfiles>1:
    file2=args[2]
    if pan.flncheck(file2,'plotd'):
       print 'Opening',file2                                               # Opening file 2
-      x2r,y2r,ye2r,tst2,bsz2,null,pcus2,null,flv2,ch[2],mis2=pan.plotdld(file2)
+      x2r,y2r,ye2r,tst2,bsz2,null,pcus2,null,flv2,ch[2],mis2,obsd2=pan.plotdld(file2)
       del null
       y2r=y2r/float(pcus2)                                                # Normalising flux by dividing by the number of active PCUs and the binsize
       ye2r=ye2r/float(pcus2)
@@ -88,7 +90,7 @@ if nfiles>2:
    file3=args[3]
    if pan.flncheck(file2,'plotd'):
       print 'Opening',file3                                               # Opening file 3
-      x3r,y3r,ye3r,tst3,bsz3,null,pcus3,null,flv3,ch[3],mis3=pan.plotdld(file3)
+      x3r,y3r,ye3r,tst3,bsz3,null,pcus3,null,flv3,ch[3],mis3,obsd3=pan.plotdld(file3)
       del null
       y3r=y3r/float(pcus3)                                                # Normalising flux by dividing by the number of active PCUs and the binsize
       ye3r=ye3r/float(pcus3)
@@ -154,6 +156,7 @@ print ''
 def colorget():                                                           # Define colorget to easily re-obtain colours if base data is modified
    print 'Analysing Data...'
    times=x1[gmask]
+   timese=None
    col={}
    cole={}
    if nfiles==1:                                                          # If only one file given, flux and flux_error are just the flux and error of this one file
@@ -167,9 +170,9 @@ def colorget():                                                           # Defi
       print 'Error!  Too much data somehow.'                              # This warning should never come up...
       pan.signoff()
       exit()
-   return times,flux,fluxe,col,cole
+   return times,timese,flux,fluxe,col,cole
 
-times,flux,fluxe,col,cole=colorget()                                      # Use colorget
+times,timese,flux,fluxe,col,cole=colorget()                               # Use colorget
 
 print 'Done!'
 print ''
@@ -183,10 +186,10 @@ cs=False                                                                  # 'cs'
 ls=False                                                                  # 'ls' with delineation
 folded=False                                                              # 'folded' has been folded over some period
 
-def doplot(x,xe,y,ye,ovr=False):                                          # Defining short function to determine whether errorbars are needed on the fly
+def doplot(x,xe,y,ye,ovr=False,ft='-k'):                                  # Defining short function to determine whether errorbars are needed on the fly
                                                                           # 'ovr' allows to override colour and line options, so lightcurves can be made differently
 
-   if ovr: formst='-k'                                                    # If override given, plot no points; just lines
+   if ovr: formst=ft                                                      # If override given, accept input format; if none given, just plot lines
    elif ls: formst='-ok'                                                  # If deLineate mode on, connect points with lines and mark points
    else: formst='ok'                                                      # If neither deLineate nor override on, just plot points.  No lines here, buddy
 
@@ -247,6 +250,7 @@ def give_inst():                                                          # Defi
    print ''
    print 'OTHER COMMANDS:'
    print '* "info" to display a list of facts and figures about the current PlotDemon session'
+   print '* "reflav" to rewrite the flavour text used for graph titles'
    print '* "help" or "?" to display this list of Instructions again'
    print '* "quit" to Quit'
 
@@ -291,7 +295,7 @@ while plotopt not in ['quit','exit']:                                     # If t
       print 'Binning complete!'
       print ''
 
-      times,flux,fluxe,col,cole=colorget()                                # Re-get colours
+      times,timese,flux,fluxe,col,cole=colorget()                         # Re-get colours
       folded=False                                                        # Re-allow clipping
       print 'Done!'
       print ''
@@ -321,7 +325,7 @@ while plotopt not in ['quit','exit']:                                     # If t
          x3,y3,ye3=pan.smfold(x3,y3,ye3,period,binning,'ch. '+ch[3])      # Fold data of file 3 if present
 
       gmask=ones(len(x1),dtype=bool)                                      # Re-establish gmask
-      times,flux,fluxe,col,cole=colorget()
+      times,timese,flux,fluxe,col,cole=colorget()
       folded=True
 
       print 'Folding Complete!'
@@ -364,7 +368,7 @@ while plotopt not in ['quit','exit']:                                     # If t
             ye3=ye3[mint:maxt]
 
          gmask=pan.gtimask(x1,gti)                                        # Re-establish gmask
-         times,flux,fluxe,col,cole=colorget()
+         times,timese,flux,fluxe,col,cole=colorget()
 
          print 'Data clipped!'
 
@@ -374,7 +378,7 @@ while plotopt not in ['quit','exit']:                                     # If t
    elif plotopt=='lc':                                                    # Plot lightcurve
 
       pl.figure()
-      doplot(times,zeros(len(times)),flux,fluxe,ovr=True)
+      doplot(times,timese,flux,fluxe,ovr=True)
       pl.xlabel('Time (s)')
       pl.ylabel('Flux (counts/s/PCU)')
       pl.title('Lightcurve "'+flavour+'"')
@@ -457,7 +461,7 @@ while plotopt not in ['quit','exit']:                                     # If t
             h2=int(ht[1])                                                 # Extract denominator file number
             ht=int(ht)
             pl.figure()
-            doplot(times,zeros(len(times)),col[ht],cole[ht],ovr=True)     # Collect colours from col library and plot
+            doplot(times,timese,col[ht],cole[ht],ovr=True)                # Collect colours from col library and plot
             pl.xlabel('Time (s)')
             pl.ylabel('('+ch[h1]+'/'+ch[h2]+') colour')
             pl.title('Colour over Time Diagram "'+flavour+'"')
@@ -496,7 +500,7 @@ while plotopt not in ['quit','exit']:                                     # If t
       print 'Plotting Lightcurve...'
 
       pl.subplot(rowexp,colexp,1)                                         # Create subplot in the first slot
-      doplot(times,zeros(len(times)),flux,fluxe,ovr=True)                 # Always plot the lightcurve
+      doplot(times,timese,flux,fluxe,ovr=True)                            # Always plot the lightcurve
       pl.xlabel('Time (s)')
       pl.ylabel('Flux (counts/s/PCU)')
       pl.title('Lightcurve "'+flavour+'"')
@@ -539,19 +543,19 @@ while plotopt not in ['quit','exit']:                                     # If t
 
       pl.figure()
       pl.subplot(nfiles,1,1) 
-      doplot(times,zeros(len(times)),y1[gmask],ye1[gmask],ovr=True)       # Plot the lowest band
+      doplot(times,timese,y1[gmask],ye1[gmask],ovr=True)                  # Plot the lowest band
       pl.xlabel('Time (s)')
       pl.ylabel('Flux (counts/s/PCU)')
       pl.title(ch[1]+' Lightcurve "'+flavour+'"')
       if nfiles>1:
          pl.subplot(nfiles,1,2)
-         doplot(times,zeros(len(times)),y2[gmask],ye2[gmask],ovr=True)    # Plot the second band
+         doplot(times,timese,y2[gmask],ye2[gmask],ovr=True)               # Plot the second band
          pl.xlabel('Time (s)')
          pl.ylabel('Flux (counts/s/PCU)')
          pl.title(ch[2]+' Lightcurve "'+flavour+'"')
       if nfiles>2:
          pl.subplot(nfiles,1,3)
-         doplot(times,zeros(len(times)),y3[gmask],ye3[gmask],ovr=True)    # Plot the third band
+         doplot(times,timese,y3[gmask],ye3[gmask],ovr=True)               # Plot the third band
          pl.xlabel('Time (s)')
          pl.ylabel('Flux (counts/s/PCU)')
          pl.title(ch[3]+' Lightcurve "'+flavour+'"')
@@ -567,12 +571,12 @@ while plotopt not in ['quit','exit']:                                     # If t
 
       pl.figure()
       leg=[ch[1]]                                                         # Create a legend array to populate with channel names
-      doplot(times,zeros(len(times)),y1[gmask],ye1[gmask],ovr=True)       # Plot the lowest band
+      doplot(times,timese,y1[gmask],ye1[gmask],ovr=True,ft='-b')          # Plot the lowest band
       if nfiles>1:
-         doplot(times,zeros(len(times)),y2[gmask],ye2[gmask],ovr=True)    # Plot the second band
+         doplot(times,timese,y2[gmask],ye2[gmask],ovr=True,ft='-g')       # Plot the second band
          leg.append(ch[2])                                                # Append name of second channel to key
       if nfiles>2:
-         doplot(times,zeros(len(times)),y3[gmask],ye3[gmask],ovr=True)    # Plot the third band
+         doplot(times,timese,y3[gmask],ye3[gmask],ovr=True,ft='-r')       # Plot the third band
          leg.append(ch[3])                                                # Append name of third channel to key
       pl.legend(leg)                                                      # Create key on plot
       pl.xlabel('Time (s)')
@@ -646,13 +650,15 @@ while plotopt not in ['quit','exit']:                                     # If t
       print ' Filename       = ',filn1
       print ' Location       = ',loca1
       print ' Mission        = ',mis1
+      print ' Object         = ',obsd1[0]
+      print ' Obs_ID         = ',obsd1[1]
       if mis1 in ['SUZAKU']:
          print ' Energy         = ',ch[1],'eV'
       else:
          print ' Channel        = ',ch[1]
       print ' Resolution     = ',str(bsz1)+'s'
       print ' No. of PCUs    = ',pcus1
-      print ' Flavour        = ',flavour
+      print ' Flavour        = ',flv1
       if nfiles>1:
          filn2,loca2=pan.xtrfilloc(file2)
          print ''
@@ -660,6 +666,8 @@ while plotopt not in ['quit','exit']:                                     # If t
          print ' Filename       = ',filn2
          print ' Location       = ',loca2
          print ' Mission        = ',mis2
+         print ' Object         = ',obsd2[0]
+         print ' Obs_ID         = ',obsd2[1]
          if mis2 in ['SUZAKU']:
             print ' Energy         = ',ch[2],'eV'
          else:
@@ -674,6 +682,8 @@ while plotopt not in ['quit','exit']:                                     # If t
          print ' Filename       = ',filn3
          print ' Location       = ',loca3
          print ' Mission        = ',mis3
+         print ' Object         = ',obsd3[0]
+         print ' Obs_ID         = ',obsd3[1]
          if mis3 in ['SUZAKU']:
             print ' Energy         = ',ch[3],'eV'
          else:
@@ -683,6 +693,7 @@ while plotopt not in ['quit','exit']:                                     # If t
          print ' Flavour        = ',flv3
       print ''
       print 'Other Info:'
+      print ' Main Flavour   = ',flavour
       print ' Obs. Starttime = ',str(tst1)+'s (0.0s)'                     # The start of the observation
       print ' Obs. Endtime   = ',str(oet+tst1)+'s ('+str(oet)+'s)'        # The end of the observation
       print ' Data Starttime = ',str(dst+tst1)+'s ('+str(dst)+'s)'        # The start of the data set (i.e. after GTI considerations and clipping)
@@ -693,6 +704,22 @@ while plotopt not in ['quit','exit']:                                     # If t
       print ' Errorbars      = ',es
       print ' Delineated     = ',ls
       print ' Colour-coded   = ',cs
+
+
+   #-----'reflav' Option-----------------------------------------------------------------------------------------------
+
+   elif plotopt=='reflav':
+
+      print 'Please give a new flavour.'
+
+      try:
+         nflavour=raw_input('Flavour: ')
+         assert nflavour!=''
+         flavour=nflavour
+         print 'Flavour set to "'+flavour+'"'
+      except:
+         print 'Invalid flavour!  Flavour remains "'+flavour+'"'
+
 
    #-----'help' Option-------------------------------------------------------------------------------------------------
 
