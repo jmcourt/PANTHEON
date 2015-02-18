@@ -39,17 +39,6 @@
 #
 #
 
-#-----Importing Modules------------------------------------------------------------------------------------------------
-
-import sys
-import pan_lib as pan
-from astropy.io import fits
-from math import log
-from numpy import arange, array, histogram, sqrt, zeros
-from scipy.fftpack import fft
-import pylab as pl
-
-
 #-----User-set Parameters----------------------------------------------------------------------------------------------
 
 ptdbinfac=16                                                              # To save space and time, the time bins for saved plotdemon data will be greater than the time
@@ -62,6 +51,26 @@ usrmin=-13                                                                # The 
 print ''
 print '-------Running XTEGet: J.M.Court, 2015------'
 print ''
+
+#-----Importing Modules------------------------------------------------------------------------------------------------
+
+try:
+
+   import sys
+   import pan_lib as pan
+   from astropy.io import fits
+   from math import log
+   from numpy import arange, array, histogram, sqrt, zeros
+   from scipy.fftpack import fft
+   import pylab as pl
+
+except:
+
+   print 'Modules missing!  Aborting!'
+   print ''
+   print '------------------------------------------------'
+   print ''
+   exit()
 
 
 #-----Checking Validity of Filename------------------------------------------------------------------------------------
@@ -88,12 +97,26 @@ if mission == 'XTE' :
    etype='channel'                                                        # XTE requires an input of channel IDs
    escale=''
    escaleb=''
-   import xtepan_lib as inst                                              # Import XTE extraction functions
+
+   try:
+      import xtepan_lib as inst                                           # Import XTE extraction functions
+   except:
+      print 'XTE PANTHEON Library not found!  Aborting!'
+      pan.signoff()
+      exit()
+
 elif mission == 'SUZAKU':
    etype='energy'                                                         # SUZAKU requires an input of raw energies
    escale='eV'
    escaleb=' (eV)'
-   import szkpan_lib as inst                                              # Import SUZAKU extraction functions
+
+   try:
+      import szkpan_lib as inst                                           # Import SUZAKU extraction functions
+   except:
+      print 'Suzaku PANTHEON Library not found!  Aborting!'
+      pan.signoff()
+      exit()
+
 else:
    print "This error shouldn't happen...  sorry 'bout that!"
    pan.signoff()

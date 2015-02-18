@@ -19,21 +19,6 @@
 #
 #
 
-#-----Importing Modules------------------------------------------------------------------------------------------------
-
-import sys,os
-import pylab as pl
-import pan_lib as pan
-from astropy.io import fits
-from numpy import array, arange, mean, meshgrid, transpose, zeros
-from numpy import exp, histogram, linspace, log10, nonzero, sqrt
-from numpy import append as npappend                                      # Importing numpy append as npappend to avoid confusion with in-built append function
-from numpy import min as npmin
-from numpy import sum as npsum
-from scipy import delete
-from scipy.fftpack import fft
-
-
 #-----User-set Parameters----------------------------------------------------------------------------------------------
 
 lplresdefault=0.005                                                       # The best resolution, in log10 space, in which the data will be analysed
@@ -44,6 +29,32 @@ lplresdefault=0.005                                                       # The 
 print ''
 print '-------Running Spec Angel: J.M.Court, 2015------'
 print ''
+
+
+#-----Importing Modules------------------------------------------------------------------------------------------------
+
+try:
+
+   import sys,os
+   import pylab as pl
+   import pan_lib as pan
+   from astropy.io import fits
+   from numpy import array, arange, mean, meshgrid, transpose, zeros
+   from numpy import exp, histogram, linspace, log10, nonzero, sqrt
+   from numpy import append as npappend                                   # Importing numpy append as npappend to avoid confusion with in-built append function
+   from numpy import min as npmin
+   from numpy import sum as npsum
+   from scipy import delete
+   from scipy.fftpack import fft
+
+except:
+
+   print 'Modules missing!  Aborting!'
+   print ''
+   print '------------------------------------------------'
+   print ''
+   exit()
+
 
 #-----Checking Validity of Arguments, Fetching File--------------------------------------------------------------------
 

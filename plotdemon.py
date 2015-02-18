@@ -24,16 +24,6 @@
 #
 #
 
-#-----Importing Modules------------------------------------------------------------------------------------------------
-
-import sys,os
-import pylab as pl
-import pan_lib as pan
-
-from math import floor, log10, sqrt
-from numpy import array, ones, zeros
-from numpy import append as npappend                                      # Importing numpy append as npappend to avoid confusion with in-built append function
-
 #-----User-set Parameters----------------------------------------------------------------------------------------------
 
 minbin=0.015625                                                           # The minimum bin size the code is allowed to attempt to use.  This can prevent long hang-ups
@@ -44,6 +34,27 @@ minbin=0.015625                                                           # The 
 print ''
 print '-------Running Plot Demon: J.M.Court, 2014------'
 print ''
+
+
+#-----Importing Modules------------------------------------------------------------------------------------------------
+
+try:
+
+   import sys,os
+   import pylab as pl
+   import pan_lib as pan
+
+   from math import floor, log10, sqrt
+   from numpy import array, ones, zeros
+   from numpy import append as npappend                                   # Importing numpy append as npappend to avoid confusion with in-built append function
+
+except:
+
+   print 'Modules missing!  Aborting!'
+   print ''
+   print '------------------------------------------------'
+   print ''
+   exit()
 
 
 #-----Opening Files----------------------------------------------------------------------------------------------------
