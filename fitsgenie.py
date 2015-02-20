@@ -49,7 +49,7 @@ usrmin=-13                                                                # The 
 #-----Welcoming Header-------------------------------------------------------------------------------------------------
 
 print ''
-print '-------Running XTEGet: J.M.Court, 2015------'
+print '-------Running FITSGenie: J.M.Court, 2015------'
 print ''
 
 #-----Importing Modules------------------------------------------------------------------------------------------------
@@ -374,6 +374,7 @@ pfilename=pan.plotdsv(filename,ta,fullhist,fullerrs,tstart,bsz*ptdbinfac,gti,max
 print "PlotDemon file saved to "+pfilename
 sfilename=pan.specasv(filename,fourgrlin,good,rates,tcounts,npcus,bsz,bgest,foures,flavour,cs,mission,obsdata)
 print "SpecAngel file saved to "+sfilename
+
 
 #-----Footer-----------------------------------------------------------------------------------------------------------
 

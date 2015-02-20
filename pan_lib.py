@@ -480,7 +480,7 @@ def lhconst(data):
    Decription:
 
     Finds the normalisation of white noise in a given power Leahy-normalised power spectrum.  Assumes
-    no spectral features in the last 33% of the spectrum.
+    no spectral features in the last 20% of the spectrum.
 
    Inputs:
 
@@ -496,13 +496,24 @@ def lhconst(data):
       return a
 
    olen=len(data)
-   olen=int((2/3.0)*olen)
+   olen=int((4/5.0)*olen)
    datav=data[olen:]
    const=optm.curve_fit(leahynoise,range(len(datav)),datav)
    const=const[0][0]
    if const>2.5 or const<1.5:
       print "WARNING: Leahy constant of "+str(const)+" outside of accepted range!"
    return const
+
+
+#-----LHImprov---------------------------------------------------------------------------------------------------------
+
+def lhimprov(spec):
+
+   def rmsnoise(x,a,b):
+      return x*a+b
+
+   const_corr=optm.curve_fit(rmsnoise,arange(len(spec)),spec*arange(len(spec)))
+   return const_corr[0][0]
 
 
 #-----MXRebin----------------------------------------------------------------------------------------------------------

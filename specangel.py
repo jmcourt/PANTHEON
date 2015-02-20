@@ -46,6 +46,7 @@ try:
    from numpy import sum as npsum
    from scipy import delete
    from scipy.fftpack import fft
+   from scipy.optimize import brentq
 
 except:
 
@@ -91,15 +92,24 @@ else:
 
 numstep=len(loadmatrix)
 
+lspec=npsum(loadmatrix,axis=0)/float(sum(good))                           # Create the average Leahy spectrum
+const=pan.lhconst(lspec)                                                  # Calculate the normalisation of noise
+
+def constmi(k):                                                           # Try and improve on this constant
+   nlspec=pan.lh2rms(lspec,mean(rates),mean(bg),k)
+   nlrang=arange(len(nlspec))
+   nlrang=nlrang[int(4*len(nlspec)/5.0):]
+   nlspec=nlspec[int(4*len(nlspec)/5.0):]
+   return (mean(nlrang*nlspec))
+
+const=(brentq(constmi,const-0.1,const+0.1))
+
 datres=int(foures/bsz)
 tfl=linspace(0.0, (1.0/2.0)*datres/float(foures), (datres/2)+1)           # Create linearly spaced frequency domain up to the Nyquist frequency 1/2 (N/T)
 tfl=tfl[:-1]
 nulldat=zeros((datres/2))                                                 # Create null data with the same number of points as tfl
 tf,null,null=pan.lbinify(tfl[1:],nulldat[1:],nulldat[1:],lplres)          # Fetch new array of bins to be output after lbinning
 del null
-
-lspec=npsum(loadmatrix,axis=0)/float(sum(good))                           # Create the average Leahy spectrum
-const=pan.lhconst(lspec)                                                  # Calculate the normalisation of noise
 
 print ''
 
@@ -122,7 +132,7 @@ def lbin(lplres,prt=False):                                               # Defi
    errgr=transpose(errgr)
    return fourgr,errgr
 
-fourgr,errgr=lbin(lplres,prt=True)                                                      
+fourgr,errgr=lbin(lplres,prt=True)  
 
 print ''
 print 'Preparing spectrogram...'
@@ -184,28 +194,29 @@ def give_inst():                                                          # Defi
    print 'COMMANDS: Enter a command to manipulate data.'
    print ''
    print 'DATA:'
-   print '* "rebin" to reset the data and load it with a different binning'
-   print '* "clip" to clip the range of data'
-   print '* "reset" to reset data'
-   print '* "leahy" to plot Leahy-normalised data and print the Leahy Constant'
+   print '* "rebin" to reset the data and load it with a different binning.'
+   print '* "clip" to clip the range of data.'
+   print '* "reset" to reset data.'
+   print '* "leahy" to plot Leahy-normalised data and print the Leahy Constant.'
    print ''
    print 'SPECTROGRAM:'
-   print '* "sgram" to plot the spectrogram currently being worked on'
-   print '* "sub" to subtract a constant from all power readings, forcing any negative values to zero'
-   print '* "log" to toggle logarithmic spectrogram plotting'
+   print '* "sgram" to plot the spectrogram currently being worked on.'
+   print '* "sub" to subtract a constant from all power readings, forcing any negative values to zero.'
+   print '* "log" to toggle logarithmic spectrogram plotting.'
    print ''
    print 'POWER SPECTRA:'
-   print '* "aspec" to plot the average spectrum and return the frequency of its highest peak'
-   print '* "gspec" to get an individual spectrum at any time and plot it'
-   print '* "rates" to get a simple lightcurve of the data'
+   print '* "aspec" to plot the average spectrum and return the frequency of its highest peak.'
+   print '* "gspec" to get an individual spectrum at any time and plot it.'
+   print '* "rates" to get a simple lightcurve of the data.'
    print ''
    print 'TOGGLE OPTIONS:'
-   print '* "errors" to toggle errorbars on power spectra plots'
+   print '* "errors" to toggle errorbars on power spectra plots.'
    print ''
    print 'OTHER COMMANDS:'
-   print '* "info" to display a list of facts and figures about the current SpecAngel session'
-   print '* "reflav" to rewrite the flavour text used for graph titles'
-   print '* "help" or "?" to display this list of instructions again'
+   print '* "info" to display a list of facts and figures about the current SpecAngel session.'
+   print '* "reflav" to rewrite the flavour text used for graph titles.'
+   print '* "sascii" to create an ASCII file of the Leahy-normalised average power density spectrum.'
+   print '* "help" or "?" to display this list of instructions again.'
    print '* "quit" to Quit'
 
 give_inst()                                                               # Print the list of instructions
@@ -301,6 +312,8 @@ while specopt not in ['quit','exit']:                                     # If t
          fourgrm,errgrm,tdlm,good=pan.mxrebin(fourgrm,errgrm,tdlm,good,tbinmult)
 
       tdgd,tfgd=meshgrid(tdlm,tflm)                                       # Recreate grid from rescaled axes
+
+      print ''
       print 'Data rebinned by '+str(tmdbin)+'s, '+str(lplres)+'Hz.'
       print str(int(sum(good)))+'/'+str(len(good))+' power spectra are good'      
 
@@ -420,8 +433,7 @@ while specopt not in ['quit','exit']:                                     # If t
    elif specopt=='leahy':                                                 # Print Leahy constant
 
       ttl='Leahy-normed Average power density spectrum "'+flavour+'"'
-
-      pl.plot(tfl[1:],lspec[1:])
+      pl.plot(tfl[2:],lspec[2:])
       pl.xlabel('Frequencyt (Hz)')
       pl.ylabel('Leahy power (Hz^-1)')
       pl.title(ttl)
@@ -441,8 +453,10 @@ while specopt not in ['quit','exit']:                                     # If t
       err=sqrt(npsum( array(errgrm)**2, axis=1)/sum(good))
       ttl='Average power density spectrum "'+flavour+'"'
       pan.slplot(tflm,spec,err,sxlab,sylab,ttl,'spc',typ='log',errors=es) # SLPlot from the pan_lib plots data on standard and log-log axes
+      scerr=spec-(err**0.5)
 
-      print 'Maximum power found at '+str(tflm[spec.argmax()])+'Hz!'      # Suggest a peak location
+      print 'Maximum power found at '+str(tflm[scerr.argmax()])+'Hz!'     # Suggest a peak location
+      
 
    #-----'gspec' Option------------------------------------------------------------------------------------------------
 
@@ -471,7 +485,9 @@ while specopt not in ['quit','exit']:                                     # If t
             ger=errgrm[:,specid]
             ttl='Power density spectrum "'+flavour+'" at +'+str(specid*tmdbin)+'s'
             pan.slplot(tflm,gsp,ger,sxlab,sylab,ttl,'spc',typ='log',errors=es)
-            print 'Maximum power found at '+str(tflm[gsp.argmax()])+'Hz!' # Suggest a peak location
+            scerr=spec-(err**0.5)
+            
+            print 'Maximum power found at '+str(tflm[scerr.argmax()])+'Hz!' # Suggest a peak location
              
          else:
             print 'Time not in GTI!'
@@ -550,6 +566,27 @@ while specopt not in ['quit','exit']:                                     # If t
          print 'Flavour set to "'+flavour+'"'
       except:
          print 'Invalid flavour!  Flavour remains "'+flavour+'"'
+
+
+   #-----'sascii' Option-----------------------------------------------------------------------------------------------
+
+   elif specopt=='sascii':
+
+      aflname=raw_input('Filename:')
+      try:
+
+         assert len(aflname)>0
+         fle=open(aflname,'w')
+         for i in range(len(tfl)):
+            a=[str(tfl[i]),' ',str(lspec[i]),' ',str(const),'\n']
+            fle.writelines(a)
+         fle.close()
+
+         print 'ASCII Leahy-normalised spectrum saved to',aflname+'!'
+
+      except:
+
+         print 'Invalid filename!'
 
 
    #-----'help' Option-------------------------------------------------------------------------------------------------
