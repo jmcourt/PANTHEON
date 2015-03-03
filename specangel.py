@@ -314,7 +314,7 @@ while specopt not in ['quit','exit']:                                     # If t
       tdgd,tfgd=meshgrid(tdlm,tflm)                                       # Recreate grid from rescaled axes
 
       print ''
-      print 'Data rebinned by '+str(tmdbin)+'s, '+str(lplres)+'Hz.'
+      print 'Data rebinned by '+str(tmdbin)+'s, [10^'+str(lplres)+'n]Hz.'
       print str(int(sum(good)))+'/'+str(len(good))+' power spectra are good'      
 
 
@@ -526,6 +526,8 @@ while specopt not in ['quit','exit']:                                     # If t
 
    elif specopt=='info':
 
+      print 'SpecAngel.py'
+      print ''
       print '1 file loaded:'
       print ''
       filn,loca=pan.xtrfilloc(filename)
@@ -544,8 +546,11 @@ while specopt not in ['quit','exit']:                                     # If t
       print ''
       print 'Other Info:'
       print ' Main Flavour   = ',flavour
+      print ' Obs length     = ',str(foures*numstep)+'s'
       print ' Time. Bin-size = ',str(tmdbin)+'s'
       print ' Freq. Bin-size = ',lplres
+      print ' Num. Time Bins = ',str(int(len(good)))
+      print ' Good Time Bins = ',str(int(sum(good)))
       print ' Avg. Rates     = ',str(mean(rates[ogood]))
       print ' Total photons  = ',phcts
       print ' Background     = ',str(bgest)+'cts/s/PCU'

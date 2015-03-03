@@ -82,6 +82,7 @@ import os,cPickle
 import pylab as pl
 import warnings
 import scipy.optimize as optm
+from matplotlib.ticker import ScalarFormatter
 from numba import jit
 from numpy import array, arange, ceil, exp, floor, log10, mean, ones, sqrt, zeros
 from numpy import append as npappend

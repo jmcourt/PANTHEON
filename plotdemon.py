@@ -654,6 +654,8 @@ while plotopt not in ['quit','exit']:                                     # If t
       dst=times[0]
       det=times[-1]
 
+      print 'PlotDemon.py'
+      print ''
       print nfiles,'files loaded:'
       print ''
       filn1,loca1=pan.xtrfilloc(file1)
