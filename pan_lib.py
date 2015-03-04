@@ -711,10 +711,16 @@ def plotdld(filename):
 
    -J.M.Court, 2015'''
 
-   readfile=open(filename,'rb')
-   data=cPickle.load(readfile)                                            # Unpickle the .speca file
+   try:
+      readfile=open(filename,'rb')                                        # Open the .plotd file
+   except:
+      print ''
+      print '"'+filename+'" not found!  Aborting!'
+      signoff()
+      exit()
+   data=cPickle.load(readfile)                                            # Unpickle the .plotd file
 
-   times=array(data['time'])                                              # Unleash the beast! [open the file]
+   times=array(data['time'])                                              # Unleash the beast! [extract the file]
    rates=array(data['flux'])
    errors=array(data['errs'])
    tstart=data['tstr']
@@ -993,10 +999,16 @@ def specald(filename):
 
    -J.M.Court, 2015'''
 
-   readfile=open(filename,'rb')
+   try:
+      readfile=open(filename,'rb')                                        # Open the .speca file
+   except:
+      print ''
+      print '"'+filename+'" not found!  Aborting!'
+      signoff()
+      exit()
    data=cPickle.load(readfile)                                            # Unpickle the .speca file
 
-   spcdata=data['data']                                                   # Unleash the beast! [open the file]
+   spcdata=data['data']                                                   # Unleash the beast! [extract the file]
    good=array(data['good'])
    rates=array(data['rate'])
    phcts=data['phct']

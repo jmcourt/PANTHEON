@@ -95,14 +95,14 @@ numstep=len(loadmatrix)
 lspec=npsum(loadmatrix,axis=0)/float(sum(good))                           # Create the average Leahy spectrum
 const=pan.lhconst(lspec)                                                  # Calculate the normalisation of noise
 
-def constmi(k):                                                           # Try and improve on this constant
+def constmi(k):                                                           # Define nuP(nu) noise average as a function of  Leahy constant.
    nlspec=pan.lh2rms(lspec,mean(rates),mean(bg),k)
    nlrang=arange(len(nlspec))
    nlrang=nlrang[int(4*len(nlspec)/5.0):]
    nlspec=nlspec[int(4*len(nlspec)/5.0):]
    return (mean(nlrang*nlspec))
 
-const=(brentq(constmi,const-0.1,const+0.1))
+const=(brentq(constmi,const-0.1,const+0.1))                               # Minimise the above function to improve the constant
 
 datres=int(foures/bsz)
 tfl=linspace(0.0, (1.0/2.0)*datres/float(foures), (datres/2)+1)           # Create linearly spaced frequency domain up to the Nyquist frequency 1/2 (N/T)
