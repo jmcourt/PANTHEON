@@ -714,7 +714,7 @@ def plotdld(filename):
       readfile=open(filename,'rb')                                        # Open the .plotd file
    except:
       print ''
-      print '"'+filename+'" not found!  Aborting!'
+      print 'File not found!  Aborting!'
       signoff()
       exit()
    data=cPickle.load(readfile)                                            # Unpickle the .plotd file
@@ -1002,7 +1002,7 @@ def specald(filename):
       readfile=open(filename,'rb')                                        # Open the .speca file
    except:
       print ''
-      print '"'+filename+'" not found!  Aborting!'
+      print 'File not found!  Aborting!'
       signoff()
       exit()
    data=cPickle.load(readfile)                                            # Unpickle the .speca file
