@@ -71,6 +71,10 @@ pan.flncheck(filename,'speca')
 print 'Opening '+str(filename)                                            # Use SpecaLd from pan_lib to load data from file
 loadmatrix,good,rates,phcts,bg,bsz,foures,bgest,flv,cs,mis,obsd=pan.specald(filename)
 flavour=flv
+if flavour=='':
+   qflav=''
+else:
+   qflav=' "'+flavour+'"'
 
 
 #-----Initially normalising data----------------------------------------------------------------------------------------
@@ -137,7 +141,7 @@ fourgr,errgr=lbin(lplres,prt=True)
 print ''
 print 'Preparing spectrogram...'
 
-deftitle='Spectrogram "'+flavour+'"'                                      # Define default title for spectrogram
+deftitle='Spectrogram'+qflav                                              # Define default title for spectrogram
 defzlabl='Frequency x RMS Normalised Power'                               # Define default key label for spectrogram
 
 
@@ -432,7 +436,7 @@ while specopt not in ['quit','exit']:                                     # If t
 
    elif specopt=='leahy':                                                 # Print Leahy constant
 
-      ttl='Leahy-normed Average power density spectrum "'+flavour+'"'
+      ttl='Leahy-normed Average power density spectrum'+qflav
       pl.plot(tfl[2:],lspec[2:])
       pl.xlabel('Frequencyt (Hz)')
       pl.ylabel('Leahy power (Hz^-1)')
@@ -451,7 +455,7 @@ while specopt not in ['quit','exit']:                                     # If t
 
       spec=npsum(fourgrm, axis=1)/sum(good)                               # Sum all spectra in the matrix and divide by the number of good columns
       err=sqrt(npsum( array(errgrm)**2, axis=1)/sum(good))
-      ttl='Average power density spectrum "'+flavour+'"'
+      ttl='Average power density spectrum'+qflav
       pan.slplot(tflm,spec,err,sxlab,sylab,ttl,'spc',typ='log',errors=es) # SLPlot from the pan_lib plots data on standard and log-log axes
       scerr=spec-(err**0.5)
 
@@ -506,7 +510,7 @@ while specopt not in ['quit','exit']:                                     # If t
       pl.plot(td[:-1][ogood],rates[ogood],'ok')
       pl.xlabel('Time (s)')
       pl.ylabel('Flux (photons/s)')
-      pl.title('Lightcurve "'+flavour+'"')
+      pl.title('Lightcurve'+qflav)
       pl.show(block=False)
 
 
@@ -568,6 +572,10 @@ while specopt not in ['quit','exit']:                                     # If t
          nflavour=raw_input('Flavour: ')
          assert nflavour!=''
          flavour=nflavour
+         if flavour=='':
+            qflav=''
+         else:
+            qflav=' "'+flavour+'"'
          print 'Flavour set to "'+flavour+'"'
       except:
          print 'Invalid flavour!  Flavour remains "'+flavour+'"'

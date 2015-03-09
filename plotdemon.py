@@ -82,6 +82,10 @@ y1r=y1r/float(pcus1)                                                      # Norm
 ye1r=ye1r/float(pcus1)
 
 flavour=flv1
+if flavour=='':
+   qflav=''
+else:
+   qflav=' "'+flavour+'"'
 
 if nfiles>1:
    file2=args[2]
@@ -392,7 +396,7 @@ while plotopt not in ['quit','exit']:                                     # If t
       doplot(times,timese,flux,fluxe,ovr=True)
       pl.xlabel('Time (s)')
       pl.ylabel('Flux (counts/s/PCU)')
-      pl.title('Lightcurve "'+flavour+'"')
+      pl.title('Lightcurve'+qflav)
       pl.show(block=False)
       print 'Lightcurve plotted!'
 
@@ -432,7 +436,7 @@ while plotopt not in ['quit','exit']:                                     # If t
             doplot(col[ht],cole[ht],flux,fluxe)                           # Collect colours from col library and plot
             pl.ylabel('Flux (counts/s/PCU)')
             pl.xlabel('('+ch[h1]+'/'+ch[h2]+') colour')
-            pl.title('Hardness Intensity Diagram "'+flavour+'"')
+            pl.title('Hardness Intensity Diagram'+qflav)
             pl.show(block=False)
             print 'File'+str(h1)+'/File'+str(h2)+' HID plotted!'
 
@@ -475,7 +479,7 @@ while plotopt not in ['quit','exit']:                                     # If t
             doplot(times,timese,col[ht],cole[ht],ovr=True)                # Collect colours from col library and plot
             pl.xlabel('Time (s)')
             pl.ylabel('('+ch[h1]+'/'+ch[h2]+') colour')
-            pl.title('Colour over Time Diagram "'+flavour+'"')
+            pl.title('Colour over Time Diagram'+qflav)
             pl.show(block=False)
             print 'File'+str(h1)+'/File'+str(h2)+' Colour over Time Diagram plotted!'
 
@@ -492,7 +496,7 @@ while plotopt not in ['quit','exit']:                                     # If t
          doplot(col[31],cole[31],col[21],cole[21])
          pl.xlabel('('+ch[2]+'/'+ch[1]+') colour')
          pl.ylabel('('+ch[3]+'/'+ch[1]+') colour')
-         pl.title('Colour-Colour Diagram "'+flavour+'"')
+         pl.title('Colour-Colour Diagram'+qflav)
          pl.show(block=False)
          print 'CCD plotted!'
       else:
@@ -514,7 +518,7 @@ while plotopt not in ['quit','exit']:                                     # If t
       doplot(times,timese,flux,fluxe,ovr=True)                            # Always plot the lightcurve
       pl.xlabel('Time (s)')
       pl.ylabel('Flux (counts/s/PCU)')
-      pl.title('Lightcurve "'+flavour+'"')
+      pl.title('Lightcurve'+qflav)
 
       if nfiles>1:                                                        # If 2+ files given, plot 2+ file data products
 
@@ -524,7 +528,7 @@ while plotopt not in ['quit','exit']:                                     # If t
          doplot(col[21],cole[21],flux,fluxe)                              # Plot Soft HID
          pl.ylabel('Flux (counts/s/PCU)')
          pl.xlabel('('+ch[2]+'/'+ch[1]+') colour')
-         pl.title('Soft HID "'+flavour+'"')
+         pl.title('Soft HID'+qflav)
 
       if nfiles==3:                                                       # If 3 files given, plot 3 file data products
 
@@ -535,13 +539,13 @@ while plotopt not in ['quit','exit']:                                     # If t
          doplot(col[31],cole[31],flux,fluxe)                              # Plot Hard HID
          pl.ylabel('Flux (counts/s/PCU)')
          pl.xlabel('('+ch[3]+'/'+ch[1]+') colour')
-         pl.title('Hard HID "'+flavour+'"')
+         pl.title('Hard HID'+qflav)
 
          pl.subplot(rowexp,colexp,4)                                      # Create subplot in the fourth slot
          doplot(col[31],cole[31],col[21],cole[21])                        # Plot CCD
          pl.ylabel('('+ch[2]+'/'+ch[1]+') colour')
          pl.xlabel('('+ch[3]+'/'+ch[1]+') colour')
-         pl.title('CCD"'+flavour+'"')
+         pl.title('CCD'+qflav)
 
       print ''
       pl.show(block=False)
@@ -557,19 +561,19 @@ while plotopt not in ['quit','exit']:                                     # If t
       doplot(times,timese,y1[gmask],ye1[gmask],ovr=True)                  # Plot the lowest band
       pl.xlabel('Time (s)')
       pl.ylabel('Flux (counts/s/PCU)')
-      pl.title(ch[1]+' Lightcurve "'+flavour+'"')
+      pl.title(ch[1]+' Lightcurve'+qflav)
       if nfiles>1:
          pl.subplot(nfiles,1,2)
          doplot(times,timese,y2[gmask],ye2[gmask],ovr=True)               # Plot the second band
          pl.xlabel('Time (s)')
          pl.ylabel('Flux (counts/s/PCU)')
-         pl.title(ch[2]+' Lightcurve "'+flavour+'"')
+         pl.title(ch[2]+' Lightcurve'+qflav)
       if nfiles>2:
          pl.subplot(nfiles,1,3)
          doplot(times,timese,y3[gmask],ye3[gmask],ovr=True)               # Plot the third band
          pl.xlabel('Time (s)')
          pl.ylabel('Flux (counts/s/PCU)')
-         pl.title(ch[3]+' Lightcurve "'+flavour+'"')
+         pl.title(ch[3]+' Lightcurve'+qflav)
       pl.show(block=False)
       print 'Banded lightcurves plotted!'
 
@@ -592,7 +596,7 @@ while plotopt not in ['quit','exit']:                                     # If t
       pl.legend(leg)                                                      # Create key on plot
       pl.xlabel('Time (s)')
       pl.ylabel('Flux (counts/s/PCU)')
-      pl.title('Lightcurve "'+flavour+'"')
+      pl.title('Lightcurve'+qflav)
       pl.show(block=False)
       print 'Banded lightcurves plotted!'
 
@@ -729,6 +733,10 @@ while plotopt not in ['quit','exit']:                                     # If t
          nflavour=raw_input('Flavour: ')
          assert nflavour!=''
          flavour=nflavour
+         if flavour=='':
+            qflav=''
+         else:
+            qflav=' "'+flavour+'"'
          print 'Flavour set to "'+flavour+'"'
       except:
          print 'Invalid flavour!  Flavour remains "'+flavour+'"'
