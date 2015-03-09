@@ -467,12 +467,15 @@ def lh2rms(leahy,rate,bg,const):
    -J.M.Court, 2015'''
 
    denom=(rate-bg)**2
-   if denom==0: denom=1
-   rms= (leahy-const)*(rate)/denom
+   if denom==0:
+      mult=0.0
+   else:
+      mult=1.0/denom
+   rms= (leahy-const)*(rate)*mult
    return rms
 
 
-#-----LHConst----------------------------------------------------------------------------------------------------------
+#-----LhConst----------------------------------------------------------------------------------------------------------
 
 def lhconst(data):
 
