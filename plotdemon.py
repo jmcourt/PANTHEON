@@ -81,6 +81,20 @@ x1r,y1r,ye1r,tst1,bsz1,gti,pcus1,bg,flv1,ch[1],mis1,obsd1=pan.plotdld(file1)
 y1r=y1r/float(pcus1)                                                      # Normalising flux by dividing by the number of active PCUs and the binsize
 ye1r=ye1r/float(pcus1)
 
+xit1=x1r[-1]
+if nfiles>1:
+   xit2=x2r[-1]
+else:
+   xit2=None
+if nfiles==3:
+   xit3=x3r[-1]
+else:
+   xit3=None
+oet=max(xit1,xit2,xit3)                                                   # Fetch the observation end time
+
+mint=0                                                                    # Save original start and endpoints for use in clipping
+maxt=oet
+
 flavour=flv1
 if flavour=='':
    qflav=''
@@ -168,8 +182,9 @@ print ''
 
 #-----Fetch Colours----------------------------------------------------------------------------------------------------
 
-def colorget():                                                           # Define colorget to easily re-obtain colours if base data is modified
-   print 'Analysing Data...'
+def colorget(verbose=True):                                               # Define colorget to easily re-obtain colours if base data is modified
+   if verbose:
+      print 'Analysing Data...'
    times=x1[gmask]
    timese=None
    col={}
@@ -235,6 +250,7 @@ def give_inst():                                                          # Defi
    print ''
    print '1+ DATASET PLOTS:'
    print '* "lc" to plot a simple graph of flux over time'
+   print '* "animate" to create an animation of the lightcurve as the binning is increased'
    if nfiles>1:                                                           # Only display 2-data-set instructions if 2+ datasets given
       print ''
       print '2+ DATASET PLOTS:'
@@ -400,6 +416,104 @@ while plotopt not in ['quit','exit']:                                     # If t
       pl.show(block=False)
       print 'Lightcurve plotted!'
 
+
+   #-----'animate' Option----------------------------------------------------------------------------------------------
+
+   elif plotopt=='animate':
+
+      animsloc=raw_input('Folder to save images: ')
+      print ''
+
+      if os.path.exists(animsloc):                                        # Create the folder
+         print 'Folder "'+animsloc+'" already exists...'
+      else:
+         print 'Creating folder "'+animsloc+'"...'
+         os.makedirs(animsloc)
+
+      here=os.getcwd()
+
+      os.chdir(animsloc)
+
+      animbin=0.0025                                                      # Start with an arbitrarily low binsize
+
+      while animbin<max(bsz1,bsz2,bsz3,minbin):                           # Find lowest allowable binsize of the form 0.01*2^N
+         animbin=animbin*2
+
+      anstep=1                                                            # Track the number of steps taken
+
+      dst=times[0]
+      det=times[-1]
+
+      while animbin<(det-dst)/4.0:                                        # Set the maximum binsize at one quarter of the observation length
+
+         print "Creating",str(animbin)+"s binned lightcurve"
+
+         x1,y1,ye1=pan.binify(x1r,y1r,ye1r,animbin)                       # Bin File 1 using 'binify' in pan_lib
+         if nfiles>1:
+            x2,y2,ye2=pan.binify(x2r,y2r,ye2r,animbin)                    # Bin File 2 using 'binify' in pan_lib
+            if nfiles>2:
+               x3,y3,ye3=pan.binify(x3r,y3r,ye3r,animbin)                 # Bin File 3 using 'binify' in pan_lib
+
+         mina,maxa=pan.srinr(x1,binning,'time',minv=dst,maxv=det)         # Clip each individual lightcurve
+
+         x1=x1[mina:maxa]                                                 # Clip file 1
+         y1=y1[mina:maxa]
+         ye1=ye1[mina:maxa]
+
+         if nfiles>1:
+
+            x2=x2[mina:maxa]                                              # Clip file 2
+            y2=y2[mina:maxa]
+            ye2=ye2[mina:maxa]
+
+         if nfiles==3:
+
+            x3=x3[mint:maxt]                                              # Clip file 3
+            y3=y3[mint:maxt]
+            ye3=ye3[mint:maxt]
+
+         gmask=pan.gtimask(x1,gti)                                        # Re-establish gmask
+
+         times,timese,flux,fluxe,col,cole=colorget(verbose=False)
+
+         if anstep==1:
+            if es:
+              merr=max(fluxe)
+            else:
+              merr=0
+            maxany=max(flux)+merr                                         # Calculate the range of all plots based on the range of the first plot
+            minany=min(flux)-merr
+            if minany<0: minany=0
+
+         pl.figure()
+         doplot(times,timese,flux,fluxe,ovr=True)
+         pl.xlabel('Time (s)')
+         pl.ylabel('Flux (counts/s/PCU)')
+         pl.title('Lightcurve ('+str(animbin)+'s binning)')
+         pl.xlim(dst,det)
+         pl.ylim(minany,maxany)
+         pl.savefig(str("%04d" % anstep)+'.png')                          # Save the figure with leading zeroes to preserve order when int convereted to string
+         pl.close()
+
+         anstep+=1                                                        # Increment the step tracker
+         animbin=animbin*2                                                # Double the binsize
+
+      print 'Cleaning up...'
+
+      os.system ("convert -delay 10 -loop 0 *.png animation.gif")         # Use the bash command 'convert' to create the animated gif
+
+      x1,y1,ye1=pan.binify(x1r,y1r,ye1r,binning)                          # Reset binning of File 1 using 'binify' in pan_lib
+      if nfiles>1:
+         x2,y2,ye2=pan.binify(x2r,y2r,ye2r,binning)                       # Reset binning of File 2 using 'binify' in pan_lib
+         if nfiles>2:
+            x3,y3,ye3=pan.binify(x3r,y3r,ye3r,binning)                    # Reset binning File 3 using 'binify' in pan_lib
+
+      gmask=pan.gtimask(x1,gti)                                           # Re-establish gmask
+      times,timese,flux,fluxe,col,cole=colorget(verbose=False)            # Re-get colours
+
+      print ''
+      print "Animation saved to",animsloc+'/animation.gif!'
+      os.chdir(here)        
 
    #-----'hidxy' Option------------------------------------------------------------------------------------------------
 
@@ -642,19 +756,6 @@ while plotopt not in ['quit','exit']:                                     # If t
 
    elif plotopt=='info':
 
-      xit1=x1r[-1]
-
-      if nfiles>1:
-         xit2=x2r[-1]
-      else:
-         xit2=None
-
-      if nfiles==3:
-         xit3=x3r[-1]
-      else:
-         xit3=None
-
-      oet=max(xit1,xit2,xit3)                                             # Fetch the observation end time
       dst=times[0]
       det=times[-1]
 

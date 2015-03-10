@@ -1108,7 +1108,7 @@ def specasv(filename,spcdata,good,rates,phcts,npcus,binsize,bgest,foures,flavour
 
 #-----SRinR------------------------------------------------------------------------------------------------------------
 
-def srinr(t,binning,domain):
+def srinr(t,binning,domain,minv=None,maxv=None):
 
    '''Subrange in Range: Subrange Creator
 
@@ -1135,13 +1135,19 @@ def srinr(t,binning,domain):
    old_mx=len(t)
 
    try:
-      new_mn=float(raw_input('Minimum '+domain+': '))                     # Fetch new min value from user
+      if minv==None:
+         new_mn=float(raw_input('Minimum '+domain+': '))                  # Fetch new min value from user
+      else:
+         new_mn=minv
       new_mn=len(t[t<new_mn]) 
    except:
       new_mn=old_mn                                                       # Treat garbage input as 'no change'
 
    try:
-      new_mx=float(raw_input('Maximum '+domain+': '))                     # Fetch new max value from user
+      if maxv==None:
+         new_mx=float(raw_input('Maximum '+domain+': '))                  # Fetch new max value from user
+      else:
+         new_mx=maxv
       new_mx=len(t[t<=new_mx])-1      
    except:
       new_mx=old_mx                                                       # Treat garbage input as 'no change'
