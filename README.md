@@ -85,6 +85,7 @@ The lightcurve and colour analysis software for hardness and intensity plotting!
 * Opens up to 3 .plotd files and allows creation of a large number of plots comparing them.
 * Allows plotting and manipulation of lightcurves, colour-colour diagrams and hardness-intensity diagrams.
 * Lets users plot lightcurves of multiple different energy bands alongside each other to see how they correlate.
+* Creates animations of how lightcurves change as the binning is increased.
 * Allows folding of data over a period of the user's selection (_Beta_).
 
 #####Arguments:
