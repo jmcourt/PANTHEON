@@ -122,8 +122,8 @@ def lbin(lplres,prt=False):                                               # Defi
    fourgr=[]
    for i in range(numstep):
       tsfdata=loadmatrix[i]                                               # Load a row of data
+      errs=pan.lh2rms(tsfdata,rates[i],bg[i],0)                           # Errors of a Leahy spectrum = the Leahy noise constant
       tsfdata=pan.lh2rms(tsfdata,rates[i],bg[i],const)                    # Convert to RMS-normalised data using the LH2RMS function from pan_lib
-      errs=pan.lh2rms(zeros(len(tsfdata))+const,rates[i],bg[i],0)         # Errors of a Leahy spectrum = the Leahy noise constant
       tf,fours,errs=pan.lbinify(tfl[1:],tsfdata[1:]*tfl[1:],errs[1:]*tfl[1:],lplres) # Logarithmically bin the data using lbinify from pan_lib
       fourgr.append(fours)                                                # Populate the data matrix
       errgr.append(abs(errs))                                             # Populate the error matrix
@@ -454,7 +454,7 @@ while specopt not in ['quit','exit']:                                     # If t
       print "Fetching time-averaged power spectrum..."
 
       spec=npsum(fourgrm, axis=1)/sum(good)                               # Sum all spectra in the matrix and divide by the number of good columns
-      err=sqrt(npsum( array(errgrm)**2, axis=1)/sum(good))
+      err=sqrt(npsum( array(errgrm)**2, axis=1))/sum(good)
       ttl='Average power density spectrum'+qflav
       pan.slplot(tflm,spec,err,sxlab,sylab,ttl,'spc',typ='log',errors=es) # SLPlot from the pan_lib plots data on standard and log-log axes
       scerr=spec-(err**0.5)
