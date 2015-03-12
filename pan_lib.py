@@ -909,9 +909,9 @@ def slplot(x,y,ye,xlabel,ylabel,title,figid="",typ='both',errors=True):
       pl.ylabel(ylabel)
       pl.title('Log '+str(title))
       if errors:
-         pl.errorbar(x,abs(y),ye)                                         # Plot data
+         pl.errorbar(x,abs(y),ye,fmt='k')                                 # Plot data
       else:
-         pl.plot(x,abs(y))                                                # Plot log-log data
+         pl.plot(x,abs(y),'k')                                            # Plot log-log data
       ax.set_xscale('log')
       ax.set_yscale('log')
       pl.grid(True,which="both")
