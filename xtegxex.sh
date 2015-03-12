@@ -14,7 +14,7 @@
 # and saved as EVENT_gx#.fits using make_se
 #
 # WARNING!  If run in a directory containing a subdirectory named 'gx0', the contents of that 
-# subdirectory WILL BE REMOVED.
+# subdirectory will be removed.
 #
 
 

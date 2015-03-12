@@ -13,7 +13,7 @@
 # data, and copies it into a subdirectory named 'event0' as EVENT_ev#.fits
 #
 # WARNING!  If run in a directory containing a subdirectory named 'event0', the contents of that 
-# subdirectory WILL BE REMOVED.
+# subdirectory will be removed.
 #
 
 
