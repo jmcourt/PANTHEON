@@ -117,35 +117,56 @@ del null
 
 print ''
 
+def lbin(lplres,norm='nupnu',prt=False):                                  # Defining a log-binning function that just depends on bin resolution and normalisation
 
+   if True:                                                               # Instructions with a list of possible normalisations
+      if norm not in ['rms','nupnu','leahy']:
+         print 'Unknown normalisation selected!'
+         print ''
+         print 'Available normalisations are:'
+         print '* "leahy" for Leahy-normalised power'
+         print '* "rms" for RMS-normalised power'
+         print '* "nupnu" for RMS-normalised power multiplied by frequency'
+         print ''
+         print 'Using "leahy" normalisation:'
+         norm='leahy'
+      else:
+         print 'Using "'+norm+'" normalisation:'
 
-def lbin(lplres,prt=False):                                               # Defining a log-binning function that just depends on bin resolution
    errgr=[]                                                               # Set up matrix of errors
    fourgr=[]
    for i in range(numstep):
       tsfdata=loadmatrix[i]                                               # Load a row of data
-      errs=pan.lh2rms(tsfdata,rates[i],bg[i],0)                           # Errors of a Leahy spectrum = the Leahy noise constant
-      tsfdata=pan.lh2rms(tsfdata,rates[i],bg[i],const)                    # Convert to RMS-normalised data using the LH2RMS function from pan_lib
-      tf,fours,errs=pan.lbinify(tfl[1:],tsfdata[1:]*tfl[1:],errs[1:]*tfl[1:],lplres) # Logarithmically bin the data using lbinify from pan_lib
+      errs=pan.lh2rms(tsfdata,rates[i],bg[i],0)                           # Errors of a Leahy spectrum = the Leahy spectrum
+
+      if norm in ['rms','nupnu']:
+         if norm=='nupnu':
+            sconst=const                                                  # For nuP(nu) normalisation, the Leahy constant will need subtracting
+         else:
+            sconst=0                                                      # In RMS norm, it can stay
+         tsfdata=pan.lh2rms(tsfdata,rates[i],bg[i],sconst)                # Convert to RMS-normalised data using the LH2RMS function from pan_lib
+         if norm=='nupnu':
+            tsfdata=tsfdata*tfl                                           # Multiply by frequency if nupnu normalisation requested
+            errs=errs*tfl
+      tf,fours,errs=pan.lbinify(tfl[1:],tsfdata[1:],errs[1:],lplres)      # Logarithmically bin the data using lbinify from pan_lib
       fourgr.append(fours)                                                # Populate the data matrix
       errgr.append(abs(errs))                                             # Populate the error matrix
 
       prog=i+1
-      if prt==True and ((prog % 5)==0 or prog==numstep):
+      if prt and ((prog % 5)==0 or prog==numstep):
          print str(prog)+'/'+str(numstep)+' series re-binned...'          # Display progress every 5 series
 
    fourgr=transpose(fourgr)                                               # Flip the matrices (makes them easier to plot the correct way round in spectrogram)
    errgr=transpose(errgr)
-   return fourgr,errgr
+   return fourgr,errgr,norm
 
-fourgr,errgr=lbin(lplres,prt=True)  
+fourgr,errgr,knorm=lbin(lplres,prt=True)  
 
 print ''
 print 'Preparing spectrogram...'
 
 deftitle='Spectrogram'+qflav                                              # Define default title for spectrogram
 defzlabl='Frequency x RMS Normalised Power'                               # Define default key label for spectrogram
-
 
 fourgrm=fourgr                                                            # Storing a copy of the matrix in memory so it can be reset
 errgrm=errgr
@@ -156,14 +177,13 @@ specopt=''                                                                # Forc
 speclog=False                                                             # Indicate that the spectrogram is not initially logarithmic
 stitle=deftitle                                                           # Give an initial title
 rtlabl=defzlabl                                                           # Give an initial key label
-szlabl=defzlabl                                                           # Give an initial key label, storing second copy
+
 tmdbin=foures                                                             # Initial time binning
 frqbin=(tf[-1]-tf[0])/(len(tf)-1)                                         # Initial freq binning
 tdgd=tdg                                                                  # Saving default grid [Time Domain Grid- Default]
 tfgd=tfg
 tdlm=td                                                                   # Saving 1D arrays to re-form grids [time-domain linear, modifiable]
 tflm=tf
-pwrsub=0                                                                  # Indicate that initially 0 has been subtracted from all power values
 ogood=good                                                                # Save copy of the 'good' list
 
 fudge=npmin(abs(fourgr[nonzero(fourgr)]))                                 # Obtain smallest nonzero value in array to add on when using logarithm to prevent log(0)
@@ -195,19 +215,21 @@ def spectrogram(td,tfc,fourgr,zlabel=defzlabl,title=deftitle):            # Defi
 
 sxlab='Frequency (Hz)'
 sylab='Frequency x RMS Normalised Power'
+szlab=defzlabl                                                            # Give an initial key label, storing second copy
 
 def give_inst():                                                          # Define printing this list of instructions as a function
    print 'COMMANDS: Enter a command to manipulate data.'
    print ''
    print 'DATA:'
-   print '* "rebin" to reset the data and load it with a different binning.'
+   print '* "rebin" to reset the data and load it with a different normalisation and binning.'
    print '* "clip" to clip the range of data.'
    print '* "reset" to reset data.'
    print '* "leahy" to plot Leahy-normalised data and print the Leahy Constant.'
    print ''
    print 'SPECTROGRAM:'
    print '* "sgram" to plot the spectrogram currently being worked on.'
-   print '* "sub" to subtract a constant from all power readings, forcing any negative values to zero.'
+   print '* "floor" to set a minimum value for the spectrogram'+"'"+'s z-axis colour key.'
+   print '* "ceil" to set a maximum value for the spectrogram'+"'"+'s z-axis colour key.'
    print '* "log" to toggle logarithmic spectrogram plotting.'
    print ''
    print 'POWER SPECTRA:'
@@ -229,6 +251,8 @@ give_inst()                                                               # Prin
 print ''
 print ' --------------------'
 
+floor=min(fourgrm)
+ceil=min(fourgrm)
 
 #-----Entering Interactive Mode----------------------------------------------------------------------------------------
 
@@ -258,7 +282,7 @@ while specopt not in ['quit','exit']:                                     # If t
 
       if proce==True:                                                     # If all is ok...
          print 'Plotting...'
-         spectrogram(tdgd,tfgd,fourgrm,szlabl,stitle)                     # Plot spectrogram 
+         spectrogram(tdgd,tfgd,fourgrm,szlab,stitle)                      # Plot spectrogram 
 
 
    #-----'rebin' Option------------------------------------------------------------------------------------------------
@@ -269,9 +293,6 @@ while specopt not in ['quit','exit']:                                     # If t
 
       speclog=False                                                       # Indicate that the spectrogram is not logarithmic
       stitle=deftitle                                                     # Restore initial title
-      rtlabl=defzlabl                                                     # Restore initial key label
-      szlabl=defzlabl                                                     # Restore initial key label, storing second copy
-      pwrsub=0                                                            # Reset counter of subtracted power
       tmdbin=foures                                                       # Initial time binning
       frqbin=(tf[-1]-tf[1])/(len(tf)-2)                                   # Initial freq binning
       fourgrm=fourgr                                                      # Reload original, unmodified data
@@ -284,6 +305,8 @@ while specopt not in ['quit','exit']:                                     # If t
 
       print 'Data now reset!'
       print ''
+
+      knorm=raw_input('Input normalisation [leahy, rms, nupnu]: ')
 
       try:
          tbinmult=int(raw_input('Input time-domain binning factor: '))
@@ -305,13 +328,11 @@ while specopt not in ['quit','exit']:                                     # If t
          print 'Invalid frequency binning!'
 
       print ''
-      print 'Re-binning...' 
+      print 'Re-binning...'
 
-      if lplres==newfbin:                                                 # Cancel binning if new bin is not greater than old bin
-
-         tflm,null,null=pan.lbinify(tfl[1:],nulldat,nulldat,lplres)       # Fetch new array of bins to be output after lbinning
-         del null
-         fourgrm,errgrm=lbin(lplres,prt=True)                             # Re log-bin data
+      tflm,null,null=pan.lbinify(tfl[1:],nulldat,nulldat,lplres)          # Fetch new array of bins to be output after lbinning
+      del null
+      fourgrm,errgrm,knorm=lbin(lplres,prt=True,norm=knorm)               # Re log-bin data
 
       if tbinmult!=1:                                                     # Cancel binning if new bin is not greater than old bin
 
@@ -321,30 +342,47 @@ while specopt not in ['quit','exit']:                                     # If t
 
       print ''
       print 'Data rebinned by '+str(tmdbin)+'s, [10^'+str(lplres)+'n]Hz.'
-      print str(int(sum(good)))+'/'+str(len(good))+' power spectra are good'      
+      print str(int(sum(good)))+'/'+str(len(good))+' power spectra are good'
 
+      if knorm=='leahy':
+         sylab='Leahy-Normalised Power (Hz^-1)'
+      elif knorm=='rms':
+         sylab='RMS Normalised Power (Hz^-1)'
+      else:
+         sylab='Frequency x RMS Normalised Power'
 
-   #-----'sub' Option--------------------------------------------------------------------------------------------------
+      defzlabl=sylab                                                      # Restore root z label for spectrogram              
+      rtlabl=defzlabl                                                     # Restore initial key label
+      szlab=defzlabl                                                      # Restore initial key label, storing second copy
 
-   # 'Subtract'
+   #-----'floor' Option------------------------------------------------------------------------------------------------
 
-   elif specopt=='sub':                                                   # Subtracting constant from data:
+   # 'Floor'
 
-      const=raw_input('Input constant to subtract: ')                     # Ask user to input constant
+   elif specopt=='floor':                                                 # Setting floor of spectrogram colour scale:
+
+      floor=raw_input('Input spectrogram colour floor: ')                 # Ask user to input floor
       try:
-         const=float(const)                                               # Check constant is a number
-         print 'Subtracting '+str(const)+' from all power measurements...'
-         fourgrm=fourgrm-const                                            # Subtract constant from every element of every power spectrum
-         fourgrm=0.5*(fourgrm+abs(fourgrm))                               # Force every negative value to zero
-         pwrsub+=const                                                    # Add constant to the cumulative subtracted power counter
-         print 'Cumulative total of '+str(pwrsub)+' subtracted.'
-
-         if pwrsub<0: sign='+'                                            # Allow for subtracting a negative constant (could be useful in logged mode)
-         else: sign='-'
-         szlabl=rtlabl+' ('+sign+str(abs(pwrsub))+')'                     # Add indication of subtracted data to key label
+         floor=float(floor)                                               # Check floor is a number
          
       except:
-         print 'Invalid constant!  No constant subtracted.'
+         floor=min(fourgrm)
+         print 'Invalid floor!'
+
+
+   #-----'ceil' Option-------------------------------------------------------------------------------------------------
+
+   # 'Floor'
+
+   elif specopt=='ceil':                                                  # Setting ceiling of spectrogram colour scale:
+
+      ceil=raw_input('Input spectrogram colour ceiling: ')                # Ask user to input floor
+      try:
+         ceil=float(ceil)                                                 # Check ceil is a number
+         
+      except:
+         ceil=max(fourgrm)
+         print 'Invalid floor!'
 
 
    #-----'log' Option--------------------------------------------------------------------------------------------------
@@ -355,33 +393,26 @@ while specopt not in ['quit','exit']:                                     # If t
 
       if speclog:                                                         # If the spectrogram was already logged, undo this with exp
 
-         if pwrsub==0:                                                    # Only attempt to undo log if no constant was subtracted while logged
+         print 'Exponentiating spectrogram...'
 
-            print 'Exponentiating spectrogram...'
+         stitle=deftitle                                                  # Reset title to default
+         rtlabl=rtlabl[4:]                                                # Remove 'log ' from the start of both saved z-labels
+         szlab=szlab[4:]
+         fourgrm=10**(fourgrm)-fudge                                      # Exponentiate every element of every power spectrum
+         speclog=False                                                    # Indicate that spectrogram is no longer logged
+         print 'Done!'
 
-            stitle=deftitle                                               # Reset title to default
-            rtlabl=rtlabl[4:]                                             # Remove 'log ' from the start of both saved z-labels
-            szlabl=szlabl[4:]
-            fourgrm=10**(fourgrm)-fudge                                   # Exponentiate every element of every power spectrum
-            speclog=False                                                 # Indicate that spectrogram is no longer logged
-            print 'Done!'
-
-         else:
-            print 'Cannot undo log of subtracted data!'
-
-      elif pwrsub==0:                                                     # If spectrogram is not yet logged, log it unless constant has been subtracted
+      else:
 
          print 'Taking logarithm of spectrogram...'
 
          stitle='Log '+deftitle                                           # Add 'log ' to start of titles and labels
          rtlabl='Log '+rtlabl
-         szlabl='Log '+szlabl
+         szlab='Log '+szlab
          fourgrm=log10(abs(fourgrm)+fudge)                                # Take the log of every element of every power spectrum
          speclog=True                                                     # Indicate that spectrum is logged
          print 'Done!'
 
-      else:
-         print 'Cannot take log of subtracted data!'
 
 
    #-----'clip' Option-------------------------------------------------------------------------------------------------
@@ -419,8 +450,7 @@ while specopt not in ['quit','exit']:                                     # If t
       speclog=False                                                       # Indicate that the spectrogram is not logarithmic
       stitle=deftitle                                                     # Restore initial title
       rtlabl=defzlabl                                                     # Restore initial key label
-      szlabl=defzlabl                                                     # Restore initial key label, storing second copy
-      pwrsub=0                                                            # Reset counter of subtracted power
+      szlab=defzlabl                                                      # Restore initial key label, storing second copy
       tmdbin=foures                                                       # Initial time binning
       frqbin=(tf[-1]-tf[1])/(len(tf)-2)                                   # Initial freq binning
       fourgrm=fourgr                                                      # Reload original, unmodified data
@@ -565,6 +595,10 @@ while specopt not in ['quit','exit']:                                     # If t
       if slide!=foures:
          print ' Separation     = ',str(slide)+'s'
       print ''
+      print 'Normalisation:'
+      print ' Normalisation  = ',knorm
+      print ' Leahy constant = ',const
+      print ''
       print 'Other Info:'
       print ' Main Flavour   = ',flavour
       print ' Obs length     = ',str(foures*numstep)+'s'
@@ -576,7 +610,6 @@ while specopt not in ['quit','exit']:                                     # If t
       print ' Total photons  = ',phcts
       print ' Background     = ',str(bgest)+'cts/s/PCU'
       print ' Errorbars      = ',es
-      print ' Leahy constant = ',const
 
 
    #-----'reflav' Option-----------------------------------------------------------------------------------------------
