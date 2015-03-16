@@ -1022,6 +1022,8 @@ def specald(filename):
    cs=data['chan']
    mission=data['miss']
    obsdata=data['obsd']
+   wtype=data['wndw']
+   slide=data['slid']
 
    readfile.close()
 
@@ -1034,13 +1036,13 @@ def specald(filename):
 
    bg=n_pcus*bgest
 
-   return spcdata,good,rates,phcts,bg,binsize,foures,bgest,flavour,cs,mission,obsdata
+   return spcdata,good,rates,phcts,bg,binsize,foures,bgest,flavour,cs,mission,obsdata,wtype,slide
 
 
 #-----SpecaSv----------------------------------------------------------------------------------------------------------
 
 @jit
-def specasv(filename,spcdata,good,rates,phcts,npcus,binsize,bgest,foures,flavour,cs,mission,obsdata):
+def specasv(filename,spcdata,good,rates,phcts,npcus,binsize,bgest,foures,flavour,cs,mission,obsdata,wtype,slide):
 
    '''.Speca Save
 
@@ -1096,6 +1098,8 @@ def specasv(filename,spcdata,good,rates,phcts,npcus,binsize,bgest,foures,flavour
    savedata['chan']=cs
    savedata['miss']=mission
    savedata['obsd']=obsdata
+   savedata['wndw']=wtype
+   savedata['slid']=slide
 
    filename=uniqfname(filename,'speca')                                   # Get the next available name of form filename(x).speca
    wfile = open(filename, 'wb')                                           # Open file to write to

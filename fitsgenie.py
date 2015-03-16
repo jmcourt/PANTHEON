@@ -181,13 +181,23 @@ if len(args)>5:
    print 'Fourier Res.=',foures
 else:
    try:
-      foures=float(raw_input("Length of time per Fourier spectrum (s): "))
+      foures=float(raw_input("Length of time per Fourier Window (s): "))
    except:
       foures=128
       print "Using 128s per spectrum..."
 
 if len(args)>6:
-   bgest=float(args[6])                                                   # Collect background estimate from inputs if given, else ask user, else use 30c/s
+   slide=float(args[6])                                                   # Collect Fourier resolution from inputs if given, else ask user, else use 128s
+   print 'Fourier Sep.=',slide
+else:
+   try:
+      slide=float(raw_input("Separation of Fourier Windows (s): "))
+   except:
+      slide=foures
+      print "Using "+str(slide)+"s per spectrum..."
+
+if len(args)>7:
+   bgest=float(args[7])                                                   # Collect background estimate from inputs if given, else ask user, else use 30c/s
    print 'Background  =',bgest
 else:
    try:
@@ -197,13 +207,15 @@ else:
       print "Using 30c/s background..."
    print ''
 
-if len(args)>7:
-   flavour=args[7]                                                        # Collect flavour if given, else flavourless
+if len(args)>8:
+   flavour=args[8]                                                        # Collect flavour if given, else flavourless
    print 'Flavour     =',flavour
 else:
    flavour=''
 
 print ''
+
+wtype='Boxcar'                                                            # Setting all windows to BoxCar; will make transition to SpecAngel 4.0 smoother if this takes a value
 
 #-----Masking data---------------------------------------------------------------------------------------
 
@@ -256,12 +268,21 @@ print 'PlotDemon binsize rounded to 2^'+str(n+int(log(ptdbinfac,2)))+'s ('+str(b
 if foures>max(times):
    foures=128
 
+if slide>max(times):
+   slide=foures
+
+slidelock=slide==foures                                                   # If foures=slide, lock them together
+
 n=0                                                                       # Rounding foures to the nearest (greater) power of 2
 while (2**n)<foures:
    n+=1
 foures=2**n
 
-print 'Fourier timeframe rounded to 2^'+str(n)+'s ('+str(foures)+'s)!'
+if slidelock:
+   slide=foures
+
+print 'Fourier window length rounded to 2^'+str(n)+'s ('+str(foures)+'s)!'
+print 'Fourier window separation rounded to',str(slide)+'s!'
 
 print ''
 
@@ -276,7 +297,11 @@ for j in range(len(gti)):
 
 ndat=int(max(times)/bsz)
 datres=int(foures/bsz)                                                    # Work out how many data points corresponds to the user given time interval 'foures'
-numstep=(ndat/datres)                                                     # Calculate how many intervals of 'datres' can be divided into the data length
+stpres=int(slide/bsz)                                                     # Work out how many data points corresponds to the user given time separation 'slide'
+numstep=(ndat/stpres)                                                     # Calculate how many intervals of 'datres' can be divided into the data length
+
+while ((numstep-1)*slide)+foures>max(times):
+   numstep-=1                                                             # Awful, lazy way to make sure the final bin doesn't exceed the data time limit
 
 print 'Analysing data...'
 print ''
@@ -298,13 +323,13 @@ fullerrs=[]
 tcounts=0                                                                 # Initiate photon counter
 
 for step in range(numstep):                                               ## For every [foures]s interval in the data:
-   stpoint=step*foures                                                         #  Calculate the startpoint of the interval
+   stpoint=step*slide                                                          #  Calculate the startpoint of the interval
    edpoint=stpoint+foures                                                      #  Calculate the endpoint of the interval
 
    in_gti=False                                                                #  Assume the subrange is not in the GTI
 
    for j in range(len(gti)):
-      if gti[j][0]<=step*foures<(step+1)*foures<=gti[j][1]: in_gti=True        #  Change in_gti flag if this range is wholly within one GTI
+      if gti[j][0]<=stpoint<edpoint<=gti[j][1]: in_gti=True                    #  Change in_gti flag if this range is wholly within one GTI
 
    mask=times>=stpoint
    datrow=times[mask]                                                          #  Take all photons in the event data which occurred after the start point
@@ -313,14 +338,14 @@ for step in range(numstep):                                               ## For
    datrow=datrow[mask]                                                         #  Remove all photons which occurred after the end point
    wrdrow=wrdrow[mask]
 
-   fc,null=histogram(datrow,tc+step*foures)                                    #  Coarsely bin this subrange of event data
+   fc,null=histogram(datrow,tc+stpoint)                                        #  Coarsely bin this subrange of event data
    del null
    fullhist=fullhist+list(fc)
    fullerrs=fullerrs+list(sqrt(array(fc)))
 
    if in_gti:
 
-      f,txis=histogram(datrow,t+step*foures)                                   #  Bin well this subrange of event data
+      f,txis=histogram(datrow,t+stpoint)                                       #  Bin well this subrange of event data
 
       pcus=inst.getpcu(wrdrow,event[1].header['DATAMODE'])                     #  Count active PCUs by assuming any that recorded 0 events in the time period were inactive
       npcus.append(pcus)
@@ -370,9 +395,13 @@ if filext!=filename:
 
 filename=filename+'_'+cs
 
-pfilename=pan.plotdsv(filename,ta,fullhist,fullerrs,tstart,bsz*ptdbinfac,gti,max(npcus),bgest,flavour,cs,mission,obsdata)
-print "PlotDemon file saved to "+pfilename
-sfilename=pan.specasv(filename,fourgrlin,good,rates,tcounts,npcus,bsz,bgest,foures,flavour,cs,mission,obsdata)
+if slidelock:
+   pfilename=pan.plotdsv(filename,ta,fullhist,fullerrs,tstart,bsz*ptdbinfac,gti,max(npcus),bgest,flavour,cs,mission,obsdata)
+   print "PlotDemon file saved to "+pfilename
+else:
+   print "PlotDemon file not saved."
+
+sfilename=pan.specasv(filename,fourgrlin,good,rates,tcounts,npcus,bsz,bgest,foures,flavour,cs,mission,obsdata,wtype,slide)
 print "SpecAngel file saved to "+sfilename
 
 

@@ -69,7 +69,7 @@ pan.flncheck(filename,'speca')
 #-----Extracting data from file-----------------------------------------------------------------------------------------
 
 print 'Opening '+str(filename)                                            # Use SpecaLd from pan_lib to load data from file
-loadmatrix,good,rates,phcts,bg,bsz,foures,bgest,flv,cs,mis,obsd=pan.specald(filename)
+loadmatrix,good,rates,phcts,bg,bsz,foures,bgest,flv,cs,mis,obsd,wtype,slide=pan.specald(filename)
 flavour=flv
 if flavour=='':
    qflav=''
@@ -117,6 +117,8 @@ del null
 
 print ''
 
+
+
 def lbin(lplres,prt=False):                                               # Defining a log-binning function that just depends on bin resolution
    errgr=[]                                                               # Set up matrix of errors
    fourgr=[]
@@ -147,7 +149,7 @@ defzlabl='Frequency x RMS Normalised Power'                               # Defi
 
 fourgrm=fourgr                                                            # Storing a copy of the matrix in memory so it can be reset
 errgrm=errgr
-td=arange(0,(numstep+1)*foures,foures)                                    # Creating the time domain as an array
+td=arange(0,(numstep+1)*slide,slide)                                      # Creating the time domain as an array
 tdg, tfg = meshgrid(td, tf)                                               # Making a grid from the time and frequency domains
 
 specopt=''                                                                # Force spectrogram manipulation mode to trigger
@@ -451,6 +453,10 @@ while specopt not in ['quit','exit']:                                     # If t
 
    elif specopt=='aspec':                                                 # Find the time-averaged spectrum
 
+      if slide!=foures:
+         print "Warning!  Data taken with sliding window: data points not independent!"
+         print ''
+
       print "Fetching time-averaged power spectrum..."
 
       spec=npsum(fourgrm, axis=1)/sum(good)                               # Sum all spectra in the matrix and divide by the number of good columns
@@ -467,6 +473,10 @@ while specopt not in ['quit','exit']:                                     # If t
    # 'Get Spec'
 
    elif specopt=='gspec':                                                 # Find the power spectrum at a specific point in time
+
+      if slide!=foures:
+         print "Warning!  Data taken with sliding window: data points not independent!"
+         print ''
 
       print 'Getting a spectrum at a time (since start of observation) of your choice.'
       print ''
@@ -547,6 +557,13 @@ while specopt not in ['quit','exit']:                                     # If t
          print ' Channel        = ',cs
       print ' Resolution     = ',str(bsz)+'s'
       print ' Flavour        = ',flv
+      print ''
+      print 'Windowing:'
+      print ' Shape          = ',wtype
+      print ' Sliding        = ',slide!=foures
+      print ' Length         = ',str(foures)+'s'
+      if slide!=foures:
+         print ' Separation     = ',str(slide)+'s'
       print ''
       print 'Other Info:'
       print ' Main Flavour   = ',flavour
