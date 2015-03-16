@@ -37,7 +37,8 @@ The all-in-one extractor for event files!  Currently implemented for _GoodXenon\
 
 * Extracts and analyses data from FITS event files.
 * Allows user to select which energy channels they want to analyse.
-* Splits the data into chunks ('Fourier Resolution') and creates power spectra of each chunk such that periodicity can be detected.
+* Splits the data into chunks ('Fourier Windows') and creates power spectra of each chunk such that periodicity can be detected.
+* Fourier Windows can be made discrete or sliding.
 * Generates a number of statistics describing the data being procesed.
 * Saves lightcurve information in a .plotd file to be read by the _**PANTHEON**_ programme _PlotDemon_.
 * Saves power spectrum information in a .speca file to be read by the _**PANTHEON**_ programme _SpecAngel_.
@@ -65,7 +66,7 @@ The power spectral analysis software for visualising time-domain variability!  S
 * Can create the average power density spectrum of an observation that has been split into chunks.
 * Can display the individual power density spectrum for any given chunk.
 * Creates spectrograms to show how the power density spectrum varies in time.
-* Allows data to be clipped or rebinned.
+* Allows data to be clipped, renormalised or rebinned.
 * Allows manipulation of the scale in the spectrogram to more easily see peaks and troughs.
 
 #####Arguments:
