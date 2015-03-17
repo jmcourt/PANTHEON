@@ -399,7 +399,7 @@ while specopt not in ['quit','exit']:                                     # If t
       sgfloor=max(npmin(fourgrm),0)                                       # Reset spectrogram colour floor & ceil
       sgceil=npmax(fourgrm)
 
-      'Colour floor and ceiling automatically set!'
+      print 'Colour floor and ceiling automatically set!'
 
 
    #-----'sg log' Option-----------------------------------------------------------------------------------------------
