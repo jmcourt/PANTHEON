@@ -43,6 +43,7 @@ try:
    from numpy import exp, histogram, linspace, log10, nonzero, sqrt
    from numpy import append as npappend                                   # Importing numpy append as npappend to avoid confusion with in-built append function
    from numpy import min as npmin
+   from numpy import max as npmax
    from numpy import sum as npsum
    from scipy import delete
    from scipy.fftpack import fft
@@ -202,7 +203,7 @@ def spectrogram(td,tfc,fourgr,zlabel=defzlabl,title=deftitle):            # Defi
    if speclog:
       pl.pcolor(td,tfc,(fourgr))
    else:
-      pl.pcolor(td,tfc,abs(fourgr))                                       # Plot abs of the spectrogram when z-scale is linear to avoid false negatives bleaching the scale
+      pl.pcolor(td,tfc,fourgr,vmin=sgfloor,vmax=sgceil)                   # Plot spectrogram
    cbar=pl.colorbar()                                                     # Create colourbar key
    cbar.set_label(zlabel)
    pl.xlabel('Time(s)')
@@ -227,10 +228,10 @@ def give_inst():                                                          # Defi
    print '* "leahy" to plot Leahy-normalised data and print the Leahy Constant.'
    print ''
    print 'SPECTROGRAM:'
-   print '* "sgram" to plot the spectrogram currently being worked on.'
-   print '* "floor" to set a minimum value for the spectrogram'+"'"+'s z-axis colour key.'
-   print '* "ceil" to set a maximum value for the spectrogram'+"'"+'s z-axis colour key.'
-   print '* "log" to toggle logarithmic spectrogram plotting.'
+   print '* "sg plot" to plot the spectrogram currently being worked on.'
+   print '* "sg floor" to set a minimum value for the spectrogram'+"'"+'s z-axis colour key.'
+   print '* "sg ceil" to set a maximum value for the spectrogram'+"'"+'s z-axis colour key.'
+   print '* "sg log" to toggle logarithmic spectrogram plotting.'
    print ''
    print 'POWER SPECTRA:'
    print '* "aspec" to plot the average spectrum and return the frequency of its highest peak.'
@@ -251,8 +252,8 @@ give_inst()                                                               # Prin
 print ''
 print ' --------------------'
 
-floor=min(fourgrm)
-ceil=min(fourgrm)
+sgfloor=max(npmin(fourgrm),0)
+sgceil=npmax(fourgrm)
 
 #-----Entering Interactive Mode----------------------------------------------------------------------------------------
 
@@ -263,31 +264,9 @@ while specopt not in ['quit','exit']:                                     # If t
    print ''
 
 
-   #-----'sgram' Option------------------------------------------------------------------------------------------------
-
-   # 'Spectrogram'
-
-   if specopt=='sgram':                                                   # Plotting data
-
-      proce=True                                                          # Assume plot will be made
-      npl=len(fourgrm[0,:])*len(fourgrm[:,0])                             # Check how large this plot will be
-
-      if npl>1000000:                                                     # Check for very large plots, ask user whether to proceed
-          try:
-             print "LARGE DATA WARNING! Plot will contain "+"{:,}".format(npl)+" elements."
-             proc=raw_input("Proceed? [y/n]: ")
-             if proc!='y': proce=False                                    # Cancel plot is user doesn't explicity say 'y'
-          except:
-             proce=False
-
-      if proce==True:                                                     # If all is ok...
-         print 'Plotting...'
-         spectrogram(tdgd,tfgd,fourgrm,szlab,stitle)                      # Plot spectrogram 
-
-
    #-----'rebin' Option------------------------------------------------------------------------------------------------
 
-   elif specopt=='rebin':                                                 # Rebinning data    
+   if specopt=='rebin':                                                   # Rebinning data    
 
       print 'Data currently binned in '+str(tmdbin)+'s and 10^'+str(lplres)+'Hz bins.'
 
@@ -355,41 +334,79 @@ while specopt not in ['quit','exit']:                                     # If t
       rtlabl=defzlabl                                                     # Restore initial key label
       szlab=defzlabl                                                      # Restore initial key label, storing second copy
 
-   #-----'floor' Option------------------------------------------------------------------------------------------------
+      sgfloor=max(npmin(fourgrm),0)                                       # Reset spectrogram colour floor & ceil
+      sgceil=npmax(fourgrm)
 
-   # 'Floor'
 
-   elif specopt=='floor':                                                 # Setting floor of spectrogram colour scale:
+   #-----'sg plot' Option----------------------------------------------------------------------------------------------
 
-      floor=raw_input('Input spectrogram colour floor: ')                 # Ask user to input floor
+   # 'Spectrogram'
+
+   elif specopt=='sg plot':                                               # Plotting data
+
+      proce=True                                                          # Assume plot will be made
+      npl=len(fourgrm[0,:])*len(fourgrm[:,0])                             # Check how large this plot will be
+
+      if npl>1000000:                                                     # Check for very large plots, ask user whether to proceed
+          try:
+             print "LARGE DATA WARNING! Plot will contain "+"{:,}".format(npl)+" elements."
+             proc=raw_input("Proceed? [y/n]: ")
+             if proc!='y': proce=False                                    # Cancel plot is user doesn't explicity say 'y'
+          except:
+             proce=False
+
+      if proce==True:                                                     # If all is ok...
+         print 'Plotting...'
+         spectrogram(tdgd,tfgd,fourgrm,szlab,stitle)                      # Plot spectrogram 
+
+
+   #-----'sg floor' Option---------------------------------------------------------------------------------------------
+
+   # 'Colour Floor'
+
+   elif specopt=='sg floor':                                              # Setting floor of spectrogram colour scale:
+
+      sgfloor=raw_input('Input spectrogram colour floor: ')               # Ask user to input floor
       try:
-         floor=float(floor)                                               # Check floor is a number
-         
+         sgfloor=float(sgfloor)                                           # Check floor is a number
+         print 'Colour floor set!'
       except:
-         floor=min(fourgrm)
+         sgfloor=max(npmin(fourgrm),0)
          print 'Invalid floor!'
 
 
-   #-----'ceil' Option-------------------------------------------------------------------------------------------------
+   #-----'sg ceil' Option----------------------------------------------------------------------------------------------
 
-   # 'Floor'
+   # 'Colour Ceiling'
 
-   elif specopt=='ceil':                                                  # Setting ceiling of spectrogram colour scale:
+   elif specopt=='sg ceil':                                               # Setting ceiling of spectrogram colour scale:
 
-      ceil=raw_input('Input spectrogram colour ceiling: ')                # Ask user to input floor
+      sgceil=raw_input('Input spectrogram colour ceiling: ')              # Ask user to input floor
       try:
-         ceil=float(ceil)                                                 # Check ceil is a number
-         
+         sgceil=float(sgceil)                                             # Check ceil is a number
+         print 'Colour ceiling set!'
       except:
-         ceil=max(fourgrm)
-         print 'Invalid floor!'
+         sgceil=npmax(fourgrm)
+         print 'Invalid ceiling!'
 
 
-   #-----'log' Option--------------------------------------------------------------------------------------------------
+   #-----'sg auto' Option----------------------------------------------------------------------------------------------
+
+   # 'Auto Recolour'
+
+   elif specopt=='sg auto':
+
+      sgfloor=max(npmin(fourgrm),0)                                       # Reset spectrogram colour floor & ceil
+      sgceil=npmax(fourgrm)
+
+      'Colour floor and ceiling automatically set!'
+
+
+   #-----'sg log' Option-----------------------------------------------------------------------------------------------
 
    # 'Logarithm'
 
-   elif specopt=='log':                                                   # Taking or undoing log of data
+   elif specopt=='sg log':                                                # Taking or undoing log of data
 
       if speclog:                                                         # If the spectrogram was already logged, undo this with exp
 
@@ -413,6 +430,16 @@ while specopt not in ['quit','exit']:                                     # If t
          speclog=True                                                     # Indicate that spectrum is logged
          print 'Done!'
 
+
+   #-----'sg' Catch-All Help Message-----------------------------------------------------------------------------------
+
+   elif specopt=='sg':
+
+      print 'SPECTROGRAM COMMANDS:'
+      print '* "sg plot" to plot the spectrogram currently being worked on.'
+      print '* "sg floor" to set a minimum value for the spectrogram'+"'"+'s z-axis colour key.'
+      print '* "sg ceil" to set a maximum value for the spectrogram'+"'"+'s z-axis colour key.'
+      print '* "sg log" to toggle logarithmic spectrogram plotting.'
 
 
    #-----'clip' Option-------------------------------------------------------------------------------------------------
