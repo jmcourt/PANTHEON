@@ -24,6 +24,7 @@
 lplresdefault=0.005                                                       # The best resolution, in log10 space, in which the data will be analysed
 version=3.2                                                               # The version of SpecAngel
 
+
 #-----Welcoming Header-------------------------------------------------------------------------------------------------
 
 print ''
@@ -210,6 +211,7 @@ fudge=npmin(abs(fourgr[nonzero(fourgr)]))                                 # Obta
 print 'Done!'
 print ''
 
+
 #-----Setting up Spectrogram Environment-------------------------------------------------------------------------------
 
 es=True                                                                   # Start with errors on by default
@@ -275,6 +277,7 @@ print ' --------------------'
 
 sgfloor=max(npmin(fourgrm),0)
 sgceil=npmax(fourgrm)
+
 
 #-----Entering Interactive Mode----------------------------------------------------------------------------------------
 

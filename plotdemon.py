@@ -516,6 +516,7 @@ while plotopt not in ['quit','exit']:                                     # If t
       print "Animation saved to",animsloc+'/animation.gif!'
       os.chdir(here)        
 
+
    #-----'hidxy' Option------------------------------------------------------------------------------------------------
 
    elif plotopt[:3]=='hid':                                                # Plot x/y HID
@@ -714,6 +715,7 @@ while plotopt not in ['quit','exit']:                                     # If t
       pl.title('Lightcurve'+qflav)
       pl.show(block=False)
       print 'Banded lightcurves plotted!'
+
 
    #-----'errors' Option-----------------------------------------------------------------------------------------------
 

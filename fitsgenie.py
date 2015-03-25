@@ -47,11 +47,13 @@ spcbinfac=4096                                                            # The 
 usrmin=-13                                                                # The smallest time resolution to consider is 2^usrmin seconds
 version=3.2
 
+
 #-----Welcoming Header-------------------------------------------------------------------------------------------------
 
 print ''
 print '-------Running FITSGenie: J.M.Court, 2015------'
 print ''
+
 
 #-----Importing Modules------------------------------------------------------------------------------------------------
 
@@ -217,6 +219,7 @@ else:
 print ''
 
 wtype='Boxcar'                                                            # Setting all windows to BoxCar; will make transition to SpecAngel 4.0 smoother if this takes a value
+
 
 #-----Masking data---------------------------------------------------------------------------------------
 

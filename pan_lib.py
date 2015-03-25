@@ -710,6 +710,7 @@ def plotdld(filename):
     mission  -     STRING: The name of the satellite
     pbsdata  -      TUPLE: The first element is the name of the object, the second is the observation
                            ID.
+    version  -     STRING: The Version of FITSGenie in which the file was created
 
    -J.M.Court, 2015'''
 
@@ -770,8 +771,9 @@ def plotdsv(filename,times,counts,errors,tstart,binsize,gti,mxpcus,bgest,flavour
     flavour  -     STRING: A useful bit of text to put on plots to help identify them later on.
     chanstr  -     STRING: A string containing the high and low channel numbers separated by a dash.
     mission  -     STRING: The name of the satellite
-    pbsdata  -      TUPLE: The first element is the name of the object, the second is the observation
+    obsdata  -      TUPLE: The first element is the name of the object, the second is the observation
                            ID.
+    version  -     STRING: The Version of FITSGenie in which the file was created
 
    Outputs:
 
@@ -989,6 +991,12 @@ def specald(filename):
                        within the GTIs of the photon count data.
     rates    -  ARRAY: The count rate per second of photons in the time interval represented by the
                        corresponding row of spcdata.
+    prates   -  ARRAY: An array of floats with as many elements as spcdata has columns.  Denotes the
+                       highest number of total counts in each timing window when the counts are binned
+                       on a time of binsize * binfac
+    trates   -  ARRAY: An array of floats with as many elements as spcdata has columns.  Denotes the
+                       lowest number of total counts in each timing window when the counts are binned
+                       on a time of binsize * binfac
     phcts    -    INT: The total number of photons detected, overall.
     bg       -  ARRAY: An estimate of the count rate of the background flux during the full observation,
                        in counts per second per PCU, multiplied by the number of PCUs active in the
@@ -996,10 +1004,17 @@ def specald(filename):
     binsize  -  FLOAT: The size in seconds of the time bins used when converting event data into time
                        binned photon count data.
     foures   -  FLOAT: The length of time corresponding to a single row of spcdata, in seconds.
+    bgest    -  FLOAT: An estimate of the count rate of the background flux during the full observation,
+                       in counts per second per PCU.
     flavour  - STRING: A useful bit of text to put on plots to help identify them later on.
-    chanstr  - STRING: A string containing the high and low channel numbers separated by a dash.
+    cs       - STRING: A string containing the high and low channel numbers separated by a dash.
     mission  - STRING: The name of the satellite
-    pbsdata  -  TUPLE: The first element is the name of the object, the second is the observation ID.
+    obsdata  -  TUPLE: The first element is the name of the object, the second is the observation ID.
+    wtype    - STRING: A string denoting the functional geometry of the windows used for Fourier analysis.
+    slide    -  FLOAT: The time separation of the start times of windows represented by two consecutive
+                       rows of spcdata, in seconds
+    binfac   -    INT: See trates or prates
+    version  - STRING: The Version of FITSGenie in which the file was created
 
    -J.M.Court, 2015'''
 
@@ -1061,28 +1076,39 @@ def specasv(filename,spcdata,good,rates,prates,trates,phcts,npcus,binsize,bgest,
 
    Inputs:
 
-    filename - STRING: The absolute or relative path to the location of the file that will be created.
-    spcdata  -  ARRAY: An array, the elements of which are the non-normalised power spectra taken over
-                       different equal-length time intervals of the photon count data being considered.
-    good     -  ARRAY: A Boolean array with as many elements as spcdata has columns.  Its entries are
-                       True unless the corresponding row in spcdata does not correspond to a valid time
-                       within the GTIs of the photon count data.
-    rates    -  ARRAY: An array of floats with as many elements as spcdata has columns.  Denotes the
-                       total number of photon counts in the time interval represented by the corresponding
-                       row in spcdata, divided by the width of a column in seconds.
-    phcts    -    INT: The total number of photons detected, overall.
-    npcus    -  ARRAY: An array of ints with as many elements as spcdata has columns.  States the number
-                       of detectors that were active when the data represented by the corresponding row
-                       of spcdata was recorded.
-    binsize  -  FLOAT: The size in seconds of the time bins used when converting event data into time
-                       binned photon count data.
-    bgest    -  FLOAT: An estimate of the count rate of the background flux during the full observation,
-                       in counts per second per PCU.
-    foures   -  FLOAT: The length of time corresponding to a single row of spcdata, in seconds.
-    flavour  - STRING: A useful bit of text to put on plots to help identify them later on.
-    chanstr  - STRING: A string containing the high and low channel numbers separated by a dash.
-    mission  - STRING: The name of the satellite
-    pbsdata  -  TUPLE: The first element is the name of the object, the second is the observation ID.
+    filename  - STRING: The absolute or relative path to the location of the file that will be created.
+    spcdata   -  ARRAY: An array, the elements of which are the non-normalised power spectra taken over
+                        different equal-length time intervals of the photon count data being considered.
+    good      -  ARRAY: A Boolean array with as many elements as spcdata has columns.  Its entries are
+                        True unless the corresponding row in spcdata does not correspond to a valid time
+                        within the GTIs of the photon count data.
+    rates     -  ARRAY: An array of floats with as many elements as spcdata has columns.  Denotes the
+                        total number of photon counts in the time interval represented by the corresponding
+                        row in spcdata, divided by the width of a column in seconds.
+    prates    -  ARRAY: An array of floats with as many elements as spcdata has columns.  Denotes the
+                        highest number of total counts in each timing window when the counts are binned
+                        on a time of binsize * spcbinfac
+    trates    -  ARRAY: An array of floats with as many elements as spcdata has columns.  Denotes the
+                        lowest number of total counts in each timing window when the counts are binned
+                        on a time of binsize * spcbinfac
+    phcts     -    INT: The total number of photons detected, overall.
+    npcus     -  ARRAY: An array of ints with as many elements as spcdata has columns.  States the number
+                        of detectors that were active when the data represented by the corresponding row
+                        of spcdata was recorded.
+    binsize   -  FLOAT: The size in seconds of the time bins used when converting event data into time
+                        binned photon count data.
+    bgest     -  FLOAT: An estimate of the count rate of the background flux during the full observation,
+                        in counts per second per PCU.
+    foures    -  FLOAT: The length of time corresponding to a single row of spcdata, in seconds.
+    flavour   - STRING: A useful bit of text to put on plots to help identify them later on.
+    cs        - STRING: A string containing the high and low channel numbers separated by a dash.
+    mission   - STRING: The name of the satellite
+    obsdata   -  TUPLE: The first element is the name of the object, the second is the observation ID.
+    wtype     - STRING: A string denoting the functional geometry of the windows used for Fourier analysis.
+    slide     -  FLOAT: The time separation of the start times of windows represented by two consecutive
+                        rows of spcdata, in seconds
+    spcbinfac -    INT: See trates or prates
+    version   - STRING: The Version of FITSGenie in which the file was created
 
    Outputs:
 
