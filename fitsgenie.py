@@ -43,8 +43,9 @@
 
 ptdbinfac=16                                                              # To save space and time, the time bins for saved plotdemon data will be greater than the time
                                                                           # bins for the not-saved specangel data by this factor.  Must be power of 2.
+spcbinfac=4096                                                            # The binning factor for SpecAngel data to use when searching for data peaks and troughs
 usrmin=-13                                                                # The smallest time resolution to consider is 2^usrmin seconds
-
+version=3.2
 
 #-----Welcoming Header-------------------------------------------------------------------------------------------------
 
@@ -309,9 +310,12 @@ print ''
 fourgrlin=[]                                                              # Set up matrix
 bad=0                                                                     # Counter to count ranges which fall out of the GTIs
 good=[]                                                                   # Array to keep track of which ranges were good
+prates=[]                                                                 # 'Peak Rates'
+trates=[]                                                                 # 'Trough Rates'
 rates=[]                                                                  # Array of count rates to be populated
 npcus=[]                                                                 
 t=arange(0,foures+bsz,bsz)                                                # Setting up SpecAngel resolution time series per Fourier bin
+tp=arange(0,foures+bsz*spcbinfac,bsz*spcbinfac)                           # Setting up SpecAngel coarse resolution time series
 tc=arange(0,foures+bsz*ptdbinfac,bsz*ptdbinfac)                           # Setting up PlotDemon coarse resolution time series per Fourier bin
 ta=arange(0,(foures*numstep),bsz*ptdbinfac)                               # Setting up PlotDemon resolution full time series
 
@@ -339,6 +343,7 @@ for step in range(numstep):                                               ## For
    wrdrow=wrdrow[mask]
 
    fc,null=histogram(datrow,tc+stpoint)                                        #  Coarsely bin this subrange of event data
+   fp,null=histogram(datrow,tp+stpoint)                                        #  Very Coarsely bin this subrange of event data
    del null
    fullhist=fullhist+list(fc)
    fullerrs=fullerrs+list(sqrt(array(fc)))
@@ -351,8 +356,13 @@ for step in range(numstep):                                               ## For
       npcus.append(pcus)
 
       counts=sum(f)
-      tcounts+=counts
+      peak=max(fp)
+      trough=min(fp)
+
       rates.append(float(counts)/foures)
+      prates.append(float(peak)*datres/(foures*spcbinfac))
+      trates.append(float(trough)*datres/(foures*spcbinfac))
+      tcounts+=counts
 
       tsfdata=fft(f)                                                           #  Fourier transform the interval
 
@@ -364,6 +374,8 @@ for step in range(numstep):                                               ## For
       tsfdata=zeros(datres/2)
       npcus.append(0)
       rates.append(0)
+      prates.append(0)
+      trates.append(0)
       good.append(False)                                                       #  Flag this column as bad
 
    fourgrlin.append(tsfdata)                                                   #  Append the FT'd data to the matrix
@@ -391,17 +403,19 @@ print ''
 
 filext=(filename.split('.')[-1])                                          # Identify file extension from the original filename
 if filext!=filename:
-   filename=filename[:-len(filext)-1]                                     # Remove file extension, if present
+   tfilename=filename[:-len(filext)-1]                                    # Remove file extension, if present
+   if tfilename[-1]!='.':                                                 # Saving extensionless files with .. in the path name breaks without this
+      filename=tfilename
 
 filename=filename+'_'+cs
 
 if slidelock:
-   pfilename=pan.plotdsv(filename,ta,fullhist,fullerrs,tstart,bsz*ptdbinfac,gti,max(npcus),bgest,flavour,cs,mission,obsdata)
+   pfilename=pan.plotdsv(filename,ta,fullhist,fullerrs,tstart,bsz*ptdbinfac,gti,max(npcus),bgest,flavour,cs,mission,obsdata,version)
    print "PlotDemon file saved to "+pfilename
 else:
    print "PlotDemon file not saved."
 
-sfilename=pan.specasv(filename,fourgrlin,good,rates,tcounts,npcus,bsz,bgest,foures,flavour,cs,mission,obsdata,wtype,slide)
+sfilename=pan.specasv(filename,fourgrlin,good,rates,prates,trates,tcounts,npcus,bsz,bgest,foures,flavour,cs,mission,obsdata,wtype,slide,spcbinfac,version)
 print "SpecAngel file saved to "+sfilename
 
 

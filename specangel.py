@@ -22,7 +22,7 @@
 #-----User-set Parameters----------------------------------------------------------------------------------------------
 
 lplresdefault=0.005                                                       # The best resolution, in log10 space, in which the data will be analysed
-
+version=3.2                                                               # The version of SpecAngel
 
 #-----Welcoming Header-------------------------------------------------------------------------------------------------
 
@@ -47,6 +47,7 @@ try:
    from numpy import sum as npsum
    from scipy import delete
    from scipy.fftpack import fft
+   from scipy.stats import spearmanr
    from scipy.optimize import brentq
 
 except:
@@ -70,7 +71,7 @@ pan.flncheck(filename,'speca')
 #-----Extracting data from file-----------------------------------------------------------------------------------------
 
 print 'Opening '+str(filename)                                            # Use SpecaLd from pan_lib to load data from file
-loadmatrix,good,rates,phcts,bg,bsz,foures,bgest,flv,cs,mis,obsd,wtype,slide=pan.specald(filename)
+loadmatrix,good,rates,prates,trates,phcts,bg,bsz,foures,bgest,flv,cs,mis,obsd,wtype,slide,binfac,v=pan.specald(filename)
 flavour=flv
 if flavour=='':
    qflav=''
@@ -94,6 +95,17 @@ else:
       lplres=float(raw_input('Logarithmic binning factor: '))
    except:
       lplres=lplresdefault
+
+if len(args)>3:                                                           # Check for knorm input, else request one
+   try:
+      knorm=str(args[3])
+   except:
+      knorm='nupnu'
+else:
+   try:
+      knorm=str(raw_input('Input normalisation [leahy, rms, nupnu]: '))
+   except:
+      knorm='nupnu'
 
 numstep=len(loadmatrix)
 
@@ -161,13 +173,19 @@ def lbin(lplres,norm='nupnu',prt=False):                                  # Defi
    errgr=transpose(errgr)
    return fourgr,errgr,norm
 
-fourgr,errgr,knorm=lbin(lplres,prt=True)  
+fourgr,errgr,knorm=lbin(lplres,prt=True,norm=knorm)  
 
 print ''
 print 'Preparing spectrogram...'
 
 deftitle='Spectrogram'+qflav                                              # Define default title for spectrogram
-defzlabl='Frequency x RMS Normalised Power'                               # Define default key label for spectrogram
+
+if knorm=='leahy':                                                        # Define default key label for spectrogram
+   defzlabl='Leahy-Normalised Power (Hz^-1)'
+elif knorm=='rms':
+   defzlabl='RMS Normalised Power (Hz^-1)'
+else:
+   defzlabl='Frequency x RMS Normalised Power'
 
 fourgrm=fourgr                                                            # Storing a copy of the matrix in memory so it can be reset
 errgrm=errgr
@@ -215,7 +233,7 @@ def spectrogram(td,tfc,fourgr,zlabel=defzlabl,title=deftitle):            # Defi
    pl.show(block=False)
 
 sxlab='Frequency (Hz)'
-sylab='Frequency x RMS Normalised Power'
+sylab=defzlabl
 szlab=defzlabl                                                            # Give an initial key label, storing second copy
 
 def give_inst():                                                          # Define printing this list of instructions as a function
@@ -231,12 +249,15 @@ def give_inst():                                                          # Defi
    print '* "sg plot" to plot the spectrogram currently being worked on.'
    print '* "sg floor" to set a minimum value for the spectrogram'+"'"+'s z-axis colour key.'
    print '* "sg ceil" to set a maximum value for the spectrogram'+"'"+'s z-axis colour key.'
+   print '* "sg auto" to automatically set colour floor and ceiling.'
    print '* "sg log" to toggle logarithmic spectrogram plotting.'
    print ''
    print 'POWER SPECTRA:'
    print '* "aspec" to plot the average spectrum and return the frequency of its highest peak.'
    print '* "gspec" to get an individual spectrum at any time and plot it.'
+   print '* "peaks" to plot a graph of the frequency of the strongest oscillation against time.'
    print '* "rates" to get a simple lightcurve of the data.'
+   print '* "fqflux" to plot "peaks" against "rates".'
    print ''
    print 'TOGGLE OPTIONS:'
    print '* "errors" to toggle errorbars on power spectra plots.'
@@ -282,10 +303,7 @@ while specopt not in ['quit','exit']:                                     # If t
       tflm=tf
       good=ogood
 
-      print 'Data now reset!'
-      print ''
-
-      knorm=raw_input('Input normalisation [leahy, rms, nupnu]: ')
+      knorm=raw_input('Select normalisation [leahy, rms, nupnu]: ')
 
       try:
          tbinmult=int(raw_input('Input time-domain binning factor: '))
@@ -439,6 +457,7 @@ while specopt not in ['quit','exit']:                                     # If t
       print '* "sg plot" to plot the spectrogram currently being worked on.'
       print '* "sg floor" to set a minimum value for the spectrogram'+"'"+'s z-axis colour key.'
       print '* "sg ceil" to set a maximum value for the spectrogram'+"'"+'s z-axis colour key.'
+      print '* "sg auto" to automatically set colour floor and ceiling.'
       print '* "sg log" to toggle logarithmic spectrogram plotting.'
 
 
@@ -566,6 +585,25 @@ while specopt not in ['quit','exit']:                                     # If t
          print 'Time not in range!'
 
 
+   #-----'peaks' Option------------------------------------------------------------------------------------------------
+
+   elif specopt=='peaks':
+
+      peaks=[]
+
+      for i in range(len(fourgrm[1])):
+         row=fourgrm[:,i]
+         peaks.append(tflm[list(row).index(max(row))])
+
+      pl.close('pk')
+      pl.figure('pk')
+      pl.semilogy(array(tdlm[:-1])[good],array(peaks)[good],'-ok')
+      pl.xlabel('Time (s)')
+      pl.ylabel('Frequency (Hz)')
+      pl.title('Peak Frequency/Time Plot'+qflav)
+      pl.show(block=False)
+
+
    #-----'rates' Option------------------------------------------------------------------------------------------------
 
    elif specopt=='rates':
@@ -573,11 +611,64 @@ while specopt not in ['quit','exit']:                                     # If t
       print 'Average rate of',str(mean(rates[ogood]))+'c/s.'
       print str(phcts),'total counts.'
 
+      print ''
+
+      datasel=raw_input('Select Rates to plot [ave/peak/trough]: ')
+
+      titles['ave']='Flux (photons/s/PCU)'
+      titles['peak']='Peak '+str(binfac*bsz)+'s Flux (photons/s/PCU)'
+      titles['trough']='Trough '+str(binfac*bsz)+'s Flux (photons/s/PCU)'
+      if datasel not in ('ave','peak','trough'):
+         print 'Invalid selection!  Using Average flux.'
+         datasel='ave'
+
+      brates['ave']=rates
+      brates['peak']=prates
+      brates['trough']=trates
+
+      pl.close('lc')
       pl.figure('lc')
-      pl.plot(td[:-1][ogood],rates[ogood],'ok')
+      pl.plot(td[:-1][ogood],brates[datasel][ogood],'-ok')
       pl.xlabel('Time (s)')
-      pl.ylabel('Flux (photons/s)')
+      pl.ylabel('Flux (photons/s/PCU)')
       pl.title('Lightcurve'+qflav)
+      pl.show(block=False)
+
+
+   #-----'fqflux' Option-----------------------------------------------------------------------------------------------
+
+   elif specopt=='fqflux':
+
+      peaks=[]
+
+      for i in range(len(fourgrm[1])):
+         row=fourgrm[:,i]
+         peaks.append(tflm[list(row).index(max(row))])
+
+      brates={}
+      titles={}
+
+      titles['ave']='Flux (photons/s/PCU)'
+      titles['peak']='Peak '+str(binfac*bsz)+'s Flux (photons/s/PCU)'
+      titles['trough']='Trough '+str(binfac*bsz)+'s Flux (photons/s/PCU)'
+
+      brates['ave']=pan.vcrebin(rates,len(rates)/len(peaks))
+      brates['peak']=pan.vcrebin(prates,len(prates)/len(peaks))
+      brates['trough']=pan.vcrebin(trates,len(trates)/len(peaks))
+
+      datasel=raw_input('Select Rates to plot against [ave/peak/trough]: ')
+      if datasel not in ('ave','peak','trough'):
+         print 'Invalid selection!  Using Average flux.'
+         datasel='ave'
+
+      print 'Spearman Rank Coefficient: ',spearmanr(array(peaks)[good],brates[datasel][good])[1]
+
+      pl.close('pr')
+      pl.figure('pr')
+      pl.semilogx(array(peaks)[good],brates[datasel][good],'ok')
+      pl.ylabel(titles[datasel])
+      pl.xlabel('Frequency (Hz)')
+      pl.title('Flux/Peak Frequency Plot'+qflav)
       pl.show(block=False)
 
 
@@ -597,7 +688,7 @@ while specopt not in ['quit','exit']:                                     # If t
 
    elif specopt=='info':
 
-      print 'SpecAngel.py'
+      print 'SpecAngel.py version',version
       print ''
       print '1 file loaded:'
       print ''
@@ -614,6 +705,7 @@ while specopt not in ['quit','exit']:                                     # If t
          print ' Channel        = ',cs
       print ' Resolution     = ',str(bsz)+'s'
       print ' Flavour        = ',flv
+      print ' FITSGenie Ver. = ',v
       print ''
       print 'Windowing:'
       print ' Shape          = ',wtype

@@ -27,6 +27,7 @@
 #-----User-set Parameters----------------------------------------------------------------------------------------------
 
 minbin=0.015625                                                           # The minimum bin size the code is allowed to attempt to use.  This can prevent long hang-ups
+version=3.2                                                               # The version of PlotDemon
 
 
 #-----Welcoming Header-------------------------------------------------------------------------------------------------
@@ -77,7 +78,7 @@ pan.flncheck(file1,'plotd')
 ch={}                                                                     # Save channel info in a library
 
 print 'Opening',file1                                                     # Opening file 1
-x1r,y1r,ye1r,tst1,bsz1,gti,pcus1,bg,flv1,ch[1],mis1,obsd1=pan.plotdld(file1)
+x1r,y1r,ye1r,tst1,bsz1,gti,pcus1,bg,flv1,ch[1],mis1,obsd1,v1=pan.plotdld(file1)
 y1r=y1r/float(pcus1)                                                      # Normalising flux by dividing by the number of active PCUs and the binsize
 ye1r=ye1r/float(pcus1)
 
@@ -105,7 +106,7 @@ if nfiles>1:
    file2=args[2]
    if pan.flncheck(file2,'plotd'):
       print 'Opening',file2                                               # Opening file 2
-      x2r,y2r,ye2r,tst2,bsz2,null,pcus2,null,flv2,ch[2],mis2,obsd2=pan.plotdld(file2)
+      x2r,y2r,ye2r,tst2,bsz2,null,pcus2,null,flv2,ch[2],mis2,obsd2,v2=pan.plotdld(file2)
       del null
       y2r=y2r/float(pcus2)                                                # Normalising flux by dividing by the number of active PCUs and the binsize
       ye2r=ye2r/float(pcus2)
@@ -119,7 +120,7 @@ if nfiles>2:
    file3=args[3]
    if pan.flncheck(file2,'plotd'):
       print 'Opening',file3                                               # Opening file 3
-      x3r,y3r,ye3r,tst3,bsz3,null,pcus3,null,flv3,ch[3],mis3,obsd3=pan.plotdld(file3)
+      x3r,y3r,ye3r,tst3,bsz3,null,pcus3,null,flv3,ch[3],mis3,obsd3,v3=pan.plotdld(file3)
       del null
       y3r=y3r/float(pcus3)                                                # Normalising flux by dividing by the number of active PCUs and the binsize
       ye3r=ye3r/float(pcus3)
@@ -759,7 +760,7 @@ while plotopt not in ['quit','exit']:                                     # If t
       dst=times[0]
       det=times[-1]
 
-      print 'PlotDemon.py'
+      print 'PlotDemon.py version',version
       print ''
       print nfiles,'files loaded:'
       print ''
@@ -777,6 +778,7 @@ while plotopt not in ['quit','exit']:                                     # If t
       print ' Resolution     = ',str(bsz1)+'s'
       print ' No. of PCUs    = ',pcus1
       print ' Flavour        = ',flv1
+      print ' FITSGenie Ver. = ',v1
       if nfiles>1:
          filn2,loca2=pan.xtrfilloc(file2)
          print ''
@@ -793,6 +795,7 @@ while plotopt not in ['quit','exit']:                                     # If t
          print ' Resolution     = ',str(bsz2)+'s'
          print ' No. of PCUs    = ',pcus2
          print ' Flavour        = ',flv2
+         print ' FITSGenie Ver. = ',v2
       if nfiles==3:
          filn3,loca3=pan.xtrfilloc(file3)
          print ''
@@ -809,6 +812,7 @@ while plotopt not in ['quit','exit']:                                     # If t
          print ' Resolution     = ',str(bsz3)+'s'
          print ' No. of PCUs    = ',pcus3
          print ' Flavour        = ',flv3
+         print ' FITSGenie Ver. = ',v3
       print ''
       print 'Other Info:'
       print ' Main Flavour   = ',flavour

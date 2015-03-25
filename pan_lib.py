@@ -734,18 +734,19 @@ def plotdld(filename):
    chanstr=data['chan']
    mission=data['miss']
    obsdata=data['obsd']
+   version=data['vers']
 
    bgpcu=bgest*mxpcus                                                     # Collect background * PCUs
 
    readfile.close()
 
-   return times,rates,errors,tstart,binsize,gti,mxpcus,bgpcu,flavour,chanstr,mission,obsdata
+   return times,rates,errors,tstart,binsize,gti,mxpcus,bgpcu,flavour,chanstr,mission,obsdata,version
 
 
 #-----PlotdSv----------------------------------------------------------------------------------------------------------
 
 @jit
-def plotdsv(filename,times,counts,errors,tstart,binsize,gti,mxpcus,bgest,flavour,chanstr,mission,obsdata):
+def plotdsv(filename,times,counts,errors,tstart,binsize,gti,mxpcus,bgest,flavour,chanstr,mission,obsdata,version):
 
    '''.Plotd Save
 
@@ -792,6 +793,7 @@ def plotdsv(filename,times,counts,errors,tstart,binsize,gti,mxpcus,bgest,flavour
    savedata['chan']=chanstr
    savedata['miss']=mission
    savedata['obsd']=obsdata
+   savedata['vers']=version
 
    filename=uniqfname(filename,'plotd')                                   # Get the next available name of form filename(x).plotd
    wfile = open(filename, 'wb')                                           # Open file to write to
@@ -1013,6 +1015,8 @@ def specald(filename):
    spcdata=data['data']                                                   # Unleash the beast! [extract the file]
    good=array(data['good'])
    rates=array(data['rate'])
+   prates=array(data['prts'])
+   trates=array(data['trts'])
    phcts=data['phct']
    n_pcus=array(data['npcu'])
    binsize=data['bsiz']
@@ -1024,6 +1028,8 @@ def specald(filename):
    obsdata=data['obsd']
    wtype=data['wndw']
    slide=data['slid']
+   binfac=data['sbin']
+   version=data['vers']
 
    readfile.close()
 
@@ -1036,13 +1042,13 @@ def specald(filename):
 
    bg=n_pcus*bgest
 
-   return spcdata,good,rates,phcts,bg,binsize,foures,bgest,flavour,cs,mission,obsdata,wtype,slide
+   return spcdata,good,rates,prates,trates,phcts,bg,binsize,foures,bgest,flavour,cs,mission,obsdata,wtype,slide,binfac,version
 
 
 #-----SpecaSv----------------------------------------------------------------------------------------------------------
 
 @jit
-def specasv(filename,spcdata,good,rates,phcts,npcus,binsize,bgest,foures,flavour,cs,mission,obsdata,wtype,slide):
+def specasv(filename,spcdata,good,rates,prates,trates,phcts,npcus,binsize,bgest,foures,flavour,cs,mission,obsdata,wtype,slide,spcbinfac,version):
 
    '''.Speca Save
 
@@ -1089,6 +1095,8 @@ def specasv(filename,spcdata,good,rates,phcts,npcus,binsize,bgest,foures,flavour
    savedata['data']=spcdata                                               # Dump each piece of data into an appropriate library element
    savedata['good']=good
    savedata['rate']=rates
+   savedata['prts']=prates
+   savedata['trts']=trates
    savedata['phct']=phcts
    savedata['npcu']=npcus
    savedata['bsiz']=binsize
@@ -1100,6 +1108,8 @@ def specasv(filename,spcdata,good,rates,phcts,npcus,binsize,bgest,foures,flavour
    savedata['obsd']=obsdata
    savedata['wndw']=wtype
    savedata['slid']=slide
+   savedata['sbin']=spcbinfac
+   savedata['vers']=version
 
    filename=uniqfname(filename,'speca')                                   # Get the next available name of form filename(x).speca
    wfile = open(filename, 'wb')                                           # Open file to write to
@@ -1230,6 +1240,47 @@ def uniqfname(filename,extension):
    uniqname=filenamex+'.'+extension
 
    return uniqname
+
+
+#-----VCRebin----------------------------------------------------------------------------------------------------------
+
+@jit
+def vcrebin(vecdata,bfac):
+
+   '''Vector X-Rebin
+
+   Description:
+
+    Takes 1-Dimensional array of data and which is linearly binned and rebins it by a factor of the
+    user's choosing, returning new data array.
+
+   Inputs:
+
+    vecdata   - ARRAY: some 2 dimensional array of values.
+
+   Outputs:
+
+    b_vecdata - ARRAY: the rebinned 2-dimensional data array
+
+   -J.M.Court, 2015'''
+
+   bfac=int(bfac)
+
+   spx=len(vecdata)                                                       # x-dimension of new vector
+   b_vecdata=zeros(spx)                                                   # Create the new vector
+
+   for i in range(spx):                                                   # For each freq row of fourgr:
+
+      celltot=0                                                           # Create a running total to deposit into the vector cell
+
+      for k in range(bfac):                                               # Calculate extent of current bin
+
+         celltot+=vecdata[i*bfac+k]                                       # Sum all values that fall within the given bin
+
+      b_vecdata[i]=celltot/bfac                                           # Divide the cell total by the bin multiplier to convert to a mean
+
+   return b_vecdata
+
 
 
 #-----XtrFilLoc--------------------------------------------------------------------------------------------------------
