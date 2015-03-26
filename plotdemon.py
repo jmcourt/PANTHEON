@@ -82,20 +82,6 @@ x1r,y1r,ye1r,tst1,bsz1,gti,pcus1,bg,flv1,ch[1],mis1,obsd1,v1=pan.plotdld(file1)
 y1r=y1r/float(pcus1)                                                      # Normalising flux by dividing by the number of active PCUs and the binsize
 ye1r=ye1r/float(pcus1)
 
-xit1=x1r[-1]
-if nfiles>1:
-   xit2=x2r[-1]
-else:
-   xit2=None
-if nfiles==3:
-   xit3=x3r[-1]
-else:
-   xit3=None
-oet=max(xit1,xit2,xit3)                                                   # Fetch the observation end time
-
-mint=0                                                                    # Save original start and endpoints for use in clipping
-maxt=oet
-
 flavour=flv1
 if flavour=='':
    qflav=''
@@ -129,6 +115,20 @@ if nfiles>2:
       print 'Warning: File 3 of incorrect file type!'
       print 'Only loading Files 1 & 2.'
 else: x3r=y3r=ye3r=tst3=bsz3=None
+
+xit1=x1r[-1]
+if nfiles>1:
+   xit2=x2r[-1]
+else:
+   xit2=None
+if nfiles==3:
+   xit3=x3r[-1]
+else:
+   xit3=None
+oet=max(xit1,xit2,xit3)                                                   # Fetch the observation end time
+
+mint=0                                                                    # Save original start and endpoints for use in clipping
+maxt=oet
 
 if nfiles>1:                                                              # Checking that start-times of files 1 & 2 match
    if tst1!=tst2:
