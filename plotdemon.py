@@ -187,7 +187,7 @@ def colorget(verbose=True):                                               # Defi
    if verbose:
       print 'Analysing Data...'
    times=x1[gmask]
-   timese=None
+   timese=zeros(len(times))
    col={}
    cole={}
    if nfiles==1:                                                          # If only one file given, flux and flux_error are just the flux and error of this one file
@@ -247,10 +247,12 @@ def give_inst():                                                          # Defi
    print 'DATA:'
    print '* "rebin" to reset the data and load it with a different binning'
    print '* "clip" to clip the data'
+   print '* "mask" to remove a range of data.'
    print '* "fold" to fold data over a period of your choosing'
    print ''
    print '1+ DATASET PLOTS:'
    print '* "lc" to plot a simple graph of flux over time'
+   print '* "lc dump" to dump the lightcurve data into an ASCII file'
    print '* "animate" to create an animation of the lightcurve as the binning is increased'
    if nfiles>1:                                                           # Only display 2-data-set instructions if 2+ datasets given
       print ''
@@ -354,15 +356,15 @@ while plotopt not in ['quit','exit']:                                     # If t
          except:
             print "Invalid phase resolution!"                             # Keep trying until they give a sensible input
 
-      x1=x1*gmask;y1=y1*gmask;ye1=ye1*gmask                               # Zeroing all data points outside of GTI
+      x1=x1[gmask];y1=y1[gmask];ye1=ye1[gmask]                            # Zeroing all data points outside of GTI
       x1,y1,ye1=pan.foldify(x1,y1,ye1,period,binning,phres=phres,name='ch. '+ch[1])         # Fold using foldify function from pan_lib
 
       if nfiles>1:
-         x2=x2*gmask;y2=y2*gmask;ye2=ye2*gmask                            # Zeroing all data points outside of GTI
+         x2=x2[gmask];y2=y2[gmask];ye2=ye2[gmask]                         # Zeroing all data points outside of GTI
          x2,y2,ye2=pan.foldify(x2,y2,ye2,period,binning,phres=phres,name='ch. '+ch[2])      # Fold data of file 2 if present
 
       if nfiles==3:
-         x3=x3*gmask;y3=y3*gmask;ye3=ye3*gmask                            # Zeroing all data points outside of GTI
+         x3=x3[gmask];y3=y3[gmask];ye3=ye3[gmask]                         # Zeroing all data points outside of GTI
          x3,y3,ye3=pan.foldify(x3,y3,ye3,period,binning,phres=phres,name='ch. '+ch[3])      # Fold data of file 3 if present
 
       gmask=ones(len(x1),dtype=bool)                                      # Re-establish gmask
@@ -414,17 +416,63 @@ while plotopt not in ['quit','exit']:                                     # If t
          print 'Data clipped!'
 
 
+   #-----'mask' Option-------------------------------------------------------------------------------------------------
+
+   elif plotopt=='mask':
+
+      print 'Masking data'
+      print ''
+
+      print 'Select time range to mask: '
+      mint,maxt=pan.srinr(x1,binning,'time')
+
+      print 'Masking...'
+
+      gmask[mint:maxt]=False
+
+      times,timese,flux,fluxe,col,cole=colorget()  
+
+      print 'Data masked!'
+
+
    #-----'lc' Option---------------------------------------------------------------------------------------------------
 
    elif plotopt=='lc':                                                    # Plot lightcurve
 
+      taxis='Phase' if folded else 'Time (s)'
+
       pl.figure()
       doplot(times,timese,flux,fluxe,ovr=True)
-      pl.xlabel('Time (s)')
+      pl.xlabel(taxis)
       pl.ylabel('Flux (counts/s/PCU)')
       pl.title('Lightcurve'+qflav)
       pl.show(block=False)
       print 'Lightcurve plotted!'
+
+
+   #-----'lc dump' Option----------------------------------------------------------------------------------------------
+
+   elif plotopt=='lc dump':                                               # Dump lightcurve to ASCII file
+
+      ofilename=raw_input('Save textfile as: ')
+
+      ofil = open(ofilename, 'w')
+
+      if folded:
+
+         for i in range(len(times)):
+            a=[str(times[i]*period),' ',str(timese[i]),' ',str(flux[i]),' ',str(fluxe[i]),'\n']
+            ofil.writelines(a)
+
+      else:
+
+         for i in range(len(times)):
+            a=[str(times[i]),' ',str(timese[i]),' ',str(flux[i]),' ',str(fluxe[i]),'\n']
+            ofil.writelines(a)
+
+      ofil.close()
+
+      print 'Lightcurve saved!'
 
 
    #-----'animate' Option----------------------------------------------------------------------------------------------
@@ -495,9 +543,11 @@ while plotopt not in ['quit','exit']:                                     # If t
             minany=min(flux)-merr
             if minany<0: minany=0
 
+         taxis='Phase' if folded else 'Time (s)'
+
          pl.figure()
          doplot(times,timese,flux,fluxe,ovr=True)
-         pl.xlabel('Time (s)')
+         pl.xlabel(taxis)
          pl.ylabel('Flux (counts/s/PCU)')
          pl.title('Lightcurve ('+str(animbin)+'s binning)')
          pl.xlim(dst,det)
@@ -599,12 +649,14 @@ while plotopt not in ['quit','exit']:                                     # If t
 
          else:
 
+            taxis='Phase' if folded else 'Time (s)'
+
             h1=int(ht[0])                                                 # Extract numerator file number
             h2=int(ht[1])                                                 # Extract denominator file number
             ht=int(ht)
             pl.figure()
             doplot(times,timese,col[ht],cole[ht],ovr=True)                # Collect colours from col library and plot
-            pl.xlabel('Time (s)')
+            pl.xlabel(taxis)
             pl.ylabel('('+ch[h1]+'/'+ch[h2]+') colour')
             pl.title('Colour over Time Diagram'+qflav)
             pl.show(block=False)
@@ -643,9 +695,11 @@ while plotopt not in ['quit','exit']:                                     # If t
       
       print 'Plotting Lightcurve...'
 
+      taxis='Phase' if folded else 'Time (s)'
+
       pl.subplot(rowexp,colexp,1)                                         # Create subplot in the first slot
       doplot(times,timese,flux,fluxe,ovr=True)                            # Always plot the lightcurve
-      pl.xlabel('Time (s)')
+      pl.xlabel(taxis)
       pl.ylabel('Flux (counts/s/PCU)')
       pl.title('Lightcurve'+qflav)
 
@@ -685,22 +739,24 @@ while plotopt not in ['quit','exit']:                                     # If t
 
    elif plotopt=='bands':                                                 # Plot lightcurves of individual bands apart
 
+      taxis='Phase' if folded else 'Time (s)'
+
       pl.figure()
       pl.subplot(nfiles,1,1) 
       doplot(times,timese,y1[gmask],ye1[gmask],ovr=True)                  # Plot the lowest band
-      pl.xlabel('Time (s)')
+      pl.xlabel(taxis)
       pl.ylabel('Flux (counts/s/PCU)')
       pl.title(ch[1]+' Lightcurve'+qflav)
       if nfiles>1:
          pl.subplot(nfiles,1,2)
          doplot(times,timese,y2[gmask],ye2[gmask],ovr=True)               # Plot the second band
-         pl.xlabel('Time (s)')
+         pl.xlabel(taxis)
          pl.ylabel('Flux (counts/s/PCU)')
          pl.title(ch[2]+' Lightcurve'+qflav)
       if nfiles>2:
          pl.subplot(nfiles,1,3)
          doplot(times,timese,y3[gmask],ye3[gmask],ovr=True)               # Plot the third band
-         pl.xlabel('Time (s)')
+         pl.xlabel(taxis)
          pl.ylabel('Flux (counts/s/PCU)')
          pl.title(ch[3]+' Lightcurve'+qflav)
       pl.show(block=False)
@@ -713,6 +769,8 @@ while plotopt not in ['quit','exit']:                                     # If t
 
    elif plotopt=='xbands':                                                # Plot lightcurves of individual bands together
 
+      taxis='Phase' if folded else 'Time (s)'
+
       pl.figure()
       leg=[ch[1]]                                                         # Create a legend array to populate with channel names
       doplot(times,timese,y1[gmask],ye1[gmask],ovr=True,ft='-b')          # Plot the lowest band
@@ -723,7 +781,7 @@ while plotopt not in ['quit','exit']:                                     # If t
          doplot(times,timese,y3[gmask],ye3[gmask],ovr=True,ft='-r')       # Plot the third band
          leg.append(ch[3])                                                # Append name of third channel to key
       pl.legend(leg)                                                      # Create key on plot
-      pl.xlabel('Time (s)')
+      pl.xlabel(taxis)
       pl.ylabel('Flux (counts/s/PCU)')
       pl.title('Lightcurve'+qflav)
       pl.show(block=False)

@@ -110,7 +110,8 @@ else:
 
 numstep=len(loadmatrix)
 
-lspec=npsum(loadmatrix,axis=0)/float(sum(good))                           # Create the average Leahy spectrum
+nleahy=float(sum(good))
+lspec=npsum(loadmatrix,axis=0)/nleahy)                                    # Create the average Leahy spectrum
 const=pan.lhconst(lspec)                                                  # Calculate the normalisation of noise
 
 def constmi(k):                                                           # Define nuP(nu) noise average as a function of  Leahy constant.
@@ -245,7 +246,6 @@ def give_inst():                                                          # Defi
    print '* "rebin" to reset the data and load it with a different normalisation and binning.'
    print '* "clip" to clip the range of data.'
    print '* "reset" to reset data.'
-   print '* "leahy" to plot Leahy-normalised data and print the Leahy Constant.'
    print ''
    print 'SPECTROGRAM:'
    print '* "sg plot" to plot the spectrogram currently being worked on.'
@@ -267,7 +267,7 @@ def give_inst():                                                          # Defi
    print 'OTHER COMMANDS:'
    print '* "info" to display a list of facts and figures about the current SpecAngel session.'
    print '* "reflav" to rewrite the flavour text used for graph titles.'
-   print '* "sascii" to create an ASCII file of the Leahy-normalised average power density spectrum.'
+   print '* "leahy dump" to create an ASCII file of the Leahy-normalised average power density spectrum.'
    print '* "help" or "?" to display this list of instructions again.'
    print '* "quit" to Quit'
 
@@ -513,19 +513,6 @@ while specopt not in ['quit','exit']:                                     # If t
       print 'Spectrogram reset!'
 
 
-   #-----'leahy' Option------------------------------------------------------------------------------------------------
-
-   elif specopt=='leahy':                                                 # Print Leahy constant
-
-      ttl='Leahy-normed Average power density spectrum'+qflav
-      pl.plot(tfl[2:],lspec[2:])
-      pl.xlabel('Frequencyt (Hz)')
-      pl.ylabel('Leahy power (Hz^-1)')
-      pl.title(ttl)
-      pl.show(block=False)
-      print 'Leahy constant is',const
-
-
    #-----'aspec' Option------------------------------------------------------------------------------------------------
 
    # 'Average Spec'
@@ -545,6 +532,7 @@ while specopt not in ['quit','exit']:                                     # If t
       scerr=spec-(err**0.5)
 
       print 'Maximum power found at '+str(tflm[scerr.argmax()])+'Hz!'     # Suggest a peak location
+      print '  (Period of '+str(1.0/tflm[scerr.argmax()])+'s)'
       
 
    #-----'gspec' Option------------------------------------------------------------------------------------------------
@@ -753,9 +741,9 @@ while specopt not in ['quit','exit']:                                     # If t
          print 'Invalid flavour!  Flavour remains "'+flavour+'"'
 
 
-   #-----'sascii' Option-----------------------------------------------------------------------------------------------
+   #-----'leahy dump' Option-------------------------------------------------------------------------------------------
 
-   elif specopt=='sascii':
+   elif specopt=='leahy dump':
 
       aflname=raw_input('Filename:')
       try:
@@ -763,7 +751,7 @@ while specopt not in ['quit','exit']:                                     # If t
          assert len(aflname)>0
          fle=open(aflname,'w')
          for i in range(len(tfl)):
-            a=[str(tfl[i]),' ',str(lspec[i]),' ',str(const),'\n']
+            a=[str(tfl[i]),' ',str(lspec[i]),' ',str(lspec[i]/sqrt(nleahy)),'\n']
             fle.writelines(a)
          fle.close()
 

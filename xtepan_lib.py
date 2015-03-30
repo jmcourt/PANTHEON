@@ -65,7 +65,7 @@ def chrange(data,low,high,datamode):
    if low<=0 and high>=255:
       return data                                                         # Don't bother searching through if the user wants full range
 
-   if datamode=='E_125us_64M_0_1s':
+   if datamode in ['E_125us_64M_0_1s','E_16us_64M_0_1s']:
       low=evmchan(low)                                                    # Convert the channels given into range IDs
       high=evmchan(high)
       r=5,11                                                              # Identify where in the E_125 data word the channel is hidden
@@ -338,7 +338,7 @@ def getpcu(words,datamode):
 
    -J.M.Court, 2015'''
 
-   if datamode=='E_125us_64M_0_1s':
+   if datamode in ['E_125us_64M_0_1s','E_16us_64M_0_1s']:
       r=1,4
    elif datamode=='GoodXenon_2s':
       r=7,10

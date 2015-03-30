@@ -309,6 +309,9 @@ def foldify(t,y,ye,period,binsize,phres=None,name=''):
    phasye=zeros(npbins)
    ny=zeros(npbins)
 
+   a=[];ax=[]
+   b=[];bx=[]
+
    for i in range(len(y)):
       k=int(phases[i]*npbins)
       phasy[k]+=y[i]
@@ -317,7 +320,6 @@ def foldify(t,y,ye,period,binsize,phres=None,name=''):
 
    phasy=phasy/ny
    phasye=sqrt(phasye)/ny
-   phasx*=period
 
    afdiff=max(phasy)-min(phasy)                                            # Flux range after folding
    print 'Flattened by '+str(100-afdiff/ptdiff*100)+'%'
