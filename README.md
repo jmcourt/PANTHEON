@@ -17,6 +17,7 @@ _**PANTHEON**_ is an open-source suite of tools to help analyse and visualise ra
   * numba
   * numpy
   * os
+  * PyAstronomy (for data folding only)
   * pylab
   * scipy
   * sys

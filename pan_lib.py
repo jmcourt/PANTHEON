@@ -88,6 +88,8 @@ from numpy import array, arange, ceil, exp, floor, log10, mean, ones, sqrt, zero
 from numpy import append as npappend
 from numpy import sum as npsum
 
+from PyAstronomy.pyasl import foldAt
+
 
 #-----ArgCheck---------------------------------------------------------------------------------------------------------
 
@@ -283,8 +285,6 @@ def foldify(t,y,ye,period,binsize):                                       # Defi
    -J.M.Court, 2014'''
 
    ndat=len(t)                                                            # Calculating the number of data points to use
-
-   rperiod=binsize*floor(period/binsize)                                  # Round the period to the nearest multiple of binsize
 
    newt=arange(0,period,binsize)                                          # Create new time array with same binning as initial data and range of 1 period
    newy=zeros(len(newt))                                                  # Set up equal length blank arrays for flux and flux error
