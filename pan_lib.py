@@ -928,7 +928,7 @@ def slplot(x,y,ye,xlabel,ylabel,title,figid="",typ='both',errors=True):
 
 #-----SmFold-----------------------------------------------------------------------------------------------------------
 
-def smfold(t,y,ye,period,binsize,name=''):
+def smfold(t,y,ye,period,binsize,phres=None,name=''):
 
    '''Smart Folder
 
@@ -962,10 +962,33 @@ def smfold(t,y,ye,period,binsize,name=''):
    tn=tnorm(t,binsize)
    print 'Folding File '+name+'...'
    ptdiff=max(y)-min(y)                                                   # Flux range before folding
-   newt,newy,newye=foldify(tn,y,ye,period,binsize)                        # Fold file 3 using 'foldify' in xtel_lib
+
+   phases=foldAt(tn,period)
+   
+   if phres=None:
+      try:
+         phres=float(raw_input('Input Phase Resolution (0-1): '))
+         assert phres<=1.0
+      except:
+         print 'Invalid phase resolution!  Aborting!'
+         return t,y,ye
+
+   npbins=int(1.0/phres)
+   phasx =arange(0,1,phres)
+   phasy =zeros(npbins)
+   phasye=zeros(npbins)
+
+   for i in range(len(y)):
+      k=int(phases[i]*npbins)
+      phasy+=y[k]
+      phasye+=(ye[k]**2)
+
+   phasye=sqrt(phasye)
+
+#   newt,newy,newye=foldify(tn,y,ye,period,binsize)                        # Fold file 3 using 'foldify' in xtel_lib
    afdiff=max(newy)-min(newy)                                             # Flux range after folding
    print 'Flattened by '+str(100-afdiff/ptdiff*100)+'%'
-   return newt,newy,newye
+   return phasx,phasy,phasye
 
 
 #-----SpecaLd----------------------------------------------------------------------------------------------------------
