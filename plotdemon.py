@@ -355,15 +355,15 @@ while plotopt not in ['quit','exit']:                                     # If t
             print "Invalid phase resolution!"                             # Keep trying until they give a sensible input
 
       x1=x1*gmask;y1=y1*gmask;ye1=ye1*gmask                               # Zeroing all data points outside of GTI
-      x1,y1,ye1=pan.smfold(x1,y1,ye1,period,binning,phres=phres,name='ch. '+ch[1])         # Fold using smfold function from pan_lib
+      x1,y1,ye1=pan.foldify(x1,y1,ye1,period,binning,phres=phres,name='ch. '+ch[1])         # Fold using foldify function from pan_lib
 
       if nfiles>1:
          x2=x2*gmask;y2=y2*gmask;ye2=ye2*gmask                            # Zeroing all data points outside of GTI
-         x2,y2,ye2=pan.smfold(x2,y2,ye2,period,binning,phres=phres,name='ch. '+ch[2])      # Fold data of file 2 if present
+         x2,y2,ye2=pan.foldify(x2,y2,ye2,period,binning,phres=phres,name='ch. '+ch[2])      # Fold data of file 2 if present
 
       if nfiles==3:
          x3=x3*gmask;y3=y3*gmask;ye3=ye3*gmask                            # Zeroing all data points outside of GTI
-         x3,y3,ye3=pan.smfold(x3,y3,ye3,period,binning,phres=phres,name='ch. '+ch[3])      # Fold data of file 3 if present
+         x3,y3,ye3=pan.foldify(x3,y3,ye3,period,binning,phres=phres,name='ch. '+ch[3])      # Fold data of file 3 if present
 
       gmask=ones(len(x1),dtype=bool)                                      # Re-establish gmask
       times,timese,flux,fluxe,col,cole=colorget()

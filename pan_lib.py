@@ -55,8 +55,6 @@
 #  SLPLOT    - plots an x-y line plot of two sets of data, and then below plots the same data on another
 #              set of axes in log-log space.
 #
-#  SMFOLD    - uses foldify to fold data, and prints the factor by which the data's amplitude was flattened.
-#
 #  SPECALD   - load and unpickle a .speca file and extract its data.
 #
 #  SPECASV   - collect a selection of data products as a library, pickle it and save as a .speca file.
@@ -87,8 +85,6 @@ from numba import jit
 from numpy import array, arange, ceil, exp, floor, log10, mean, ones, sqrt, zeros
 from numpy import append as npappend
 from numpy import sum as npsum
-
-from PyAstronomy.pyasl import foldAt
 
 
 #-----ArgCheck---------------------------------------------------------------------------------------------------------
@@ -255,25 +251,28 @@ def flncheck(filename,validext,cont=False):
 
 #-----Foldify----------------------------------------------------------------------------------------------------------
 
-@jit
-def foldify(t,y,ye,period,binsize):                                       # Defining 'foldify' subscript
+def foldify(t,y,ye,period,binsize,phres=None,name=''):
 
    '''Foldify
 
    Description:
 
-    Takes a 2-dimensional set of data; given a user-input period in the t data, this function
-    additively folds the y data over that period.
+    Folds a two-dimensional set of data over a period in the first dimension using the folding script
+    which is provided in PyAstronomy.  Also calculates how much the peak-trough difference of the
+    data has been compressed by the fold, and tells the user.
 
    Inputs:
 
-    t       -  LIST: The t- or x-values of the two-dimensional data.  The period to be folded over
-                     is a period in this dimension.
-    y       -  LIST: The y-values of the two-dimensional data, must be the same length as x.
-    ye      -  LIST: The errors associated with the y-values of the two-dimensional data, must be
-                     the same length as x and y.
-    period  - FLOAT: The period of the data, in the same units as the data's x-values.
-    binsize - FLOAT: the size of the new x-axis bins in which to re-bin the data.
+    t       -   LIST: The t- or x-values of the two-dimensional data.  The period to be folded over
+                      is a period in this dimension.
+    y       -   LIST: The y-values of the two-dimensional data, must be the same length as x.
+    ye      -   LIST: The errors associated with the y-values of the two-dimensional data, must be
+                      the same length as x and y.
+    period  -  FLOAT: The period of the data, in the same units as the data's x-values.
+    binsize -  FLOAT: The size of the new x-axis bins in which to re-bin the data.
+    phres   -  FLOAT: The resolution, in frequency space, at which data will be shown.
+    name    - STRING: [optional] the name of the file to be folded.  This name will be used in text
+                      outputs printed to screen.
 
    Outputs:
 
@@ -282,33 +281,47 @@ def foldify(t,y,ye,period,binsize):                                       # Defi
     newye   -  LIST: The errors associated with the folded y-values of the two-dimensional data for
                      one period.
 
-   -J.M.Court, 2014'''
+   -J.M.Court, 2015'''
 
-   ndat=len(t)                                                            # Calculating the number of data points to use
+   try:
+      from PyAstronomy.pyasl import foldAt
+   except:
+      print 'PyAstronomy module not found; aborting!'
+      return t,y,ye
 
-   newt=arange(0,period,binsize)                                          # Create new time array with same binning as initial data and range of 1 period
-   newy=zeros(len(newt))                                                  # Set up equal length blank arrays for flux and flux error
-   newye=zeros(len(newt))
-   ndpy=zeros(len(newt))                                                  # Set up array to keep track of how many times data points were placed into each bin
+   tn=tnorm(t,binsize)
+   print 'Folding File '+name+'...'
+   ptdiff=max(y)-min(y)                                                   # Flux range before folding
 
-   for i in range(ndat):                                                  # For all data points...
-      fx=t[i]                                                             # Get the time
-      fy=y[i]                                                             # Get the flux
-      fye=(ye[i]**2)                                                      # Get the square of the flux error
-      fx-=floor(fx/period)*period                                         # Subtract an integer number of periods from the timestamp so it is in the range [0,period]
-      while fx<0:
-         fx+=period                                                       # Bump up any values which, through computational error, get placed at a negative location
-      fx=floor(fx/binsize)                                                # Convert the timestamp into an index within the folded arrays
-      newy[fx]+=fy                                                        # Add flux and data into their new folded bins
-      newye[fx]+=fye
-      ndpy[fx]+=1                                                         # Add one to the total number of data points contributing to that bin
+   phases=foldAt(tn,period)
+ 
+   if phres==None:
+      try:
+         phres=float(raw_input('Input Phase Resolution (0-1): '))
+         assert phres<=1.0
+      except:
+         print 'Invalid phase resolution!  Aborting!'
+         return t,y,ye
 
-   for i in range(len(newt)):
-      if ndpy[i]!=0:
-         newy[i]=newy[i]/ndpy[i]                                          # Divide through by the number of data points thrown into each bin
-         newye[i]=sqrt(newye[i])/ndpy[i]
+   npbins=int(1.0/phres)
+   phasx =arange(0,1,phres)
+   phasy =zeros(npbins)
+   phasye=zeros(npbins)
+   ny=zeros(npbins)
 
-   return newt, newy, newye
+   for i in range(len(y)):
+      k=int(phases[i]*npbins)
+      phasy[k]+=y[i]
+      phasye[k]+=(ye[i]**2)
+      ny[k]+=1
+
+   phasy=phasy/ny
+   phasye=sqrt(phasye)/ny
+   phasx*=period
+
+   afdiff=max(phasy)-min(phasy)                                            # Flux range after folding
+   print 'Flattened by '+str(100-afdiff/ptdiff*100)+'%'
+   return phasx,phasy,phasye
 
 
 #-----GTIMask----------------------------------------------------------------------------------------------------------
@@ -924,71 +937,6 @@ def slplot(x,y,ye,xlabel,ylabel,title,figid="",typ='both',errors=True):
       pl.show(block=False)                                                # Show both plots together
    else:
       'Invalid typ!  No plot shown.'                                      # Complain if none of 'lin', 'log' or 'both are given as typ word
-
-
-#-----SmFold-----------------------------------------------------------------------------------------------------------
-
-def smfold(t,y,ye,period,binsize,phres=None,name=''):
-
-   '''Smart Folder
-
-   Description:
-
-    Folds a two-dimensional set of data over a period in the first dimension using the foldify script
-    which is also provided in xtele_lib.  Also calculates how much the peak-trough difference of the
-    data has been compressed by the fold, and tells the user.
-
-   Inputs:
-
-    t       -   LIST: The t- or x-values of the two-dimensional data.  The period to be folded over
-                      is a period in this dimension.
-    y       -   LIST: The y-values of the two-dimensional data, must be the same length as x.
-    ye      -   LIST: The errors associated with the y-values of the two-dimensional data, must be
-                      the same length as x and y.
-    period  -  FLOAT: The period of the data, in the same units as the data's x-values.
-    binsize -  FLOAT: the size of the new x-axis bins in which to re-bin the data.
-    name    - STRING: [optional] the name of the file to be folded.  This name will be used in text
-                      outputs printed to screen.
-
-   Outputs:
-
-    newt    -  LIST: A clipped version of the input t which now only corresponds to one period.
-    newy    -  LIST: The folded y-values of the two-dimensional data for one period.
-    newye   -  LIST: The errors associated with the folded y-values of the two-dimensional data for
-                     one period.
-
-   -J.M.Court, 2015'''
-
-   tn=tnorm(t,binsize)
-   print 'Folding File '+name+'...'
-   ptdiff=max(y)-min(y)                                                   # Flux range before folding
-
-   phases=foldAt(tn,period)
-   
-   if phres=None:
-      try:
-         phres=float(raw_input('Input Phase Resolution (0-1): '))
-         assert phres<=1.0
-      except:
-         print 'Invalid phase resolution!  Aborting!'
-         return t,y,ye
-
-   npbins=int(1.0/phres)
-   phasx =arange(0,1,phres)
-   phasy =zeros(npbins)
-   phasye=zeros(npbins)
-
-   for i in range(len(y)):
-      k=int(phases[i]*npbins)
-      phasy+=y[k]
-      phasye+=(ye[k]**2)
-
-   phasye=sqrt(phasye)
-
-#   newt,newy,newye=foldify(tn,y,ye,period,binsize)                        # Fold file 3 using 'foldify' in xtel_lib
-   afdiff=max(newy)-min(newy)                                             # Flux range after folding
-   print 'Flattened by '+str(100-afdiff/ptdiff*100)+'%'
-   return phasx,phasy,phasye
 
 
 #-----SpecaLd----------------------------------------------------------------------------------------------------------
