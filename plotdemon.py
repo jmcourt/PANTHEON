@@ -379,9 +379,11 @@ while plotopt not in ['quit','exit']:                                     # If t
          print 'Time range is '+str(x1[0])+'s - '+str(x1[-1])+'s'
 
          print 'Please choose new range of data:'
-         mint,maxt=pan.srinr(times,binning,'time')                        # Fetch new time domain endpoints using srinr function from pan_lib
+         mint,maxt=pan.srinr(x1,binning,'time')                        # Fetch new time domain endpoints using srinr function from pan_lib
 
          print 'Clipping...'
+
+         print x1[mint],x1[maxt]
 
          x1=x1[mint:maxt]                                                 # Clip file 1
          y1=y1[mint:maxt]
@@ -552,6 +554,8 @@ while plotopt not in ['quit','exit']:                                     # If t
             doplot(col[ht],cole[ht],flux,fluxe)                           # Collect colours from col library and plot
             pl.ylabel('Flux (counts/s/PCU)')
             pl.xlabel('('+ch[h1]+'/'+ch[h2]+') colour')
+            pl.xlim(0,2)
+            pl.ylim(0,300)
             pl.title('Hardness Intensity Diagram'+qflav)
             pl.show(block=False)
             print 'File'+str(h1)+'/File'+str(h2)+' HID plotted!'
@@ -612,6 +616,8 @@ while plotopt not in ['quit','exit']:                                     # If t
          doplot(col[31],cole[31],col[21],cole[21])
          pl.xlabel('('+ch[2]+'/'+ch[1]+') colour')
          pl.ylabel('('+ch[3]+'/'+ch[1]+') colour')
+         pl.xlim(0,2)
+         pl.ylim(0,2)
          pl.title('Colour-Colour Diagram'+qflav)
          pl.show(block=False)
          print 'CCD plotted!'
