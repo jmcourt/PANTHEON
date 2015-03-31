@@ -252,13 +252,13 @@ def give_inst():                                                          # Defi
    print ''
    print '1+ DATASET PLOTS:'
    print '* "lc" to plot a simple graph of flux over time'
-   print '* "lc dump" to dump the lightcurve data into an ASCII file'
    print '* "animate" to create an animation of the lightcurve as the binning is increased'
    if nfiles>1:                                                           # Only display 2-data-set instructions if 2+ datasets given
       print ''
       print '2+ DATASET PLOTS:'
       print '* "hid21" to plot a hardness-intensity diagram of file2/file1 colour against total flux'
       print '* "hid12" to plot a hardness-intensity diagram of file1/file2 colour against total flux'
+
       print '* "col21" to plot file2/file1 colour against time.'
       print '* "col12" to plot file1/file2 colour against time.'
       print '* "bands" to plot lightcurves of all bands on adjacent axes.'
@@ -276,6 +276,14 @@ def give_inst():                                                          # Defi
       print '* "col31" to plot file3/file1 colour against time.'
       print '* "col13" to plot file1/file3 colour against time.'
       print '* "ccd" to plot a colour-colour diagram (3/1 colour against 2/1 colour).'
+   print ''
+   print 'SAVING DATA TO ASCII:'
+   print '* "lc dump" to dump the lightcurve data into an ASCII file'
+   if nfiles>1:                                                           # Only display 2-data-set instructions if 2+ datasets given
+      print '* "hidXY dump" to save a fileX/fileY HID as an ASCII file.  [Replace "X" and "Y" with 1'+(' or 2' if nfiles==2 else ',2 or 3 ')+'].'
+      print '* "colXY dump" to save a fileX/fileY Col/t diagram as an ASCII file.  [Replace "X" and "Y" with 1'+(' or 2' if nfiles==2 else ',2 or 3 ')+'].'
+   if nfiles==3:
+      print '* "ccd dump" to save a colour-colour diagram as an ASCII file.'
    print ''
    print 'TOGGLE OPTIONS:'
    print '* "errors" to toggle whether to display errors in plots.'
@@ -300,6 +308,18 @@ while plotopt not in ['quit','exit']:                                     # If t
    print ''
    plotopt=raw_input('Give command [? for help]: ')                       # Fetch command from user
    print ''
+
+
+   #-----Aliasing options----------------------------------------------------------------------------------------------
+
+   if plotopt=='shid':                                                    # Let 'shid' refer to the soft 2/1 HID
+      plotopt='hid 21'
+
+   elif plotopt=='hhid':                                                  # Let 'hhid' refer to the hard 3/1 HID
+      plotopt='hid 31'
+
+   elif plotopt=='hid' and nfiles==2:
+      plotopt='hid 21'                                                    # Let 'hid' refer to the 2/1 HID if that is the only HID available
 
 
    #-----'rebin' option------------------------------------------------------------------------------------------------
@@ -336,6 +356,10 @@ while plotopt not in ['quit','exit']:                                     # If t
 
 
    #-----'fold' Option-------------------------------------------------------------------------------------------------
+
+   elif plotopt=='fold' and folded:
+
+      print 'Data already folded!  Rebin before re-folding.'
 
    elif plotopt=='fold':                                                  # Fold lightcurve
 
@@ -460,9 +484,20 @@ while plotopt not in ['quit','exit']:                                     # If t
 
       if folded:
 
-         for i in range(len(times)):
-            a=[str(times[i]*period),' ',str(timese[i]),' ',str(flux[i]),' ',str(fluxe[i]),'\n']
-            ofil.writelines(a)
+         try:
+            asciilcrep=int(raw_input('Number of waveforms to save: '))
+            assert asciilcrep>0
+            print 'Saving '+str(asciilcrep)+' waveform repetition'+('s' if asciilcrep>0 else None)+'.'
+         except:
+            print 'Saving 1 waveform repetition.'
+            asciilcrep=1
+            
+         for j in range(asciilcrep):
+
+            for i in range(len(times)):
+               a=[str(times[i]*period),' ',str(timese[i]),' ',str(flux[i]),' ',str(fluxe[i]),'\n']
+               ofil.writelines(a)
+            times=times+1
 
       else:
 
@@ -578,7 +613,7 @@ while plotopt not in ['quit','exit']:                                     # If t
 
    #-----'hidxy' Option------------------------------------------------------------------------------------------------
 
-   elif plotopt[:3]=='hid':                                                # Plot x/y HID
+   elif plotopt[:3]=='hid' and plotopt[5:]!=' dump':                       # Plot x/y HID
 
       ht=plotopt[3:]                                                       # Collect the xy token from the user
 
@@ -590,13 +625,14 @@ while plotopt not in ['quit','exit']:                                     # If t
             print 'Did you mean...'
             print ''
             print 'HID options:'
-            print '*"hid12" for 2/1 colour'
-            print '*"hid21" for 1/2 colour'
+            print '* "hid12" for 2/1 colour'
+            print '* "hid21" for 1/2 colour'
             if nfiles==3:
-               print '*"hid32" for 3/2 colour'
-               print '*"hid23" for 2/3 colour'
-               print '*"hid31" for 3/1 colour'
-               print '*"hid13" for 1/3 colour'
+               print '* "hid32" for 3/2 colour'
+               print '* "hid23" for 2/3 colour'
+               print '* "hid31" for 3/1 colour'
+               print '* "hid13" for 1/3 colour'
+            print ' *"hidXY dump" to export the X/Y HID to ASCII'
 
          elif ('3' in ht) and (nfiles<3):
 
@@ -621,9 +657,56 @@ while plotopt not in ['quit','exit']:                                     # If t
          print 'Not enough infiles for HID!'
 
 
+   #-----'hidxy dump' Option-------------------------------------------------------------------------------------------
+
+   elif plotopt[:3]=='hid' and plotopt[5:]==' dump':                      # Dump HID to ASCII file
+
+      ht=plotopt[3:5]                                                     # Collect the xy token from the user
+
+      if nfiles>1:
+         if not (ht in ['12','13','21','23','31','32']):                  # Check that the token is 2 long and contains two different characters of the set [1,2,3]
+
+            print 'Invalid command!'
+            print ''
+            print 'Did you mean...'
+            print ''
+            print 'HID options:'
+            print '* "hid12" for 2/1 colour'
+            print '* "hid21" for 1/2 colour'
+            if nfiles==3:
+               print '* "hid32" for 3/2 colour'
+               print '* "hid23" for 2/3 colour'
+               print '* "hid31" for 3/1 colour'
+               print '* "hid13" for 1/3 colour'
+            print '* "hidXY dump" to export the X/Y HID to ASCII'
+
+         elif ('3' in ht) and (nfiles<3):
+
+            print 'Not enough infiles for advanced HID!'                  # If token contains a 3 but only 2 infiles are used, abort!
+
+         else:
+
+            h1=int(ht[0])                                                 # Extract numerator file number
+            h2=int(ht[1])                                                 # Extract denominator file number
+            ht=int(ht)
+
+            ofilename=raw_input('Save textfile as: ')
+
+            ofil = open(ofilename, 'w')
+
+            for i in range(len(times)):
+
+               a=[str(col[ht][i]),' ',str(cole[ht][i]),' ',str(flux[i]),' ',str(fluxe[i]),'\n']
+               ofil.writelines(a)
+
+            ofil.close()
+
+            print 'File'+str(h1)+'/File'+str(h2)+' HID saved!'
+
+
    #-----'colxy' Option------------------------------------------------------------------------------------------------
 
-   elif plotopt[:3]=='col':                                                # Plot x/y colour/t
+   elif plotopt[:3]=='col' and plotopt[5:]!=' dump':                       # Plot x/y colour/t
 
       ht=plotopt[3:]                                                       # Collect the xy token from the user
 
@@ -642,6 +725,7 @@ while plotopt not in ['quit','exit']:                                     # If t
                print '*"col23" for 2/3 colour'
                print '*"col31" for 3/1 colour'
                print '*"col13" for 1/3 colour'
+            print '* "colXY dump" to export the X/Y colour to ASCII'
 
          elif ('3' in ht) and (nfiles<3):
 
@@ -666,9 +750,56 @@ while plotopt not in ['quit','exit']:                                     # If t
          print 'Not enough infiles for Col/t plot!'
 
 
+   #-----'colxy dump' Option-------------------------------------------------------------------------------------------
+
+   elif plotopt[:3]=='col' and plotopt[5:]==' dump':                      # Dump Col/t to ASCII file
+
+      ht=plotopt[3:5]                                                     # Collect the xy token from the user
+
+      if nfiles>1:
+         if not (ht in ['12','13','21','23','31','32']):                  # Check that the token is 2 long and contains two different characters of the set [1,2,3]
+
+            print 'Invalid command!'
+            print ''
+            print 'Did you mean...'
+            print ''
+            print 'Col/t plot options:'
+            print '*"col12" for 2/1 colour'
+            print '*"col21" for 1/2 colour'
+            if nfiles==3:
+               print '*"col32" for 3/2 colour'
+               print '*"col23" for 2/3 colour'
+               print '*"col31" for 3/1 colour'
+               print '*"col13" for 1/3 colour'
+            print '* "colXY dump" to export the X/Y colour to ASCII'
+
+         elif ('3' in ht) and (nfiles<3):
+
+            print 'Not enough infiles for advanced HID!'                  # If token contains a 3 but only 2 infiles are used, abort!
+
+         else:
+
+            h1=int(ht[0])                                                 # Extract numerator file number
+            h2=int(ht[1])                                                 # Extract denominator file number
+            ht=int(ht)
+
+            ofilename=raw_input('Save textfile as: ')
+
+            ofil = open(ofilename, 'w')
+
+            for i in range(len(times)):
+
+               a=[str(times[i]),' ',str(timese[i]),' ',str(flux[i]),' ',str(fluxe[i]),'\n']
+               ofil.writelines(a)
+
+            ofil.close()
+
+            print 'File'+str(h1)+'/File'+str(h2)+' Col/t plot saved!'
+
+
    #-----'ccd' Option--------------------------------------------------------------------------------------------------
 
-   elif plotopt=='ccd':                                                   # Plot 3/1 HID
+   elif plotopt=='ccd':                                                   # Plot Colour-Colour diagram
 
       if nfiles==3:
          pl.figure()
@@ -681,6 +812,28 @@ while plotopt not in ['quit','exit']:                                     # If t
          pl.show(block=False)
          print 'CCD plotted!'
       else:
+         print 'Not enough infiles for CCD!'
+
+
+   #-----'ccd dump' Option---------------------------------------------------------------------------------------------
+
+   elif plotopt=='ccd dump':                                               # Dump CCD to ASCII
+
+      if nfiles==3:
+         ofilename=raw_input('Save textfile as: ')
+
+         ofil = open(ofilename, 'w')
+
+         for i in range(len(times)):
+            a=[str(col[31][i]),' ',str(cole[31][i]),' ',str(col[21][i]),' ',str(cole[21][i]),'\n']
+            ofil.writelines(a)
+
+         ofil.close()
+
+         print 'CCD saved!'
+
+      else:
+
          print 'Not enough infiles for CCD!'
 
 
@@ -752,13 +905,13 @@ while plotopt not in ['quit','exit']:                                     # If t
          doplot(times,timese,y2[gmask],ye2[gmask],ovr=True)               # Plot the second band
          pl.xlabel(taxis)
          pl.ylabel('Flux (counts/s/PCU)')
-         pl.title(ch[2]+' Lightcurve'+qflav)
+         pl.title(ch[2]+' Lightcurve'+flv2)
       if nfiles>2:
          pl.subplot(nfiles,1,3)
          doplot(times,timese,y3[gmask],ye3[gmask],ovr=True)               # Plot the third band
          pl.xlabel(taxis)
          pl.ylabel('Flux (counts/s/PCU)')
-         pl.title(ch[3]+' Lightcurve'+qflav)
+         pl.title(ch[3]+' Lightcurve'+flv3)
       pl.show(block=False)
       print 'Banded lightcurves plotted!'
 

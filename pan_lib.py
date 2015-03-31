@@ -723,7 +723,7 @@ def plotdld(filename):
     flavour  -     STRING: A useful bit of text to put on plots to help identify them later on.
     chanstr  -     STRING: A string containing the high and low channel numbers separated by a dash.
     mission  -     STRING: The name of the satellite
-    pbsdata  -      TUPLE: The first element is the name of the object, the second is the observation
+    obsdata  -      TUPLE: The first element is the name of the object, the second is the observation
                            ID.
     version  -     STRING: The Version of FITSGenie in which the file was created
 
@@ -938,7 +938,7 @@ def slplot(x,y,ye,xlabel,ylabel,title,figid="",typ='both',errors=True):
    if typ in ('lin','log','both'):
       pl.show(block=False)                                                # Show both plots together
    else:
-      'Invalid typ!  No plot shown.'                                      # Complain if none of 'lin', 'log' or 'both are given as typ word
+      print 'Invalid typ!  No plot shown.'                                # Complain if none of 'lin', 'log' or 'both are given as typ word
 
 
 #-----SpecaLd----------------------------------------------------------------------------------------------------------
