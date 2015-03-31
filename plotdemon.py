@@ -392,7 +392,7 @@ while plotopt not in ['quit','exit']:                                     # If t
          x3,y3,ye3=pan.foldify(x3,y3,ye3,period,binning,phres=phres,name='ch. '+ch[3])      # Fold data of file 3 if present
 
       gmask=ones(len(x1),dtype=bool)                                      # Re-establish gmask
-      times,timese,flux,fluxe,col,cole=colorget()
+      times,timese,flux,fluxe,col,cole=colorget()                         # Re-get colours
       folded=True
 
       print 'Folding Complete!'
@@ -410,11 +410,10 @@ while plotopt not in ['quit','exit']:                                     # If t
 
          print 'Clipping data'
          print ''
-
          print 'Time range is '+str(x1[0])+'s - '+str(x1[-1])+'s'
 
          print 'Please choose new range of data:'
-         mint,maxt=pan.srinr(x1,binning,'time')                        # Fetch new time domain endpoints using srinr function from pan_lib
+         mint,maxt=pan.srinr(x1,binning,'time')                           # Fetch new time domain endpoints using srinr function from pan_lib
 
          print 'Clipping...'
 
@@ -423,19 +422,17 @@ while plotopt not in ['quit','exit']:                                     # If t
          ye1=ye1[mint:maxt]
 
          if nfiles>1:
-
             x2=x2[mint:maxt]                                              # Clip file 2
             y2=y2[mint:maxt]
             ye2=ye2[mint:maxt]
 
          if nfiles==3:
-
             x3=x3[mint:maxt]                                              # Clip file 3
             y3=y3[mint:maxt]
             ye3=ye3[mint:maxt]
 
          gmask=pan.gtimask(x1,gti)                                        # Re-establish gmask
-         times,timese,flux,fluxe,col,cole=colorget()
+         times,timese,flux,fluxe,col,cole=colorget()                      # Re-get colours
 
          print 'Data clipped!'
 
@@ -446,15 +443,14 @@ while plotopt not in ['quit','exit']:                                     # If t
 
       print 'Masking data'
       print ''
-
       print 'Select time range to mask: '
-      mint,maxt=pan.srinr(x1,binning,'time')
+      mint,maxt=pan.srinr(x1,binning,'time')                              # Fetch time domain endpoints of bad window using srinr function from pan_lib
 
       print 'Masking...'
 
-      gmask[mint:maxt]=False
+      gmask[mint:maxt]=False                                              # Force all values inside the bad window to appear as outside of GTIs
 
-      times,timese,flux,fluxe,col,cole=colorget()  
+      times,timese,flux,fluxe,col,cole=colorget()                         # Re-get colours
 
       print 'Data masked!'
 
@@ -466,7 +462,7 @@ while plotopt not in ['quit','exit']:                                     # If t
       taxis='Phase' if folded else 'Time (s)'
 
       pl.figure()
-      doplot(times,timese,flux,fluxe,ovr=True)
+      doplot(times,timese,flux,fluxe,ovr=True)                            # Plot flux/time using doplot from pan_lib
       pl.xlabel(taxis)
       pl.ylabel('Flux (counts/s/PCU)')
       pl.title('Lightcurve'+qflav)
@@ -478,34 +474,34 @@ while plotopt not in ['quit','exit']:                                     # If t
 
    elif plotopt=='lc dump':                                               # Dump lightcurve to ASCII file
 
-      ofilename=raw_input('Save textfile as: ')
+      ofilename=raw_input('Save textfile as: ')                           # Fetch filename from user
 
-      ofil = open(ofilename, 'w')
+      ofil = open(ofilename, 'w')                                         # Open file
 
       if folded:
 
          try:
-            asciilcrep=int(raw_input('Number of waveforms to save: '))
-            assert asciilcrep>0
+            asciilcrep=int(raw_input('Number of waveforms to save: '))    # If folded, ask the user how many iterations of the waveform they would like to save
+            assert asciilcrep>0                                           # Force this number to be positive
             print 'Saving '+str(asciilcrep)+' waveform repetition'+('s' if asciilcrep>0 else None)+'.'
          except:
             print 'Saving 1 waveform repetition.'
-            asciilcrep=1
+            asciilcrep=1                                                  # Default to 1 repetition if the user inputs garbage
             
-         for j in range(asciilcrep):
+         for j in range(asciilcrep):                                      # Repeat the data as many times as the user asks:
 
             for i in range(len(times)):
                a=[str(times[i]*period),' ',str(timese[i]),' ',str(flux[i]),' ',str(fluxe[i]),'\n']
-               ofil.writelines(a)
-            times=times+1
+               ofil.writelines(a)                                         # Append row of data into open file
+            times=times+1                                                 # Shift x-axis along by one period
 
       else:
 
          for i in range(len(times)):
             a=[str(times[i]),' ',str(timese[i]),' ',str(flux[i]),' ',str(fluxe[i]),'\n']
-            ofil.writelines(a)
+            ofil.writelines(a)                                            # Append row of data into open file
 
-      ofil.close()
+      ofil.close()                                                        # Close file
 
       print 'Lightcurve saved!'
 
@@ -523,9 +519,8 @@ while plotopt not in ['quit','exit']:                                     # If t
          print 'Creating folder "'+animsloc+'"...'
          os.makedirs(animsloc)
 
-      here=os.getcwd()
-
-      os.chdir(animsloc)
+      here=os.getcwd()                                                    # Get current working directory (to move back to later)
+      os.chdir(animsloc)                                                  # Change working directory to animation location
 
       animbin=0.0025                                                      # Start with an arbitrarily low binsize
 
@@ -533,8 +528,7 @@ while plotopt not in ['quit','exit']:                                     # If t
          animbin=animbin*2
 
       anstep=1                                                            # Track the number of steps taken
-
-      dst=times[0]
+      dst=times[0]                                                        # Fetch largest and smallest times to use to force same scale on all graphs
       det=times[-1]
 
       while animbin<(det-dst)/4.0:                                        # Set the maximum binsize at one quarter of the observation length
@@ -567,21 +561,21 @@ while plotopt not in ['quit','exit']:                                     # If t
 
          gmask=pan.gtimask(x1,gti)                                        # Re-establish gmask
 
-         times,timese,flux,fluxe,col,cole=colorget(verbose=False)
+         times,timese,flux,fluxe,col,cole=colorget(verbose=False)         # Re-get colours
 
          if anstep==1:
             if es:
               merr=max(fluxe)
             else:
               merr=0
-            maxany=max(flux)+merr                                         # Calculate the range of all plots based on the range of the first plot
+            maxany=max(flux)+merr                                         # Calculate the scale of all plots based on the range of the first plot
             minany=min(flux)-merr
             if minany<0: minany=0
 
          taxis='Phase' if folded else 'Time (s)'
 
          pl.figure()
-         doplot(times,timese,flux,fluxe,ovr=True)
+         doplot(times,timese,flux,fluxe,ovr=True)                         # Plot the graph using doplot from pan_lib
          pl.xlabel(taxis)
          pl.ylabel('Flux (counts/s/PCU)')
          pl.title('Lightcurve ('+str(animbin)+'s binning)')

@@ -230,7 +230,9 @@ print 'Discarding photons outside of '+etype+' range '+str(lowc)+escale+'-'+str(
 
 datas=inst.discnev(datas)
 olen=str(len(datas))
+print '1'
 datas=inst.chrange(datas,lowc,highc,event[1].header['DATAMODE'])
+print '2'
 tstart=inst.getini(event)
 
 phcts=len(datas)
