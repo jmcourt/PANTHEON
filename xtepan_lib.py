@@ -79,7 +79,6 @@ def chrange(data,low,high,datamode):
       print datamode,'not yet supported, using full range!'
       return data
 
-   print words[1]
    words=array(pan.boolval((words[:,r[0]:r[1]]).tolist()))
 
    mask1=(words>=low)
@@ -349,7 +348,7 @@ def getpcu(words,datamode):
    elif datamode=='GoodXenon_2s':
       r=7,10
    else:
-      print datamode,'not yet supported!'
+      print 'Number of PCUs is unknown!'
       return 1
 
    pcus=0

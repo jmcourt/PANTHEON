@@ -278,12 +278,7 @@ def give_inst():                                                          # Defi
       print '* "ccd" to plot a colour-colour diagram (3/1 colour against 2/1 colour).'
    print ''
    print 'SAVING DATA TO ASCII:'
-   print '* "lc dump" to dump the lightcurve data into an ASCII file'
-   if nfiles>1:                                                           # Only display 2-data-set instructions if 2+ datasets given
-      print '* "hidXY dump" to save a fileX/fileY HID as an ASCII file.  [Replace "X" and "Y" with 1'+(' or 2' if nfiles==2 else ',2 or 3 ')+'].'
-      print '* "colXY dump" to save a fileX/fileY Col/t diagram as an ASCII file.  [Replace "X" and "Y" with 1'+(' or 2' if nfiles==2 else ',2 or 3 ')+'].'
-   if nfiles==3:
-      print '* "ccd dump" to save a colour-colour diagram as an ASCII file.'
+   print '* "export" to dump the lightcurve and colour data into an ASCII file'
    print ''
    print 'TOGGLE OPTIONS:'
    print '* "errors" to toggle whether to display errors in plots.'
@@ -313,13 +308,13 @@ while plotopt not in ['quit','exit']:                                     # If t
    #-----Aliasing options----------------------------------------------------------------------------------------------
 
    if plotopt=='shid':                                                    # Let 'shid' refer to the soft 2/1 HID
-      plotopt='hid 21'
+      plotopt='hid21'
 
    elif plotopt=='hhid':                                                  # Let 'hhid' refer to the hard 3/1 HID
-      plotopt='hid 31'
+      plotopt='hid31'
 
    elif plotopt=='hid' and nfiles==2:
-      plotopt='hid 21'                                                    # Let 'hid' refer to the 2/1 HID if that is the only HID available
+      plotopt='hid21'                                                     # Let 'hid' refer to the 2/1 HID if that is the only HID available
 
 
    #-----'rebin' option------------------------------------------------------------------------------------------------
@@ -470,15 +465,17 @@ while plotopt not in ['quit','exit']:                                     # If t
       print 'Lightcurve plotted!'
 
 
-   #-----'lc dump' Option----------------------------------------------------------------------------------------------
+   #-----'export' Option-----------------------------------------------------------------------------------------------
 
-   elif plotopt=='lc dump':                                               # Dump lightcurve to ASCII file
+   elif plotopt=='export':                                                # Export lightcurve to ASCII file
 
       ofilename=raw_input('Save textfile as: ')                           # Fetch filename from user
 
       ofil = open(ofilename, 'w')                                         # Open file
 
       if folded:
+
+         exfac=period
 
          try:
             asciilcrep=int(raw_input('Number of waveforms to save: '))    # If folded, ask the user how many iterations of the waveform they would like to save
@@ -487,23 +484,45 @@ while plotopt not in ['quit','exit']:                                     # If t
          except:
             print 'Saving 1 waveform repetition.'
             asciilcrep=1                                                  # Default to 1 repetition if the user inputs garbage
-            
-         for j in range(asciilcrep):                                      # Repeat the data as many times as the user asks:
-
-            for i in range(len(times)):
-               a=[str(times[i]*period),' ',str(timese[i]),' ',str(flux[i]),' ',str(fluxe[i]),'\n']
-               ofil.writelines(a)                                         # Append row of data into open file
-            times=times+1                                                 # Shift x-axis along by one period
 
       else:
 
+         exfac=1
+         asciilcrep=1
+
+      for j in range(asciilcrep):                                      # Repeat the data as many times as the user asks:
          for i in range(len(times)):
-            a=[str(times[i]),' ',str(timese[i]),' ',str(flux[i]),' ',str(fluxe[i]),'\n']
-            ofil.writelines(a)                                            # Append row of data into open file
+
+            row=[0]*15
+            row[0]=str(times[i]*exfac)+' '
+            row[1]=str(timese[i]*exfac)+' '
+            row[2]=str(flux[i])+' '
+            row[3]=str(fluxe[i])+' '
+            row[4]=str(y1[gmask][i])+' '
+            row[5]=str(ye1[gmask][i])+' '
+            row[14]='\n'
+
+            if nfiles>1:
+
+               row[6]=str(y2[gmask][i])+' '
+               row[7]=str(ye2[gmask][i])+' '
+               row[10]=str(col[21][i])+' '
+               row[11]=str(cole[21][i])+' '
+
+            if nfiles==3:
+
+               row[8]=str(y3[gmask][i])+' '
+               row[9]=str(ye3[gmask][i])+' '
+               row[12]=str(col[31][i])+' '
+               row[13]=str(cole[31][i])+' '
+
+            ofil.writelines(row)                                          # Append row of data into open file
+
+         times=times+1                                                    # Shift x-axis along by one period
 
       ofil.close()                                                        # Close file
 
-      print 'Lightcurve saved!'
+      print 'Data saved!'
 
 
    #-----'animate' Option----------------------------------------------------------------------------------------------
@@ -607,7 +626,7 @@ while plotopt not in ['quit','exit']:                                     # If t
 
    #-----'hidxy' Option------------------------------------------------------------------------------------------------
 
-   elif plotopt[:3]=='hid' and plotopt[5:]!=' dump':                       # Plot x/y HID
+   elif plotopt[:3]=='hid':                                                # Plot x/y HID
 
       ht=plotopt[3:]                                                       # Collect the xy token from the user
 
@@ -626,7 +645,6 @@ while plotopt not in ['quit','exit']:                                     # If t
                print '* "hid23" for 2/3 colour'
                print '* "hid31" for 3/1 colour'
                print '* "hid13" for 1/3 colour'
-            print ' *"hidXY dump" to export the X/Y HID to ASCII'
 
          elif ('3' in ht) and (nfiles<3):
 
@@ -651,56 +669,9 @@ while plotopt not in ['quit','exit']:                                     # If t
          print 'Not enough infiles for HID!'
 
 
-   #-----'hidxy dump' Option-------------------------------------------------------------------------------------------
-
-   elif plotopt[:3]=='hid' and plotopt[5:]==' dump':                      # Dump HID to ASCII file
-
-      ht=plotopt[3:5]                                                     # Collect the xy token from the user
-
-      if nfiles>1:
-         if not (ht in ['12','13','21','23','31','32']):                  # Check that the token is 2 long and contains two different characters of the set [1,2,3]
-
-            print 'Invalid command!'
-            print ''
-            print 'Did you mean...'
-            print ''
-            print 'HID options:'
-            print '* "hid12" for 2/1 colour'
-            print '* "hid21" for 1/2 colour'
-            if nfiles==3:
-               print '* "hid32" for 3/2 colour'
-               print '* "hid23" for 2/3 colour'
-               print '* "hid31" for 3/1 colour'
-               print '* "hid13" for 1/3 colour'
-            print '* "hidXY dump" to export the X/Y HID to ASCII'
-
-         elif ('3' in ht) and (nfiles<3):
-
-            print 'Not enough infiles for advanced HID!'                  # If token contains a 3 but only 2 infiles are used, abort!
-
-         else:
-
-            h1=int(ht[0])                                                 # Extract numerator file number
-            h2=int(ht[1])                                                 # Extract denominator file number
-            ht=int(ht)
-
-            ofilename=raw_input('Save textfile as: ')
-
-            ofil = open(ofilename, 'w')
-
-            for i in range(len(times)):
-
-               a=[str(col[ht][i]),' ',str(cole[ht][i]),' ',str(flux[i]),' ',str(fluxe[i]),'\n']
-               ofil.writelines(a)
-
-            ofil.close()
-
-            print 'File'+str(h1)+'/File'+str(h2)+' HID saved!'
-
-
    #-----'colxy' Option------------------------------------------------------------------------------------------------
 
-   elif plotopt[:3]=='col' and plotopt[5:]!=' dump':                       # Plot x/y colour/t
+   elif plotopt[:3]=='col':                                                # Plot x/y colour/t
 
       ht=plotopt[3:]                                                       # Collect the xy token from the user
 
@@ -719,7 +690,6 @@ while plotopt not in ['quit','exit']:                                     # If t
                print '*"col23" for 2/3 colour'
                print '*"col31" for 3/1 colour'
                print '*"col13" for 1/3 colour'
-            print '* "colXY dump" to export the X/Y colour to ASCII'
 
          elif ('3' in ht) and (nfiles<3):
 
@@ -744,53 +714,6 @@ while plotopt not in ['quit','exit']:                                     # If t
          print 'Not enough infiles for Col/t plot!'
 
 
-   #-----'colxy dump' Option-------------------------------------------------------------------------------------------
-
-   elif plotopt[:3]=='col' and plotopt[5:]==' dump':                      # Dump Col/t to ASCII file
-
-      ht=plotopt[3:5]                                                     # Collect the xy token from the user
-
-      if nfiles>1:
-         if not (ht in ['12','13','21','23','31','32']):                  # Check that the token is 2 long and contains two different characters of the set [1,2,3]
-
-            print 'Invalid command!'
-            print ''
-            print 'Did you mean...'
-            print ''
-            print 'Col/t plot options:'
-            print '*"col12" for 2/1 colour'
-            print '*"col21" for 1/2 colour'
-            if nfiles==3:
-               print '*"col32" for 3/2 colour'
-               print '*"col23" for 2/3 colour'
-               print '*"col31" for 3/1 colour'
-               print '*"col13" for 1/3 colour'
-            print '* "colXY dump" to export the X/Y colour to ASCII'
-
-         elif ('3' in ht) and (nfiles<3):
-
-            print 'Not enough infiles for advanced HID!'                  # If token contains a 3 but only 2 infiles are used, abort!
-
-         else:
-
-            h1=int(ht[0])                                                 # Extract numerator file number
-            h2=int(ht[1])                                                 # Extract denominator file number
-            ht=int(ht)
-
-            ofilename=raw_input('Save textfile as: ')
-
-            ofil = open(ofilename, 'w')
-
-            for i in range(len(times)):
-
-               a=[str(times[i]),' ',str(timese[i]),' ',str(flux[i]),' ',str(fluxe[i]),'\n']
-               ofil.writelines(a)
-
-            ofil.close()
-
-            print 'File'+str(h1)+'/File'+str(h2)+' Col/t plot saved!'
-
-
    #-----'ccd' Option--------------------------------------------------------------------------------------------------
 
    elif plotopt=='ccd':                                                   # Plot Colour-Colour diagram
@@ -806,28 +729,6 @@ while plotopt not in ['quit','exit']:                                     # If t
          pl.show(block=False)
          print 'CCD plotted!'
       else:
-         print 'Not enough infiles for CCD!'
-
-
-   #-----'ccd dump' Option---------------------------------------------------------------------------------------------
-
-   elif plotopt=='ccd dump':                                               # Dump CCD to ASCII
-
-      if nfiles==3:
-         ofilename=raw_input('Save textfile as: ')
-
-         ofil = open(ofilename, 'w')
-
-         for i in range(len(times)):
-            a=[str(col[31][i]),' ',str(cole[31][i]),' ',str(col[21][i]),' ',str(cole[21][i]),'\n']
-            ofil.writelines(a)
-
-         ofil.close()
-
-         print 'CCD saved!'
-
-      else:
-
          print 'Not enough infiles for CCD!'
 
 
