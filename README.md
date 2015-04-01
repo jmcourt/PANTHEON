@@ -25,6 +25,7 @@ _**PANTHEON**_ is an open-source suite of tools to help analyse and visualise ra
 * You must have the 'fkeyprint' and 'make\_se' tools from [HEASARC](http://heasarc.gsfc.nasa.gov/ftools/)'s FTOOLS package in order to use _Xte GoodXenon-Extractor_.  If you do not intend to work with XTE _GoodXenon_ files, or want to select the files manually, no HEASARC products are required.
 
 _____
+##Overview
 
 ##Mission-Independent Tools
 
@@ -88,12 +89,26 @@ The lightcurve and colour analysis software for hardness and intensity plotting!
 * Allows plotting and manipulation of lightcurves, colour-colour diagrams and hardness-intensity diagrams.
 * Lets users plot lightcurves of multiple different energy bands alongside each other to see how they correlate.
 * Creates animations of how lightcurves change as the binning is increased.
-* Allows folding of data over a period of the user's selection (_Beta_).
+* Allows folding of data over a period of the user's selection.
+* Exports data to ASCII text files for compatibility with, for example, GnuPlot.
 
 #####Arguments:
 
 Arguments can be given with the function call, else they will the user will be prompted to enter them by the software.  They are as follows:
 * Binsize: the size of the binning, in time, for lightcurves and colour curves.
+
+_____
+
+###DataFairy
+
+>_datafairy.py_
+
+Creates fake data, the form of which can be changed by the user, which is readable by _PlotDemon_.
+
+#####Functions:
+* The form of the data output is determined by functions in the _DataFairy_ code which can be edited by the user.
+* Output data is in the form of three _PlotDemon_ .plotd files.
+* Coming soon: output .speca files.
 
 _____
 
@@ -136,5 +151,17 @@ _____
 >_szkpan\_lib.py_
 
 Contains useful Suzaku-specific functions used in the other scripts.  See documentation in XTEPan_Lib for details on individual functions.
+
+_____
+##PlotDemon Manual
+
+_Coming soon!_
+
+_____
+##SpecAngel Manual
+
+_Coming soon!_
+
+_____
 
 _Have fun using **PANTHEON**!_
