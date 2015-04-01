@@ -493,7 +493,7 @@ while plotopt not in ['quit','exit']:                                     # If t
       for j in range(asciilcrep):                                      # Repeat the data as many times as the user asks:
          for i in range(len(times)):
 
-            row=[0]*15
+            row=['0.0 ']*15
             row[0]=str(times[i]*exfac)+' '
             row[1]=str(timese[i]*exfac)+' '
             row[2]=str(flux[i])+' '
