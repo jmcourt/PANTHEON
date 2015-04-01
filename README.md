@@ -6,7 +6,18 @@ _The new home of the former_ XTE L-Extract _project!_
 
 _**PANTHEON**_ is an open-source suite of tools to help analyse and visualise raw X-Ray satellite data.  Comes with tools to sort relevant data out of pre-downloaded archives, construct a variety of products and manipulate these.  It's easy to use, with most instructions given in the form of on-screen prompts, and the various tools are able to function mostly independently of each other.
 
-##Specifications
+##Contents
+
+1. Specifications
+2. Overview
+⋅⋅1. Mission-Independent Tools
+⋅⋅2. Instrument Specific Tools
+3. PlotDemon Manual
+4. SpecAngel Manual
+
+_____
+
+##1. Specifications
 
 * _FITSGenie_, _SpecAngel_ and _PlotDemon_ must be placed in the same directory as their associated library _Pan\_Lib_.
 * The auxilliary function library relevant to the mission of interest (i.e. _SzkPan\_Lib_ or _XTEPan\_Lib_) must be placed in the same directory as _FITSGenie_.
@@ -25,9 +36,9 @@ _**PANTHEON**_ is an open-source suite of tools to help analyse and visualise ra
 * You must have the 'fkeyprint' and 'make\_se' tools from [HEASARC](http://heasarc.gsfc.nasa.gov/ftools/)'s FTOOLS package in order to use _Xte GoodXenon-Extractor_.  If you do not intend to work with XTE _GoodXenon_ files, or want to select the files manually, no HEASARC products are required.
 
 _____
-##Overview
+##2. Overview
 
-##Mission-Independent Tools
+##i. Mission-Independent Tools
 
 ###FITSGenie
 
@@ -120,7 +131,7 @@ Contains useful mission-independent functions used in the other scripts.  See do
 
 _____
 
-##Instrument-Specific Tools
+##ii. Instrument-Specific Tools
 
 ###XTE Event-Extractor
 
@@ -153,12 +164,12 @@ _____
 Contains useful Suzaku-specific functions used in the other scripts.  See documentation in XTEPan_Lib for details on individual functions.
 
 _____
-##PlotDemon Manual
+##3. PlotDemon Manual
 
 _Coming soon!_
 
 _____
-##SpecAngel Manual
+##4. SpecAngel Manual
 
 _Coming soon!_
 
