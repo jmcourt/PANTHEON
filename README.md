@@ -10,8 +10,8 @@ _**PANTHEON**_ is an open-source suite of tools to help analyse and visualise ra
 
 1. Specifications
 2. Overview
-⋅⋅1. Mission-Independent Tools
-⋅⋅2. Instrument Specific Tools
+ 1. Mission-Independent Tools
+ 2. Instrument Specific Tools
 3. PlotDemon Manual
 4. SpecAngel Manual
 
