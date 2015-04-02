@@ -329,6 +329,8 @@ fullhist=[]                                                               # Crea
 fullerrs=[]
 tcounts=0                                                                 # Initiate photon counter
 
+pcus=None                                                                 # A
+
 for step in range(numstep):                                               ## For every [foures]s interval in the data:
    stpoint=step*slide                                                          #  Calculate the startpoint of the interval
    edpoint=stpoint+foures                                                      #  Calculate the endpoint of the interval
@@ -355,7 +357,7 @@ for step in range(numstep):                                               ## For
 
       f,txis=histogram(datrow,t+stpoint)                                       #  Bin well this subrange of event data
 
-      pcus=inst.getpcu(wrdrow,event[1].header['DATAMODE'])                     #  Count active PCUs by assuming any that recorded 0 events in the time period were inactive
+      pcus=inst.getpcu(wrdrow,event[1].header['DATAMODE'],t_pcus=pcus)         #  Count active PCUs by assuming any that recorded 0 events in the time period were inactive
       npcus.append(pcus)
 
       counts=sum(f)

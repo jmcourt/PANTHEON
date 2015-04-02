@@ -6,14 +6,17 @@ _The new home of the former_ XTE L-Extract _project!_
 
 _**PANTHEON**_ is an open-source suite of tools to help analyse and visualise raw X-Ray satellite data.  Comes with tools to sort relevant data out of pre-downloaded archives, construct a variety of products and manipulate these.  It's easy to use, with most instructions given in the form of on-screen prompts, and the various tools are able to function mostly independently of each other.
 
+_____
+
 ##Contents
 
 1. Specifications
 2. Overview
  1. Mission-Independent Tools
  2. Instrument Specific Tools
-3. PlotDemon Manual
-4. SpecAngel Manual
+3. _FitsGenie_ Manual
+4. _PlotDemon_ Manual
+5. _SpecAngel_ Manual
 
 _____
 
@@ -40,7 +43,7 @@ _____
 
 ##i. Mission-Independent Tools
 
-###FITSGenie
+####FITSGenie
 
 >_fitsgenie.py_
 
@@ -68,7 +71,7 @@ Arguments can be given with the function call, else they will the user will be p
 
 _____
 
-###SpecAngel
+####SpecAngel
 
 >_specangel.py_
 
@@ -89,7 +92,7 @@ Arguments can be given with the function call, else they will the user will be p
 
 _____
 
-###PlotDemon
+####PlotDemon
 
 >_plotdemon.py_
 
@@ -110,7 +113,7 @@ Arguments can be given with the function call, else they will the user will be p
 
 _____
 
-###DataFairy
+####DataFairy
 
 >_datafairy.py_
 
@@ -123,7 +126,7 @@ Creates fake data, the form of which can be changed by the user, which is readab
 
 _____
 
-###Pan_Lib
+####Pan_Lib
 
 >_pan\_lib.py_
 
@@ -133,7 +136,7 @@ _____
 
 ##ii. Instrument-Specific Tools
 
-###XTE Event-Extractor
+####XTE Event-Extractor
 
 >_xteevex.sh_
 
@@ -141,7 +144,7 @@ When run in a directory, locates all event files saved in a .evt format and copi
 
 _____
 
-###XTE GoodXenon-Extractor
+####XTE GoodXenon-Extractor
 
 >_xtegxex.sh_
 
@@ -149,7 +152,7 @@ When run in a directory, locates both parts of all possible Good Xenon files, an
 
 _____
 
-###XTEPan_Lib
+####XTEPan_Lib
 
 >_xtepan\_lib.py_
 
@@ -157,19 +160,24 @@ Contains useful XTE-specific functions used in the other scripts.  See documenta
 
 _____
 
-###SzkPan_Lib
+####SzkPan_Lib
 
 >_szkpan\_lib.py_
 
 Contains useful Suzaku-specific functions used in the other scripts.  See documentation in XTEPan_Lib for details on individual functions.
 
 _____
-##3. PlotDemon Manual
+##3. FitsGenie Manual
 
 _Coming soon!_
 
 _____
-##4. SpecAngel Manual
+##4. PlotDemon Manual
+
+_Coming soon!_
+
+_____
+##5. SpecAngel Manual
 
 _Coming soon!_
 

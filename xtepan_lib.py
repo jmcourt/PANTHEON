@@ -320,7 +320,7 @@ def getobs(event,datamode,filepath):
 
 #-----Get PCU----------------------------------------------------------------------------------------------------------
 
-def getpcu(words,datamode):
+def getpcu(words,datamode,t_pcus=None):
 
    '''Get PCUs
 
@@ -343,10 +343,27 @@ def getpcu(words,datamode):
 
    -J.M.Court, 2015'''
 
-   if datamode == ['E_125us_64M_0_1s']:
+   if datamode=='E_125us_64M_0_1s':
       r=1,4
    elif datamode=='GoodXenon_2s':
       r=7,10
+   elif datamode=='E_16us_64M_0_1s':                                      # This datamode does not store data about PCUs for some reason
+      if t_pcus==None:
+         goodpcus=False
+
+         while not goodpcus:
+            try:
+               pcus=int(raw_input('Number of Active PCUS: '))             # Ask the user how many there are
+               assert pcus<6                                              # Check they give a number between 1 and 5 (inclusive)
+               assert pcus>0
+               goodpcus=True
+            except:
+               'Invalid number of PCUs!'
+         return pcus                                                      # Use the number they give as the number of PCUs
+
+      else:
+         return t_pcus                                                    # Allow the previously user-given value to be fed back into the script so user doesnt have to retype it
+               
    else:
       print 'Number of PCUs is unknown!'
       return 1

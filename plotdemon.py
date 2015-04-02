@@ -475,7 +475,7 @@ while plotopt not in ['quit','exit']:                                     # If t
 
       if folded:
 
-         exfac=period
+         exfac=period                                                     # A factor to convert phase for folded data into time
 
          try:
             asciilcrep=int(raw_input('Number of waveforms to save: '))    # If folded, ask the user how many iterations of the waveform they would like to save
@@ -487,34 +487,34 @@ while plotopt not in ['quit','exit']:                                     # If t
 
       else:
 
-         exfac=1
-         asciilcrep=1
+         exfac=1                                                          # Use one repetition if data is unfolded
+         asciilcrep=1                                                     # No need to multiply the x-axis by a factor for unfolded data
 
-      for j in range(asciilcrep):                                      # Repeat the data as many times as the user asks:
+      for j in range(asciilcrep):                                         # Repeat the data as many times as the user asks:
          for i in range(len(times)):
 
-            row=['0.0 ']*15
-            row[0]=str(times[i]*exfac)+' '
-            row[1]=str(timese[i]*exfac)+' '
-            row[2]=str(flux[i])+' '
-            row[3]=str(fluxe[i])+' '
-            row[4]=str(y1[gmask][i])+' '
-            row[5]=str(ye1[gmask][i])+' '
-            row[14]='\n'
+            row=['0.0 ']*15                                               # Create a row of strings reading 0.0, append data into it
+            row[0]=str(times[i]*exfac)+' '                                # Column 01: Time
+            row[1]=str(timese[i]*exfac)+' '                               # Column 02: Time Error
+            row[2]=str(flux[i])+' '                                       # Column 03: Total Flux
+            row[3]=str(fluxe[i])+' '                                      # Column 04: Total Flux Error
+            row[4]=str(y1[gmask][i])+' '                                  # Column 05: Band 1 Flux
+            row[5]=str(ye1[gmask][i])+' '                                 # Column 06: Band 1 Flux Error
+            row[14]='\n'                                                  # Column 15: Return (so further data will be appended to a new line)
 
-            if nfiles>1:
+            if nfiles>1:                                                  # If 2+ bands are given:
 
-               row[6]=str(y2[gmask][i])+' '
-               row[7]=str(ye2[gmask][i])+' '
-               row[10]=str(col[21][i])+' '
-               row[11]=str(cole[21][i])+' '
+               row[6]=str(y2[gmask][i])+' '                               # Column 07: Band 2 Flux
+               row[7]=str(ye2[gmask][i])+' '                              # Column 08: Band 2 Flux Error
+               row[10]=str(col[21][i])+' '                                # Column 11: [2/1] Colour
+               row[11]=str(cole[21][i])+' '                               # Column 12: [2/1] Colour Error
 
-            if nfiles==3:
+            if nfiles==3:                                                 # If 3 bands are given:
 
-               row[8]=str(y3[gmask][i])+' '
-               row[9]=str(ye3[gmask][i])+' '
-               row[12]=str(col[31][i])+' '
-               row[13]=str(cole[31][i])+' '
+               row[8]=str(y3[gmask][i])+' '                               # Column 09: Band 3 Flux
+               row[9]=str(ye3[gmask][i])+' '                              # Column 10: Band 3 Flux Error
+               row[12]=str(col[31][i])+' '                                # Column 13: [3/1] Colour
+               row[13]=str(cole[31][i])+' '                               # Column 14: [3/1] Colour Error
 
             ofil.writelines(row)                                          # Append row of data into open file
 
