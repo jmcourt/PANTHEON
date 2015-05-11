@@ -12,13 +12,13 @@
 
 #-----User-set Parameters----------------------------------------------------------------------------------------------
 
-rang=0,100000                                                             # The range of data, in seconds, to be saved
-reso=29.3023                                                              # The resolution, in seconds, of that data
+rang=0,1000                                                               # The range of data, in seconds, to be saved
+reso=1                                                                    # The resolution, in seconds, of that data
 
 ## Change the functions below to change the form of the data ##
 
 def band1(t):
-   return sin(2*pi*t/16.12)+2+0.2*random.random()+0.3*sin(2*pi*t/20.04)+1/(abs(cos(2*pi*t/40))+0.2)
+   return sin(2*pi*t/16.12054)+2+0.2*random.random()+0.3*sin(2*pi*t/8.06027)+1/(abs(cos(2*pi*t/16.12054))+0.2)
 
 def band2(t):
    return 0

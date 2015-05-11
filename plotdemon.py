@@ -249,6 +249,7 @@ def give_inst():                                                          # Defi
    print '* "clip" to clip the data.'
    print '* "mask" to remove a range of data.'
    print '* "fold" to fold data over a period of your choosing.'
+   print '* "circfold" to circularly fold data over a period of your choosing.'
    print ''
    print '1+ DATASET PLOTS:'
    print '* "lc" to plot a simple graph of flux over time.'
@@ -625,6 +626,32 @@ while plotopt not in ['quit','exit']:                                     # If t
       os.chdir(here)        
 
 
+   #-----'circfold' Option----------------------------------------------------------------------------------------------
+
+   elif plotopt=='circfold':
+
+      goodfp=False
+
+      while not goodfp:
+
+         try:
+            cftime=float(raw_input('Fold Period (s): '))
+            goodfp=True
+         except:
+            print 'Invalid entry!'
+
+      theta,rad=pan.circfold(times,flux,cftime)
+      limany=max(rad)
+
+      pl.figure()
+      ax = pl.subplot(111, polar=True)
+      ax.plot(theta,rad,'x')
+      ax.set_title('Circle Diagram ('+str(cftime)+'s folding)')
+      ax.set_rmax(1.05*limany)
+      pl.show(block=True)
+      pl.close()
+
+
    #-----'circanim' Option----------------------------------------------------------------------------------------------
 
    elif plotopt=='circanim':
@@ -651,18 +678,16 @@ while plotopt not in ['quit','exit']:                                     # If t
 
          print "Creating",str(foldinx)+"s folded Circle Diagram"
 
-         s,c=pan.circfold(times,flux,foldinx)
+         theta,rad=pan.circfold(times,flux,foldinx)
 
          if cistep==1:
-            limany=max(max(c),max(s))
+            limany=max(rad)
 
          pl.figure()
-         pl.plot(s,c,'x')
-         pl.plot([-limany,limany],[0,0],'k')
-         pl.plot([0,0],[-limany,limany],'k')
-         pl.title('Circle Diagram ('+str(foldinx)+'s folding)')
-         pl.xlim(-limany,limany)
-         pl.ylim(-limany,limany)
+         ax = pl.subplot(111, polar=True)
+         ax.plot(theta,rad,'x')
+         ax.set_title('Circle Diagram ('+str(foldinx)+'s folding)')
+         ax.set_rmax(1.05*limany)
          pl.savefig(str("%04d" % cistep)+'.png')                          # Save the figure with leading zeroes to preserve order when int convereted to string
          pl.close()
 

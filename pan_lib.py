@@ -214,14 +214,17 @@ def boolval(data,reverse=True):
 
 #-----Circfold---------------------------------------------------------------------------------------------------------
 
-def circfold(x,y,t):
+def circfold(x,y,t,pcoords=True):
 
    mult=(2*pi)/float(t)
    a=x*mult
    s=y*sin(a)
    c=y*cos(a)
 
-   return s,c
+   if pcoords:
+      return a,y
+   else:
+      return s,c
 
 
 #-----FlnCheck---------------------------------------------------------------------------------------------------------
