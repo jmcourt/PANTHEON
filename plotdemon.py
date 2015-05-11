@@ -245,19 +245,20 @@ def give_inst():                                                          # Defi
    print 'COMMANDS: Enter a command to manipulate data.'
    print ''
    print 'DATA:'
-   print '* "rebin" to reset the data and load it with a different binning'
-   print '* "clip" to clip the data'
+   print '* "rebin" to reset the data and load it with a different binning.'
+   print '* "clip" to clip the data.'
    print '* "mask" to remove a range of data.'
-   print '* "fold" to fold data over a period of your choosing'
+   print '* "fold" to fold data over a period of your choosing.'
    print ''
    print '1+ DATASET PLOTS:'
-   print '* "lc" to plot a simple graph of flux over time'
-   print '* "animate" to create an animation of the lightcurve as the binning is increased'
+   print '* "lc" to plot a simple graph of flux over time.'
+   print '* "animate" to create an animation of the lightcurve as the binning is increased.'
+   print '* "circanim" to create an animation of the lightcurve circularly folded as the period is increased.'
    if nfiles>1:                                                           # Only display 2-data-set instructions if 2+ datasets given
       print ''
       print '2+ DATASET PLOTS:'
-      print '* "hid21" to plot a hardness-intensity diagram of file2/file1 colour against total flux'
-      print '* "hid12" to plot a hardness-intensity diagram of file1/file2 colour against total flux'
+      print '* "hid21" to plot a hardness-intensity diagram of file2/file1 colour against total flux.'
+      print '* "hid12" to plot a hardness-intensity diagram of file1/file2 colour against total flux.'
 
       print '* "col21" to plot file2/file1 colour against time.'
       print '* "col12" to plot file1/file2 colour against time.'
@@ -278,7 +279,7 @@ def give_inst():                                                          # Defi
       print '* "ccd" to plot a colour-colour diagram (3/1 colour against 2/1 colour).'
    print ''
    print 'SAVING DATA TO ASCII:'
-   print '* "export" to dump the lightcurve and colour data into an ASCII file'
+   print '* "export" to dump the lightcurve and colour data into an ASCII file.'
    print ''
    print 'TOGGLE OPTIONS:'
    print '* "errors" to toggle whether to display errors in plots.'
@@ -624,6 +625,59 @@ while plotopt not in ['quit','exit']:                                     # If t
       os.chdir(here)        
 
 
+   #-----'circanim' Option----------------------------------------------------------------------------------------------
+
+   elif plotopt=='circanim':
+
+      circsloc=raw_input('Folder to save images: ')
+      print ''
+
+      if os.path.exists(circsloc):                                        # Create the folder
+         print 'Folder "'+circsloc+'" already exists...'
+      else:
+         print 'Creating folder "'+circsloc+'"...'
+         os.makedirs(circsloc)
+
+      here=os.getcwd()                                                    # Get current working directory (to move back to later)
+      os.chdir(circsloc)                                                  # Change working directory to animation location
+
+      foldinx=binning*1.05                                                # Start with an arbitrarily low folding index
+
+      cistep=1                                                            # Track the number of steps taken
+      dst=times[0]                                                        # Fetch largest and smallest fluxes to use to force same scale on all graphs
+      det=times[-1]
+
+      while foldinx<(det-dst)/4:                                          # Set the maximum old index at one quarter of the observation length
+
+         print "Creating",str(foldinx)+"s folded Circle Diagram"
+
+         s,c=pan.circfold(times,flux,foldinx)
+
+         if cistep==1:
+            limany=max(max(c),max(s))
+
+         pl.figure()
+         pl.plot(s,c,'x')
+         pl.plot([-limany,limany],[0,0],'k')
+         pl.plot([0,0],[-limany,limany],'k')
+         pl.title('Circle Diagram ('+str(foldinx)+'s folding)')
+         pl.xlim(-limany,limany)
+         pl.ylim(-limany,limany)
+         pl.savefig(str("%04d" % cistep)+'.png')                          # Save the figure with leading zeroes to preserve order when int convereted to string
+         pl.close()
+
+         cistep+=1
+         foldinx=foldinx*1.05
+
+      print 'Cleaning up...'
+
+      os.system ("convert -delay 10 -loop 0 *.png animation.gif")         # Use the bash command 'convert' to create the animated gif
+
+      print ''
+      print "Animation saved to",circsloc+'/animation.gif!'
+      os.chdir(here)        
+
+
    #-----'hidxy' Option------------------------------------------------------------------------------------------------
 
    elif plotopt[:3]=='hid':                                                # Plot x/y HID
@@ -757,6 +811,8 @@ while plotopt not in ['quit','exit']:                                     # If t
 
          pl.subplot(rowexp,colexp,2)                                      # Create subplot in the second slot
          doplot(col[21],cole[21],flux,fluxe)                              # Plot Soft HID
+         pl.xlim(0,2)
+         pl.ylim(0,300)
          pl.ylabel('Flux (counts/s/PCU)')
          pl.xlabel('('+ch[2]+'/'+ch[1]+') colour')
          pl.title('Soft HID'+qflav)
@@ -768,12 +824,16 @@ while plotopt not in ['quit','exit']:                                     # If t
 
          pl.subplot(rowexp,colexp,3)                                      # Create subplot in the third slot
          doplot(col[31],cole[31],flux,fluxe)                              # Plot Hard HID
+         pl.xlim(0,2)
+         pl.ylim(0,300)
          pl.ylabel('Flux (counts/s/PCU)')
          pl.xlabel('('+ch[3]+'/'+ch[1]+') colour')
          pl.title('Hard HID'+qflav)
 
          pl.subplot(rowexp,colexp,4)                                      # Create subplot in the fourth slot
          doplot(col[31],cole[31],col[21],cole[21])                        # Plot CCD
+         pl.xlim(0,2)
+         pl.ylim(0,2)
          pl.ylabel('('+ch[2]+'/'+ch[1]+') colour')
          pl.xlabel('('+ch[3]+'/'+ch[1]+') colour')
          pl.title('CCD'+qflav)

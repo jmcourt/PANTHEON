@@ -82,7 +82,7 @@ import warnings
 import scipy.optimize as optm
 from matplotlib.ticker import ScalarFormatter
 from numba import jit
-from numpy import array, arange, ceil, exp, floor, log10, mean, ones, sqrt, zeros
+from numpy import pi, sin, cos, array, arange, ceil, exp, floor, log10, mean, ones, sqrt, zeros
 from numpy import append as npappend
 from numpy import sum as npsum
 
@@ -212,6 +212,18 @@ def boolval(data,reverse=True):
    return data
  
 
+#-----Circfold---------------------------------------------------------------------------------------------------------
+
+def circfold(x,y,t):
+
+   mult=(2*pi)/float(t)
+   a=x*mult
+   s=y*sin(a)
+   c=y*cos(a)
+
+   return s,c
+
+
 #-----FlnCheck---------------------------------------------------------------------------------------------------------
 
 def flncheck(filename,validext,cont=False):
@@ -251,7 +263,7 @@ def flncheck(filename,validext,cont=False):
 
 #-----Foldify----------------------------------------------------------------------------------------------------------
 
-def foldify(t,y,ye,period,binsize,phres=None,name=''):
+def foldify(t,y,ye,period,binsize,phres=None,name='',compr=False,verb=True):
 
    '''Foldify
 
@@ -270,9 +282,12 @@ def foldify(t,y,ye,period,binsize,phres=None,name=''):
                       the same length as x and y.
     period  -  FLOAT: The period of the data, in the same units as the data's x-values.
     binsize -  FLOAT: The size of the new x-axis bins in which to re-bin the data.
-    phres   -  FLOAT: The resolution, in frequency space, at which data will be shown.
+    phres   -  FLOAT: [optional] The resolution, in frequency space, at which data will be shown.
     name    - STRING: [optional] the name of the file to be folded.  This name will be used in text
                       outputs printed to screen.
+    compr   -   BOOL: [optional] if set True, gives a fourth output which is the amount by which the
+                      min-max difference of the data-set was compressed by folding.
+    verb    -   BOOL: [optional] if set false, suppresses all non-error text output.
 
    Outputs:
 
@@ -280,6 +295,7 @@ def foldify(t,y,ye,period,binsize,phres=None,name=''):
     newy    -  LIST: The folded y-values of the two-dimensional data for one period.
     newye   -  LIST: The errors associated with the folded y-values of the two-dimensional data for
                      one period.
+    compr   - FLOAT: see 'compr' input option
 
    -J.M.Court, 2015'''
 
@@ -290,7 +306,8 @@ def foldify(t,y,ye,period,binsize,phres=None,name=''):
       return t,y,ye
 
    tn=tnorm(t,binsize)
-   print 'Folding File '+name+'...'
+   if verb:
+      print 'Folding File '+name+'...'
    ptdiff=max(y)-min(y)                                                   # Flux range before folding
 
    phases=foldAt(tn,period)
@@ -322,8 +339,14 @@ def foldify(t,y,ye,period,binsize,phres=None,name=''):
    phasye=sqrt(phasye)/ny
 
    afdiff=max(phasy)-min(phasy)                                            # Flux range after folding
-   print 'Flattened by '+str(100-afdiff/ptdiff*100)+'%'
-   return phasx,phasy,phasye
+   if verb:
+      print 'Flattened by '+str(100-afdiff/ptdiff*100)+'%'
+
+   if compr:
+      return phasx,phasy,phasye,(afdiff/ptdiff)
+
+   else:
+      return phasx,phasy,phasye
 
 
 #-----GTIMask----------------------------------------------------------------------------------------------------------

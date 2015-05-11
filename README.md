@@ -13,7 +13,7 @@ _____
 1. Specifications
 2. Overview
  1. Mission-Independent Tools
- 2. Instrument Specific Tools
+ 2. Instrument-Specific Tools
 3. _FitsGenie_ Manual
 4. _PlotDemon_ Manual
 5. _SpecAngel_ Manual
@@ -22,7 +22,7 @@ _____
 
 ##1. Specifications
 
-* _FITSGenie_, _SpecAngel_ and _PlotDemon_ must be placed in the same directory as their associated library _Pan\_Lib_.
+* _FITSGenie_, _SpecAngel_, _PlotDemon_ and _DataFairy_ must be placed in the same directory as their associated library _Pan\_Lib_.
 * The auxilliary function library relevant to the mission of interest (i.e. _SzkPan\_Lib_ or _XTEPan\_Lib_) must be placed in the same directory as _FITSGenie_.
 * The following modules for Python are required:
   * astropy
@@ -36,7 +36,7 @@ _____
   * scipy
   * sys
   * warnings
-* You must have the 'fkeyprint' and 'make\_se' tools from [HEASARC](http://heasarc.gsfc.nasa.gov/ftools/)'s FTOOLS package in order to use _Xte GoodXenon-Extractor_.  If you do not intend to work with XTE _GoodXenon_ files, or want to select the files manually, no HEASARC products are required.
+* You must have the 'fkeyprint' and 'make\_se' tools from [HEASARC](http://heasarc.gsfc.nasa.gov/ftools/)'s FTOOLS package in order to use _Xte GoodXenon-Extractor_.  If you do not intend to work with XTE _GoodXenon_ files, or want to select and make the files manually, no HEASARC products are required.
 
 _____
 ##2. Overview
@@ -168,6 +168,8 @@ Contains useful Suzaku-specific functions used in the other scripts.  See docume
 
 _____
 ##3. FitsGenie Manual
+
+_FITSGenie_ is a piece of software required to take raw GoodXenon or Event files from HEASARC and extract them into formats readable by _SpecAngel_ and _PlotDemon_.
 
 _Coming soon!_
 
