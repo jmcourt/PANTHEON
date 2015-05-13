@@ -408,7 +408,6 @@ def getwrd(data):
 
    -J.M.Court, 2015'''
 
-   print data.field(1)
    return data.field(1)
 
 

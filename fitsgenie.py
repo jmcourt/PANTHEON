@@ -86,7 +86,13 @@ filename=args[1]                                                          # Fetc
 
 #-----Opening FITS file, identifying mission---------------------------------------------------------------------------
 
-event=fits.open(filename)                                                 # Unleash the beast! [open the file]
+try:
+   event=fits.open(filename)                                              # Unleash the beast! [open the file]
+except:
+   print 'Could not open file!'
+   print 'Aborting!'
+   pan.signoff()
+   exit()
 mission=event[1].header['TELESCOP']                                       # Fetch the name of the telescope
 
 if mission in ['XTE','SUZAKU']:
@@ -228,7 +234,14 @@ datas=inst.getdat(event)                                                  # Extr
 
 print 'Discarding photons outside of '+etype+' range '+str(lowc)+escale+'-'+str(highc)+escale+'...'
 
-datas=inst.discnev(datas)
+try:
+   datas=inst.discnev(datas)
+except:
+   print 'Could not filter data!'
+   print 'Aborting!'
+   pan.signoff()
+   exit()
+
 olen=str(len(datas))
 datas=inst.chrange(datas,lowc,highc,event[1].header['DATAMODE'])
 tstart=inst.getini(event)
