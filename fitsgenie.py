@@ -93,7 +93,14 @@ except:
    print 'Aborting!'
    pan.signoff()
    exit()
-mission=event[1].header['TELESCOP']                                       # Fetch the name of the telescope
+
+try:
+   mission=event[1].header['TELESCOP']                                    # Fetch the name of the telescope
+except:
+   print 'Could not identify mission!'
+   print 'Aborting!'
+   pan.signoff()
+   exit()
 
 if mission in ['XTE','SUZAKU']:
    print mission,'data detected!'
@@ -131,7 +138,13 @@ else:
    pan.signoff()
    exit()
 
-obsdata=inst.getobs(event,event[1].header['DATAMODE'],filename)           # Fetch object and Obs_ID
+try:
+   obsdata=inst.getobs(event,event[1].header['DATAMODE'],filename)        # Fetch object and Obs_ID
+except:
+   print 'Could not identify DATAMODE!'
+   print 'Aborting!'
+   pan.signoff()
+   exit()
 
 
 #-----Checking validity of remaining inputs----------------------------------------------------------------------------
