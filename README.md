@@ -126,6 +126,14 @@ Creates fake data, the form of which can be changed by the user, which is readab
 
 _____
 
+####Mode_Get
+
+>_mode\_get.py_
+
+Produces a list of all .FITS files in a directory, along with their DATAMODEs, start times and and times.
+
+_____
+
 ####Pan_Lib
 
 >_pan\_lib.py_
