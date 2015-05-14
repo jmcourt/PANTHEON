@@ -73,6 +73,10 @@ def chrange(data,low,high,datamode):
       low=evmchan(low)                                                    # Convert the channels given into range IDs
       high=evmchan(high)
       r=1,7                                                               # Identify where in the E_16 data word the channel is hidden
+   elif datamode=='E_16us_16B_36_1s':
+      low=evbchan(low)
+      high=evbchan(high)
+      r=4,8
    elif datamode=='GoodXenon_2s':
       r=17,25                                                             # GoodXenon data contains the channels as written, no need to convert
    else:
@@ -106,11 +110,59 @@ def discnev(datas):
    return datas
 
 
+#-----EvBChan----------------------------------------------------------------------------------------------------------
+
+def evbchan(chan):
+
+   '''Event Mode B Channel-Get
+
+   Description:
+
+    Converts a channel number into the ID of the range which contains that channel in E_16us_16B_36_1s
+    data from PCA on RXTE.  This is the least interesting function I have ever written.
+
+   Inputs:
+
+    chan   - INT: the real channel number for PCA data from RXTE.
+
+   Outputs:
+
+    n_chan - INT: the ID of the range containing the relevant channel.
+
+   -J.M.Court, 2015'''
+
+   chan=int(chan)
+
+   if chan<36:                                                            # Simple sanity check to prevent messy accidents
+      print 'This data type does not store photons below Channel 36!'
+      pan.signoff()
+      exit()
+
+   if chan<38:     n_chan=0                                               # This is just a list of ifs.  It checks if the value falls into each and, if not, carries on.
+   elif chan<40:   n_chan=1
+   elif chan<42:   n_chan=2
+   elif chan<44:   n_chan=3
+   elif chan<47:  n_chan=4
+   elif chan<50:  n_chan=5
+   elif chan<54:  n_chan=6
+   elif chan<59:  n_chan=7
+   elif chan<65:  n_chan=8
+   elif chan<72:  n_chan=9
+   elif chan<80:  n_chan=10
+   elif chan<90:  n_chan=11
+   elif chan<104:  n_chan=12
+   elif chan<128:  n_chan=13
+   elif chan<175:  n_chan=14
+   else: n_chan=15
+
+   return n_chan
+
+
 #-----EvMChan----------------------------------------------------------------------------------------------------------
 
 def evmchan(chan):
 
-   '''Event Mode Channel-Get
+   '''Event Mode M Channel-Get
 
    Description:
 
@@ -308,7 +360,7 @@ def getobs(event,datamode,filepath):
          obsid=(filepath.split('/')[-4])                                  # GoodXenon for XTE doesnt store obs_id for some reason
       except:
          obsid=''
-   elif datamode=='E_125us_64M_0_1s':
+   elif datamode in ['E_125us_64M_0_1s','E_16us_64M_0_1s','E_16us_16B_36_1s']:
       obsid=event[1].header['OBS_ID']
    else:
       obsid=''
@@ -343,7 +395,7 @@ def getpcu(words,datamode,t_pcus=None):
 
    -J.M.Court, 2015'''
 
-   if datamode=='E_125us_64M_0_1s':
+   if datamode in ['E_125us_64M_0_1s','E_16us_16B_36_1s']:
       r=1,4
    elif datamode=='GoodXenon_2s':
       r=7,10

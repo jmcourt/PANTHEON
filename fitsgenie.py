@@ -140,6 +140,7 @@ else:
 
 try:
    obsdata=inst.getobs(event,event[1].header['DATAMODE'],filename)        # Fetch object and Obs_ID
+   print event[1].header['DATAMODE'],'format detected.'
 except:
    print 'Could not identify DATAMODE!'
    print 'Aborting!'
