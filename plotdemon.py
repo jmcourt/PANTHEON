@@ -438,18 +438,23 @@ while plotopt not in ['quit','exit']:                                     # If t
 
    elif plotopt=='mask':
 
-      print 'Masking data'
-      print ''
-      print 'Select time range to mask: '
-      mint,maxt=pan.srinr(x1,binning,'time')                              # Fetch time domain endpoints of bad window using srinr function from pan_lib
+      if folded:
+         print 'Cannot mask folded data!'
 
-      print 'Masking...'
+      else:
 
-      gmask[mint:maxt]=False                                              # Force all values inside the bad window to appear as outside of GTIs
+         print 'Masking data'
+         print ''
+         print 'Select time range to mask: '
+         mint,maxt=pan.srinr(x1,binning,'time')                              # Fetch time domain endpoints of bad window using srinr function from pan_lib
 
-      times,timese,flux,fluxe,col,cole=colorget()                         # Re-get colours
+         print 'Masking...'
 
-      print 'Data masked!'
+         gmask[mint:maxt]=False                                              # Force all values inside the bad window to appear as outside of GTIs
+
+         times,timese,flux,fluxe,col,cole=colorget()                         # Re-get colours
+
+         print 'Data masked!'
 
 
    #-----'lc' Option---------------------------------------------------------------------------------------------------
@@ -717,8 +722,8 @@ while plotopt not in ['quit','exit']:                                     # If t
             print 'Did you mean...'
             print ''
             print 'HID options:'
-            print '* "hid12" for 2/1 colour'
-            print '* "hid21" for 1/2 colour'
+            print '* "hid21" for 2/1 colour'
+            print '* "hid12" for 1/2 colour'
             if nfiles==3:
                print '* "hid32" for 3/2 colour'
                print '* "hid23" for 2/3 colour'
@@ -762,8 +767,8 @@ while plotopt not in ['quit','exit']:                                     # If t
             print 'Did you mean...'
             print ''
             print 'Col/t plot options:'
-            print '*"col12" for 2/1 colour'
-            print '*"col21" for 1/2 colour'
+            print '*"col21" for 2/1 colour'
+            print '*"col12" for 1/2 colour'
             if nfiles==3:
                print '*"col32" for 3/2 colour'
                print '*"col23" for 2/3 colour'
