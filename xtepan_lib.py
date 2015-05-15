@@ -29,10 +29,18 @@
 #  MAXEN     - returns the highest energy or channel valid for the instrument.
 #
 
+# Modes supported:
+
+# 'E_125us_64M_0_1s'
+# 'E_16us_64M_0_1s'
+# 'E_16us_16B_36_1s'
+# 'GoodXenon_2s'
+# 'B_2ms_4B_0_35_H'
+
 #-----Importing Modules------------------------------------------------------------------------------------------------
 
 import pan_lib as pan
-from numpy import array
+from numpy import array, zeros
 
 
 #-----ChRange----------------------------------------------------------------------------------------------------------
@@ -60,43 +68,57 @@ def chrange(data,low,high,datamode):
 
    -J.M.Court, 2015'''
 
-   words=data.field(1)
+   if datamode=='B_2ms_4B_0_35_H':
 
-   if low<=0 and high>=255:
-      return data                                                         # Don't bother searching through if the user wants full range
+      low=bihchan(low)
+      high=bihchan(high)+1
 
-   if datamode=='E_125us_64M_0_1s':
-      low=evmchan(low)                                                    # Convert the channels given into range IDs
-      high=evmchan(high)
-      r=4,10                                                              # Identify where in the E_125 data word the channel is hidden         
-   elif datamode=='E_16us_64M_0_1s':
-      low=evmchan(low)                                                    # Convert the channels given into range IDs
-      high=evmchan(high)
-      r=1,7                                                               # Identify where in the E_16 data word the channel is hidden
-   elif datamode=='E_16us_16B_36_1s':
-      low=evbchan(low)
-      high=evbchan(high)
-      r=4,8
-   elif datamode=='GoodXenon_2s':
-      r=17,25                                                             # GoodXenon data contains the channels as written, no need to convert
+      ndat=zeros(len(data[0]))
+
+      for i in range(low,high):
+         ndat+=array(data[i])
+
+      return ndat
+
    else:
-      print datamode,'not yet supported, using full range!'
-      return data
 
-   words=array(pan.boolval((words[:,r[0]:r[1]]).tolist()))
+      words=data.field(1)
 
-   mask1=(words>=low)
+      if low<=0 and high>=255:
+         return data                                                      # Don't bother searching through if the user wants full range
 
-   mask2=(words<=high)
+      if datamode=='E_125us_64M_0_1s':
+         low=evmchan(low)                                                 # Convert the channels given into range IDs
+         high=evmchan(high)
+         r=4,10                                                           # Identify where in the E_125 data word the channel is hidden         
+      elif datamode=='E_16us_64M_0_1s':
+         low=evmchan(low)                                                 # Convert the channels given into range IDs
+         high=evmchan(high)
+         r=1,7                                                            # Identify where in the E_16 data word the channel is hidden
+      elif datamode=='E_16us_16B_36_1s':
+         low=evbchan(low)
+         high=evbchan(high)
+         r=4,8
+      elif datamode=='GoodXenon_2s':
+         r=17,25                                                          # GoodXenon data contains the channels as written, no need to convert
+      else:
+         print datamode,'not yet supported, using full range!'
+         return data
 
-   ch_data=data[mask1&mask2]
+      words=array(pan.boolval((words[:,r[0]:r[1]]).tolist()))
 
-   return ch_data
+      mask1=(words>=low)
+
+      mask2=(words<=high)
+
+      ch_data=data[mask1&mask2]
+
+      return ch_data
 
 
 #-----DiscNEv----------------------------------------------------------------------------------------------------------
 
-def discnev(datas):
+def discnev(datas,datamode):
 
    '''Discard Non-Events
 
@@ -105,9 +127,73 @@ def discnev(datas):
 
    -J.M.Court, 2014'''
 
+   if datamode=='B_2ms_4B_0_35_H':
+      return discnevb(datas.field(1))
+
    mask=datas['Event'][:,0]==True                                         # Creating a mask to obscure any data not labelled as photons
    datas=datas[mask]                                                      # Applying the mask
    return datas
+
+
+#-----DiscNEvB---------------------------------------------------------------------------------------------------------
+
+def discnevb(datas):
+
+   '''Discard Non-Events: Binned Data Version
+
+   Decription:
+    Given a FITS binned data table, discards all non-photon events from the table.
+
+   -J.M.Court, 2014'''
+
+   cha=[]
+   chb=[]
+   chc=[]
+   chd=[]
+
+   for i in range(len(datas)):
+      cha+=datas[i][0].tolist()
+      chb+=datas[i][1].tolist()
+      chc+=datas[i][2].tolist()
+      chd+=datas[i][3].tolist()
+
+   return [cha,chb,chc,chd]
+
+
+#-----BiHChan----------------------------------------------------------------------------------------------------------
+
+def bihchan(chan):
+
+   '''Bin Mode H Channel-Get
+
+   Description:
+
+    Converts a channel number into the ID of the range which contains that channel in B_2ms_4B_0_35_H
+    data from PCA on RXTE.
+
+   Inputs:
+
+    chan   - INT: the real channel number for PCA data from RXTE.
+
+   Outputs:
+
+    n_chan - INT: the ID of the range containing the relevant channel.
+
+   -J.M.Court, 2015'''
+
+   chan=int(chan)
+
+   if chan>35:                                                            # Simple sanity check to prevent messy accidents
+      print 'This data type does not store photons above Channel 35!'
+      pan.signoff()
+      exit()
+
+   if chan<14:     n_chan=0                                               # This is just a list of ifs.  It checks if the value falls into each and, if not, carries on.
+   elif chan<19:   n_chan=1
+   elif chan<26:   n_chan=2
+   else: n_chan=3
+
+   return n_chan
 
 
 #-----EvBChan----------------------------------------------------------------------------------------------------------
@@ -119,7 +205,7 @@ def evbchan(chan):
    Description:
 
     Converts a channel number into the ID of the range which contains that channel in E_16us_16B_36_1s
-    data from PCA on RXTE.  This is the least interesting function I have ever written.
+    data from PCA on RXTE.
 
    Inputs:
 
@@ -251,7 +337,7 @@ def evmchan(chan):
 
 #-----GetBin-----------------------------------------------------------------------------------------------------------
 
-def getbin(event):
+def getbin(event,datamode):
 
    '''Get Bin
 
@@ -269,7 +355,10 @@ def getbin(event):
 
    -J.M.Court, 2014'''
 
-   bsz=event[1].header['TIMEDEL']
+   if datamode=='B_2ms_4B_0_35_H':
+      bsz=event[1].header['1CDLT2']
+   else:
+      bsz=event[1].header['TIMEDEL']
    return bsz
 
 
@@ -439,7 +528,7 @@ def getpcu(words,datamode,t_pcus=None):
 
 #-----Get Tim----------------------------------------------------------------------------------------------------------
 
-def gettim(data):
+def gettim(data,tstart,res,datamode):
 
    '''Get Times
 
@@ -447,12 +536,19 @@ def gettim(data):
 
    -J.M.Court, 2015'''
 
-   return data.field(0) 
+   if datamode=='B_2ms_4B_0_35_H':
+      times=[]
+      for i in range(len(data)):
+         times+=[(i*res)+tstart]
+      return array(times)
+
+   else:
+      return data.field(0) 
 
 
 #-----Get Wrd----------------------------------------------------------------------------------------------------------
 
-def getwrd(data):
+def getwrd(data,datamode):
 
    '''Get Words
 
@@ -460,12 +556,31 @@ def getwrd(data):
 
    -J.M.Court, 2015'''
 
-   return data.field(1)
+   if datamode=='B_2ms_4B_0_35_H':
+      return None
+   else:
+      return data.field(1)
+
+
+#-----Get Wrd Row------------------------------------------------------------------------------------------------------
+
+def getwrdrow(words,mask,datamode):
+
+   '''Get Word Rows
+
+   Description: Returns Data Words filtered by a mask, for data that has datawords.
+
+   -J.M.Court, 2015'''
+
+   if datamode=='B_2ms_4B_0_35_H':
+      return None
+   else:
+      return words[mask]
 
 
 #-----MaxEn------------------------------------------------------------------------------------------------------------
 
-def maxen():
+def maxen(datamode):
 
    '''Max Energy
 
@@ -474,6 +589,9 @@ def maxen():
 
    -J.M.Court, 2015'''
 
-   return 255
+   if datamode=='B_2ms_4B_0_35_H':
+      return 35
+   else:
+      return 255
 
 

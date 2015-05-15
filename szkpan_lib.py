@@ -76,7 +76,7 @@ def chrange(data,low,high,datamode):
 
 #-----DiscNEv----------------------------------------------------------------------------------------------------------
 
-def discnev(datas):
+def discnev(datas,datamode):
 
    '''Discard Non-Events
 
@@ -90,7 +90,7 @@ def discnev(datas):
 
 #-----GetBin-----------------------------------------------------------------------------------------------------------
 
-def getbin(event):
+def getbin(event,datamode):
 
    '''Get Bin
 
@@ -229,7 +229,7 @@ def getpcu(words,datamode):
 
 #-----Get Tim----------------------------------------------------------------------------------------------------------
 
-def gettim(data):
+def gettim(data,tstart,res,datamode):
 
    '''Get Times
 
@@ -242,7 +242,7 @@ def gettim(data):
 
 #-----Get Wrd----------------------------------------------------------------------------------------------------------
 
-def getwrd(data):
+def getwrd(data,mask,datamode):
 
    '''Get Words
 
@@ -253,9 +253,22 @@ def getwrd(data):
    return ones(len(data.field(0)))
 
 
+#-----Get Wrd Row------------------------------------------------------------------------------------------------------
+
+def getwrdrow(words,datamode):
+
+   '''Get Word Rows
+
+   Description: Returns Data Words filtered by a mask, for data that has datawords.
+
+   -J.M.Court, 2015'''
+
+   return words[mask]
+
+
 #-----MaxEn------------------------------------------------------------------------------------------------------------
 
-def maxen():
+def maxen(datamode):
 
    '''Max Energy
 

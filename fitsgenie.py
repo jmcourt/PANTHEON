@@ -47,7 +47,6 @@ spcbinfac=4096                                                            # The 
 usrmin=-13                                                                # The smallest time resolution to consider is 2^usrmin seconds
 version=3.2
 
-
 #-----Welcoming Header-------------------------------------------------------------------------------------------------
 
 print ''
@@ -82,7 +81,7 @@ args=sys.argv
 pan.argcheck(args,2)                                                      # Must give at least 2 args (Filename and the function call)
 
 filename=args[1]                                                          # Fetch file name from arguments
-
+spec=True
 
 #-----Opening FITS file, identifying mission---------------------------------------------------------------------------
 
@@ -147,6 +146,8 @@ except:
    pan.signoff()
    exit()
 
+if event[1].header['DATAMODE']=='B_2ms_4B_0_35_H':
+   spec=False
 
 #-----Checking validity of remaining inputs----------------------------------------------------------------------------
 
@@ -154,7 +155,7 @@ print 'Object =',obsdata[0]
 print 'Obs_ID =',obsdata[1]
 print ''
 
-maxen=inst.maxen()                                                        # Get the value of the highest energy or channel for the instrument
+maxen=inst.maxen(event[1].header['DATAMODE'])                             # Get the value of the highest energy or channel for the instrument
 
 print 'Inputs:'
 print ''
@@ -249,7 +250,7 @@ datas=inst.getdat(event)                                                  # Extr
 print 'Discarding photons outside of '+etype+' range '+str(lowc)+escale+'-'+str(highc)+escale+'...'
 
 try:
-   datas=inst.discnev(datas)
+   datas=inst.discnev(datas,event[1].header['DATAMODE'])                  # Discarding non-events / reformatting XTE Binned data into a less awful structure
 except:
    print 'Could not filter data!'
    print 'Aborting!'
@@ -272,15 +273,11 @@ if phcts==0:
 
 print ''
 
-times=inst.gettim(datas)                                                  # Extracting list of photon incident times as a separate object
-pcwrds=inst.getwrd(datas)
-sttim=times[0]
-times=times-sttim
-
 
 #-----Fetching Bin Size------------------------------------------------------------------------------------------------
 
-bsz=inst.getbin(event)                                                    # Fetch 'Binning' as the time resolution of the data
+bsz=inst.getbin(event,event[1].header['DATAMODE'])                        # Fetch 'Binning' as the time resolution of the data
+res=bsz
 
 if bszt>bsz:                                                              # If user enters a lower binning resolution than maximum, use that instead
    bsz=bszt
@@ -290,8 +287,15 @@ while (2**n)<bsz:
    n+=1
 bsz=2**n
 
+
+#-----Fetching Time Axis-----------------------------------------------------------------------------------------------
+
 print 'SpecAngel binsize rounded to 2^'+str(n)+'s ('+str(bsz)+'s)!'
 print 'PlotDemon binsize rounded to 2^'+str(n+int(log(ptdbinfac,2)))+'s ('+str(bsz*ptdbinfac)+'s)!'
+times=inst.gettim(datas,tstart,res,event[1].header['DATAMODE'])           # Extracting list of photon incident times as a separate object
+pcwrds=inst.getwrd(datas,event[1].header['DATAMODE'])
+sttim=times[0]
+times=times-sttim
 
 
 #-----Fetching Fourier Range Size--------------------------------------------------------------------------------------
@@ -356,75 +360,84 @@ fullhist=[]                                                               # Crea
 fullerrs=[]
 tcounts=0                                                                 # Initiate photon counter
 
-pcus=None                                                                 # A
+pcus=None
 
-for step in range(numstep):                                               ## For every [foures]s interval in the data:
-   stpoint=step*slide                                                          #  Calculate the startpoint of the interval
-   edpoint=stpoint+foures                                                      #  Calculate the endpoint of the interval
+if spec==True:
 
-   in_gti=False                                                                #  Assume the subrange is not in the GTI
+   for step in range(numstep):                                           ## For every [foures]s interval in the data:
+      stpoint=step*slide                                                    #  Calculate the startpoint of the interval
+      edpoint=stpoint+foures                                                #  Calculate the endpoint of the interval
 
-   for j in range(len(gti)):
-      if gti[j][0]<=stpoint<edpoint<=gti[j][1]: in_gti=True                    #  Change in_gti flag if this range is wholly within one GTI
+      in_gti=False                                                          #  Assume the subrange is not in the GTI
 
-   mask=times>=stpoint
-   datrow=times[mask]                                                          #  Take all photons in the event data which occurred after the start point
-   wrdrow=pcwrds[mask]
-   mask=datrow<edpoint
-   datrow=datrow[mask]                                                         #  Remove all photons which occurred after the end point
-   wrdrow=wrdrow[mask]
+      for j in range(len(gti)):
+         if gti[j][0]<=stpoint<edpoint<=gti[j][1]: in_gti=True              #  Change in_gti flag if this range is wholly within one GTI
 
-   fc,null=histogram(datrow,tc+stpoint)                                        #  Coarsely bin this subrange of event data
-   fp,null=histogram(datrow,tp+stpoint)                                        #  Very Coarsely bin this subrange of event data
-   del null
-   fullhist=fullhist+list(fc)
-   fullerrs=fullerrs+list(sqrt(array(fc)))
+      mask=times>=stpoint
+      datrow=times[mask]                                                    #  Take all photons in the event data which occurred after the start point
+      wrdrow=inst.getwrdrow(pcwrds,mask,event[1].header['DATAMODE'])
+      mask=datrow<edpoint
+      datrow=datrow[mask]                                                   #  Remove all photons which occurred after the end point
+      wrdrow=inst.getwrdrow(wrdrow,mask,event[1].header['DATAMODE'])
 
-   if in_gti:
+      fc,null=histogram(datrow,tc+stpoint)                                  #  Coarsely bin this subrange of event data
+      fp,null=histogram(datrow,tp+stpoint)                                  #  Very Coarsely bin this subrange of event data
+      del null
 
-      f,txis=histogram(datrow,t+stpoint)                                       #  Bin well this subrange of event data
+      fullhist=fullhist+list(fc)
+      fullerrs=fullerrs+list(sqrt(array(fc)))
 
-      pcus=inst.getpcu(wrdrow,event[1].header['DATAMODE'],t_pcus=pcus)         #  Count active PCUs by assuming any that recorded 0 events in the time period were inactive
-      npcus.append(pcus)
+      if in_gti:
 
-      counts=sum(f)
-      peak=max(fp)
-      trough=min(fp)
+         f,txis=histogram(datrow,t+stpoint)                                 #  Bin well this subrange of event data
 
-      rates.append(float(counts)/foures)
-      prates.append(float(peak)*datres/(foures*spcbinfac))
-      trates.append(float(trough)*datres/(foures*spcbinfac))
-      tcounts+=counts
+         pcus=inst.getpcu(wrdrow,event[1].header['DATAMODE'],t_pcus=pcus)   #  Count active PCUs by assuming any that recorded 0 events in the time period were inactive
+         npcus.append(pcus)
 
-      tsfdata=fft(f)                                                           #  Fourier transform the interval
+         counts=sum(f)
+         peak=max(fp)
+         trough=min(fp)
 
-      tsfdata=pan.leahyn(tsfdata,counts,datres)                                #  Normalise to Leahy Power
-      good.append(True)                                                        #  Flag this column as good
+         rates.append(float(counts)/foures)
+         prates.append(float(peak)*datres/(foures*spcbinfac))
+         trates.append(float(trough)*datres/(foures*spcbinfac))
+         tcounts+=counts
 
-   else:
+         tsfdata=fft(f)                                                     #  Fourier transform the interval
 
-      tsfdata=zeros(datres/2)
-      npcus.append(0)
-      rates.append(0)
-      prates.append(0)
-      trates.append(0)
-      good.append(False)                                                       #  Flag this column as bad
+         tsfdata=pan.leahyn(tsfdata,counts,datres)                          #  Normalise to Leahy Power
+         good.append(True)                                                  #  Flag this column as good
 
-   fourgrlin.append(tsfdata)                                                   #  Append the FT'd data to the matrix
+      else:
 
-   prog=step+1
-   if (prog % 5)==0 or prog==numstep:
-      print str(prog)+'/'+str(numstep)+' series analysed...'                   # Display progress every 5 series
+         tsfdata=zeros(datres/2)
+         npcus.append(0)
+         rates.append(0)
+         prates.append(0)
+         trates.append(0)
+         good.append(False)                                                 #  Flag this column as bad
+  
+      fourgrlin.append(tsfdata)                                             #  Append the FT'd data to the matrix
 
-pcg=str(int(100*tcounts/float(phcts)))+'%'
+      prog=step+1
+      if (prog % 5)==0 or prog==numstep:
+         print str(prog)+'/'+str(numstep)+' series analysed...'             # Display progress every 5 series
 
-print ''
-print str(tcounts)+'/'+str(phcts)+' photons in GTI ('+pcg+')!'
+   pcg=str(int(100*tcounts/float(phcts)))+'%'
 
-if tcounts==0:
-   print 'Aborting!'
-   pan.signoff()
-   exit()
+   print ''
+   print str(tcounts)+'/'+str(phcts)+' photons in GTI ('+pcg+')!'
+
+   if tcounts==0:
+      print 'Aborting!'
+      pan.signoff()
+      exit()
+
+else:                                                                        # Not doing Spectra for Binned data just yet...
+
+   print 'Number of PCUs unknown!'
+   npcus=[1]
+   ta,fullhist,fullerrs=pan.binify(times,datas/res,sqrt(datas)/res,bsz) ################
 
 
 #-----Save .speca and .plotd files-------------------------------------------------------------------------------------
@@ -447,8 +460,11 @@ if slidelock:
 else:
    print "PlotDemon file not saved."
 
-sfilename=pan.specasv(filename,fourgrlin,good,rates,prates,trates,tcounts,npcus,bsz,bgest,foures,flavour,cs,mission,obsdata,wtype,slide,spcbinfac,version)
-print "SpecAngel file saved to "+sfilename
+if spec:
+   sfilename=pan.specasv(filename,fourgrlin,good,rates,prates,trates,tcounts,npcus,bsz,bgest,foures,flavour,cs,mission,obsdata,wtype,slide,spcbinfac,version)
+   print "SpecAngel file saved to "+sfilename
+else:
+   print "SpecAngel file not saved."
 
 
 #-----Footer-----------------------------------------------------------------------------------------------------------

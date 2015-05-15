@@ -130,6 +130,8 @@ oet=max(xit1,xit2,xit3)                                                   # Fetc
 mint=0                                                                    # Save original start and endpoints for use in clipping
 maxt=oet
 
+print tst1,tst2,tst3
+
 if nfiles>1:                                                              # Checking that start-times of files 1 & 2 match
    if tst1!=tst2:
       print 'Starting times for files 1 & 2 do not match!  Aborting!'
