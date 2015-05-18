@@ -130,8 +130,6 @@ oet=max(xit1,xit2,xit3)                                                   # Fetc
 mint=0                                                                    # Save original start and endpoints for use in clipping
 maxt=oet
 
-print tst1,tst2,tst3
-
 if nfiles>1:                                                              # Checking that start-times of files 1 & 2 match
    if tst1!=tst2:
       print 'Starting times for files 1 & 2 do not match!  Aborting!'
@@ -469,6 +467,7 @@ while plotopt not in ['quit','exit']:                                     # If t
       doplot(times,timese,flux,fluxe,ovr=True)                            # Plot flux/time using doplot from pan_lib
       pl.xlabel(taxis)
       pl.ylabel('Flux (counts/s/PCU)')
+      pl.ylim(ymin=0)
       pl.title('Lightcurve'+qflav)
       pl.show(block=False)
       print 'Lightcurve plotted!'
@@ -608,7 +607,7 @@ while plotopt not in ['quit','exit']:                                     # If t
          pl.ylabel('Flux (counts/s/PCU)')
          pl.title('Lightcurve ('+str(animbin)+'s binning)')
          pl.xlim(dst,det)
-         pl.ylim(minany,maxany)
+         pl.ylim(max(minany,0),maxany)
          pl.savefig(str("%04d" % anstep)+'.png')                          # Save the figure with leading zeroes to preserve order when int convereted to string
          pl.close()
 
@@ -792,6 +791,7 @@ while plotopt not in ['quit','exit']:                                     # If t
             doplot(times,timese,col[ht],cole[ht],ovr=True)                # Collect colours from col library and plot
             pl.xlabel(taxis)
             pl.ylabel('('+ch[h1]+'/'+ch[h2]+') colour')
+            pl.ylim(ymin=0)
             pl.title('Colour over Time Diagram'+qflav)
             pl.show(block=False)
             print 'File'+str(h1)+'/File'+str(h2)+' Colour over Time Diagram plotted!'
@@ -835,6 +835,7 @@ while plotopt not in ['quit','exit']:                                     # If t
       doplot(times,timese,flux,fluxe,ovr=True)                            # Always plot the lightcurve
       pl.xlabel(taxis)
       pl.ylabel('Flux (counts/s/PCU)')
+      pl.ylim(ymin=0)
       pl.title('Lightcurve'+qflav)
 
       if nfiles>1:                                                        # If 2+ files given, plot 2+ file data products

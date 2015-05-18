@@ -63,6 +63,7 @@ try:
    from astropy.io import fits
    from math import log
    from numpy import arange, array, histogram, sqrt, zeros
+   from numpy import sum as npsum
    from scipy.fftpack import fft
    import pylab as pl
 
@@ -257,11 +258,17 @@ except:
    pan.signoff()
    exit()
 
-olen=str(len(datas))
+if event[1].header['DATAMODE']=='B_2ms_4B_0_35_H':
+   olen=str(npsum(array(datas)))
+else:
+   olen=str(len(datas))
 datas=inst.chrange(datas,lowc,highc,event[1].header['DATAMODE'])
 tstart=inst.getini(event)
 
-phcts=len(datas)
+if event[1].header['DATAMODE']=='B_2ms_4B_0_35_H':
+   phcts=sum(datas)
+else:
+   phcts=len(datas)
 pcg=str(int(100*phcts/float(olen)))+'%'
 
 print str(phcts)+'/'+olen+' photons fall within '+etype+' range ('+pcg+')!'

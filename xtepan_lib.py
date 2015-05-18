@@ -78,6 +78,8 @@ def chrange(data,low,high,datamode):
       for i in range(low,high):
          ndat+=array(data[i])
 
+      print sum(ndat)
+
       return ndat
 
    else:
@@ -192,6 +194,8 @@ def bihchan(chan):
    elif chan<19:   n_chan=1
    elif chan<26:   n_chan=2
    else: n_chan=3
+
+   print n_chan
 
    return n_chan
 
