@@ -27,7 +27,7 @@
 #-----User-set Parameters----------------------------------------------------------------------------------------------
 
 minbin=0.015625                                                           # The minimum bin size the code is allowed to attempt to use.  This can prevent long hang-ups
-version=3.2                                                               # The version of PlotDemon
+version=4.2                                                               # The version of PlotDemon
 
 
 #-----Welcoming Header-------------------------------------------------------------------------------------------------

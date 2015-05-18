@@ -45,7 +45,7 @@ ptdbinfac=16                                                              # To s
                                                                           # bins for the not-saved specangel data by this factor.  Must be power of 2.
 spcbinfac=4096                                                            # The binning factor for SpecAngel data to use when searching for data peaks and troughs
 usrmin=-13                                                                # The smallest time resolution to consider is 2^usrmin seconds
-version=3.2
+version=4.2
 
 #-----Welcoming Header-------------------------------------------------------------------------------------------------
 

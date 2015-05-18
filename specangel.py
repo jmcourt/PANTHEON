@@ -22,7 +22,7 @@
 #-----User-set Parameters----------------------------------------------------------------------------------------------
 
 lplresdefault=0.005                                                       # The best resolution, in log10 space, in which the data will be analysed
-version=3.2                                                               # The version of SpecAngel
+version=4.2                                                               # The version of SpecAngel
 
 
 #-----Welcoming Header-------------------------------------------------------------------------------------------------
