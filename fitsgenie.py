@@ -260,6 +260,7 @@ except:
 
 if event[1].header['DATAMODE']=='B_2ms_4B_0_35_H':
    olen=str(npsum(array(datas)))
+   print len(datas[1])
 else:
    olen=str(len(datas))
 datas=inst.chrange(datas,lowc,highc,event[1].header['DATAMODE'])

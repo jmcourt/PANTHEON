@@ -78,8 +78,6 @@ def chrange(data,low,high,datamode):
       for i in range(low,high):
          ndat+=array(data[i])
 
-      print sum(ndat)
-
       return ndat
 
    else:
