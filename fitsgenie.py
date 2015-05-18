@@ -260,7 +260,6 @@ except:
 
 if event[1].header['DATAMODE']=='B_2ms_4B_0_35_H':
    olen=str(npsum(array(datas)))
-   print len(datas[1])
 else:
    olen=str(len(datas))
 datas=inst.chrange(datas,lowc,highc,event[1].header['DATAMODE'])
@@ -444,8 +443,8 @@ if spec==True:
 else:                                                                        # Not doing Spectra for Binned data just yet...
 
    print 'Number of PCUs unknown!'
-   npcus=[1]
-   ta,fullhist,fullerrs=pan.binify(times,datas/res,sqrt(datas)/res,bsz) ################
+   npcus=[int(raw_input('Number of Active PCUS: '))]                         # Ask the user how many there are
+   ta,fullhist,fullerrs=pan.binify(times,datas/res*bsz*ptdbinfac,sqrt(datas)/res*bsz*ptdbinfac,bsz)
 
 
 #-----Save .speca and .plotd files-------------------------------------------------------------------------------------

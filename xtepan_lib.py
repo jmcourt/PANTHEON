@@ -193,8 +193,6 @@ def bihchan(chan):
    elif chan<26:   n_chan=2
    else: n_chan=3
 
-   print n_chan
-
    return n_chan
 
 
