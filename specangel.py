@@ -111,7 +111,7 @@ else:
 numstep=len(loadmatrix)
 
 nleahy=float(sum(good))
-lspec=npsum(loadmatrix,axis=0)/nleahy)                                    # Create the average Leahy spectrum
+lspec=npsum(loadmatrix,axis=0)/nleahy                                     # Create the average Leahy spectrum
 const=pan.lhconst(lspec)                                                  # Calculate the normalisation of noise
 
 def constmi(k):                                                           # Define nuP(nu) noise average as a function of  Leahy constant.
