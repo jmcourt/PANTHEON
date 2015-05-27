@@ -76,7 +76,11 @@
 
 #-----Importing Modules------------------------------------------------------------------------------------------------
 
-import os,cPickle
+import os
+try:
+   import cPickle as pickle
+except:
+   import pickle
 import pylab as pl
 import warnings
 import scipy.optimize as optm
@@ -762,7 +766,7 @@ def plotdld(filename):
       print 'File not found!  Aborting!'
       signoff()
       exit()
-   data=cPickle.load(readfile)                                            # Unpickle the .plotd file
+   data=pickle.load(readfile)                                            # Unpickle the .plotd file
 
    times=array(data['time'])                                              # Unleash the beast! [extract the file]
    rates=array(data['flux'])
@@ -841,7 +845,7 @@ def plotdsv(filename,times,counts,errors,tstart,binsize,gti,mxpcus,bgest,flavour
    filename=uniqfname(filename,'plotd')                                   # Get the next available name of form filename(x).plotd
    wfile = open(filename, 'wb')                                           # Open file to write to
 
-   cPickle.dump(savedata,wfile)                                           # Pickle the data (convert into bitstream) and dump to file
+   pickle.dump(savedata,wfile)                                            # Pickle the data (convert into bitstream) and dump to file
    wfile.close()                                                          # Close file
 
    return filename
@@ -1024,7 +1028,7 @@ def specald(filename):
       print 'File not found!  Aborting!'
       signoff()
       exit()
-   data=cPickle.load(readfile)                                            # Unpickle the .speca file
+   data=pickle.load(readfile)                                             # Unpickle the .speca file
 
    spcdata=data['data']                                                   # Unleash the beast! [extract the file]
    good=array(data['good'])
@@ -1139,7 +1143,7 @@ def specasv(filename,spcdata,good,rates,prates,trates,phcts,npcus,binsize,bgest,
    filename=uniqfname(filename,'speca')                                   # Get the next available name of form filename(x).speca
    wfile = open(filename, 'wb')                                           # Open file to write to
 
-   cPickle.dump(savedata,wfile)                                           # Pickle the data (convert into bitstream) and dump to file
+   pickle.dump(savedata,wfile)                                            # Pickle the data (convert into bitstream) and dump to file
    wfile.close()                                                          # Close file
 
    return filename

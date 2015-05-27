@@ -662,7 +662,19 @@ while plotopt not in ['quit','exit']:                                     # If t
 
    elif plotopt=='circanim':
 
+      cistep=1                                                            # Track the number of steps taken
+      dst=times[0]                                                        # Fetch largest and smallest fluxes to use to force same scale on all graphs
+      det=times[-1]
+
       circsloc=raw_input('Folder to save images: ')
+      try:
+         castt=float(raw_input('Lowest Fold time  (s): '))
+      except:
+         castt=binning*1.05
+      try:
+         caend=float(raw_input('Highest Fold time (s): '))
+      except:
+         caend=(det-dst)/4.0
       print ''
 
       if os.path.exists(circsloc):                                        # Create the folder
@@ -674,13 +686,12 @@ while plotopt not in ['quit','exit']:                                     # If t
       here=os.getcwd()                                                    # Get current working directory (to move back to later)
       os.chdir(circsloc)                                                  # Change working directory to animation location
 
-      foldinx=binning*1.05                                                # Start with an arbitrarily low folding index
+      castt=max(binning*1.05,castt)                                       # Start with an arbitrarily low folding index
+      caend=min((det-dst)/4.0,caend)
 
-      cistep=1                                                            # Track the number of steps taken
-      dst=times[0]                                                        # Fetch largest and smallest fluxes to use to force same scale on all graphs
-      det=times[-1]
+      foldinx=castt
 
-      while foldinx<(det-dst)/4:                                          # Set the maximum old index at one quarter of the observation length
+      while foldinx<caend:                                                # Set the maximum old index at one quarter of the observation length
 
          print "Creating",str(foldinx)+"s folded Circle Diagram"
 
@@ -698,7 +709,7 @@ while plotopt not in ['quit','exit']:                                     # If t
          pl.close()
 
          cistep+=1
-         foldinx=foldinx*1.05
+         foldinx+=((caend-castt)/100.0)
 
       print 'Cleaning up...'
 
