@@ -173,6 +173,51 @@ if nfiles>1:
 print 'Binning complete!'
 print ''
 
+wrongsize=False
+
+x3l=len(x1)                                                               # Sloppy fix to make this work for 2 or 3 mismatched files
+
+#-----Force file lengths to match--------------------------------------------------------------------------------------
+
+if nfiles>1:                                                              # Checking file lengths match
+   if len(x1)!=len(x2):
+      print 'Warning!  Files 1&2 of different lengths!'
+      wrongsize=True
+
+if nfiles==3:
+   if len(x1)!=len(x3):
+      print 'Warning!  Files 1&3 of different lengths!'
+      wrongsize=True
+      x3l=len(x3)
+
+if wrongsize:                                                             # Forcing file lengths to match if possible
+   print 'Attemtping to crop files...'
+   mindex=min(len(x1),len(x2),x3l)-1
+   if x1[mindex]!=x2[mindex]:
+      print 'Cannot crop, aborting!'
+      pan.signoff()
+      exit()
+   if nfiles==3:
+      if x1[mindex]!=x3[mindex]:
+         print 'Cannot crop, aborting!'
+         pan.signoff()
+         exit()
+   mindex+=1
+   x1=x1[:mindex]
+   y1=y1[:mindex]
+   ye1=ye1[:mindex]
+   x2=x2[:mindex]
+   y2=y2[:mindex]
+   ye2=ye2[:mindex]
+   if nfiles==3:
+      x3=x3[:mindex]
+      y3=y3[:mindex]
+      ye3=ye3[:mindex]
+   print 'Cropped succesfully!'
+   print ''
+   
+#-----Fetch GTI Mask---------------------------------------------------------------------------------------------------
+
 print 'Fetching GTI mask...'
 
 gmask=pan.gtimask(x1,gti)                                                 # A mask to blank values that fall outside of the GTIs
@@ -237,6 +282,8 @@ def doplot(x,xe,y,ye,ovr=False,ft='-k'):                                  # Defi
          pl.plot(x[2],y[2],'og')
          pl.plot(x[3],y[3],'oc')
          pl.plot(x[4],y[4],'ob')
+
+fldtxt=''
 
 
 #-----User Menu--------------------------------------------------------------------------------------------------------
@@ -324,6 +371,7 @@ while plotopt not in ['quit','exit']:                                     # If t
    if plotopt=='rebin':                                                   # Rebin data
 
       goodbin=False
+      fldtxt=''
       while not goodbin:                                                  # Keep asking until a good response is given
          try:
             binning=float(raw_input("Enter bin size (s): "))              # Ask for binsize in dialogue box
@@ -340,6 +388,38 @@ while plotopt not in ['quit','exit']:                                     # If t
          if nfiles>2:
             print 'Binning File 3...'
             x3,y3,ye3=pan.binify(x3r,y3r,ye3r,binning)                    # Bin File 3 using 'binify' in pan_lib
+
+      if nfiles>1:                                                        # Checking file lengths match... need to migrate this to a function one day
+         if len(x1)!=len(x2):
+            wrongsize=True
+
+      if nfiles==3:
+         if len(x1)!=len(x3):
+            wrongsize=True
+            x3l=len(x3)
+
+      if wrongsize:                                                       # Forcing file lengths to match if possible
+         mindex=min(len(x1),len(x2),x3l)-1                                #
+         if x1[mindex]!=x2[mindex]:                                       #
+            print 'Cannot crop, aborting!'                                #
+            pan.signoff()                                                 #
+            exit()                                                        #
+         if nfiles==3:                                                    #
+            if x1[mindex]!=x3[mindex]:                                    #
+               print 'Cannot crop, aborting!'                             #
+               pan.signoff()                                              #
+               exit()                                                     #
+         mindex+=1                                                        #
+         x1=x1[:mindex]                                                   #
+         y1=y1[:mindex]                                                   #
+         ye1=ye1[:mindex]                                                 #
+         x2=x2[:mindex]                                                   #
+         y2=y2[:mindex]                                                   #
+         ye2=ye2[:mindex]                                                 #
+         if nfiles==3:                                                    #
+            x3=x3[:mindex]                                                #
+            y3=y3[:mindex]                                                #
+            ye3=ye3[:mindex]                                              #
 
       gmask=pan.gtimask(x1,gti)                                           # Re-establish gmask
 
@@ -379,6 +459,8 @@ while plotopt not in ['quit','exit']:                                     # If t
 
       x1=x1[gmask];y1=y1[gmask];ye1=ye1[gmask]                            # Zeroing all data points outside of GTI
       x1,y1,ye1=pan.foldify(x1,y1,ye1,period,binning,phres=phres,name='ch. '+ch[1])         # Fold using foldify function from pan_lib
+
+      fldtxt='Folded '
 
       if nfiles>1:
          x2=x2[gmask];y2=y2[gmask];ye2=ye2[gmask]                         # Zeroing all data points outside of GTI
@@ -468,7 +550,7 @@ while plotopt not in ['quit','exit']:                                     # If t
       pl.xlabel(taxis)
       pl.ylabel('Flux (counts/s/PCU)')
       pl.ylim(ymin=0)
-      pl.title('Lightcurve'+qflav)
+      pl.title(fldtxt+'Lightcurve'+qflav)
       pl.show(block=False)
       print 'Lightcurve plotted!'
 
@@ -757,7 +839,7 @@ while plotopt not in ['quit','exit']:                                     # If t
             pl.xlabel('('+ch[h1]+'/'+ch[h2]+') colour')
             pl.xlim(0,2)
             pl.ylim(0,300)
-            pl.title('Hardness Intensity Diagram'+qflav)
+            pl.title(fldtxt+'Hardness Intensity Diagram'+qflav)
             pl.show(block=False)
             print 'File'+str(h1)+'/File'+str(h2)+' HID plotted!'
 
@@ -803,7 +885,7 @@ while plotopt not in ['quit','exit']:                                     # If t
             pl.xlabel(taxis)
             pl.ylabel('('+ch[h1]+'/'+ch[h2]+') colour')
             pl.ylim(ymin=0)
-            pl.title('Colour over Time Diagram'+qflav)
+            pl.title(fldtxt+'Colour over Time Diagram'+qflav)
             pl.show(block=False)
             print 'File'+str(h1)+'/File'+str(h2)+' Colour over Time Diagram plotted!'
 
@@ -822,7 +904,7 @@ while plotopt not in ['quit','exit']:                                     # If t
          pl.ylabel('('+ch[3]+'/'+ch[1]+') colour')
          pl.xlim(0,2)
          pl.ylim(0,2)
-         pl.title('Colour-Colour Diagram'+qflav)
+         pl.title(fldtxt+'Colour-Colour Diagram'+qflav)
          pl.show(block=False)
          print 'CCD plotted!'
       else:
@@ -847,7 +929,7 @@ while plotopt not in ['quit','exit']:                                     # If t
       pl.xlabel(taxis)
       pl.ylabel('Flux (counts/s/PCU)')
       pl.ylim(ymin=0)
-      pl.title('Lightcurve'+qflav)
+      pl.title(fldtxt+'Lightcurve'+qflav)
 
       if nfiles>1:                                                        # If 2+ files given, plot 2+ file data products
 
@@ -859,7 +941,7 @@ while plotopt not in ['quit','exit']:                                     # If t
          pl.ylim(0,300)
          pl.ylabel('Flux (counts/s/PCU)')
          pl.xlabel('('+ch[2]+'/'+ch[1]+') colour')
-         pl.title('Soft HID'+qflav)
+         pl.title(fldtxt+'Soft HID'+qflav)
 
       if nfiles==3:                                                       # If 3 files given, plot 3 file data products
 
@@ -872,7 +954,7 @@ while plotopt not in ['quit','exit']:                                     # If t
          pl.ylim(0,300)
          pl.ylabel('Flux (counts/s/PCU)')
          pl.xlabel('('+ch[3]+'/'+ch[1]+') colour')
-         pl.title('Hard HID'+qflav)
+         pl.title(fldtxt+'Hard HID'+qflav)
 
          pl.subplot(rowexp,colexp,4)                                      # Create subplot in the fourth slot
          doplot(col[31],cole[31],col[21],cole[21])                        # Plot CCD
@@ -880,7 +962,7 @@ while plotopt not in ['quit','exit']:                                     # If t
          pl.ylim(0,2)
          pl.ylabel('('+ch[2]+'/'+ch[1]+') colour')
          pl.xlabel('('+ch[3]+'/'+ch[1]+') colour')
-         pl.title('CCD'+qflav)
+         pl.title(fldtxt+'CCD'+qflav)
 
       print ''
       pl.show(block=False)
@@ -898,19 +980,19 @@ while plotopt not in ['quit','exit']:                                     # If t
       doplot(times,timese,y1[gmask],ye1[gmask],ovr=True)                  # Plot the lowest band
       pl.xlabel(taxis)
       pl.ylabel('Flux (counts/s/PCU)')
-      pl.title(ch[1]+' Lightcurve'+qflav)
+      pl.title(fldtxt+ch[1]+' Lightcurve'+qflav)
       if nfiles>1:
          pl.subplot(nfiles,1,2)
          doplot(times,timese,y2[gmask],ye2[gmask],ovr=True)               # Plot the second band
          pl.xlabel(taxis)
          pl.ylabel('Flux (counts/s/PCU)')
-         pl.title(ch[2]+' Lightcurve'+flv2)
+         pl.title(fldtxt+ch[2]+' Lightcurve'+flv2)
       if nfiles>2:
          pl.subplot(nfiles,1,3)
          doplot(times,timese,y3[gmask],ye3[gmask],ovr=True)               # Plot the third band
          pl.xlabel(taxis)
          pl.ylabel('Flux (counts/s/PCU)')
-         pl.title(ch[3]+' Lightcurve'+flv3)
+         pl.title(fldtxt+ch[3]+' Lightcurve'+flv3)
       pl.show(block=False)
       print 'Banded lightcurves plotted!'
 
@@ -935,7 +1017,7 @@ while plotopt not in ['quit','exit']:                                     # If t
       pl.legend(leg)                                                      # Create key on plot
       pl.xlabel(taxis)
       pl.ylabel('Flux (counts/s/PCU)')
-      pl.title('Lightcurve'+qflav)
+      pl.title(fldtxt+'Lightcurve'+qflav)
       pl.show(block=False)
       print 'Banded lightcurves plotted!'
 
@@ -1048,6 +1130,8 @@ while plotopt not in ['quit','exit']:                                     # If t
       print ' Bin-size       = ',str(binning)+'s'
       print ' Background     = ',str(bg)+'cts/s/PCU'
       print ' Folded         = ',folded
+      if folded:
+         print ' Fold Period    = ',period
       print ' Errorbars      = ',es
       print ' Delineated     = ',ls
       print ' Colour-coded   = ',cs

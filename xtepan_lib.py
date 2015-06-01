@@ -507,7 +507,7 @@ def getpcu(words,datamode,t_pcus=None):
                
    else:
       print 'Number of PCUs is unknown!'
-      return 1
+      return 5
 
    pcus=0
 
