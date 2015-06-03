@@ -36,6 +36,8 @@
 # 'E_16us_16B_36_1s'
 # 'GoodXenon_2s'
 # 'B_2ms_4B_0_35_H'
+# 'B_8ms_16A_0_35_H' 
+
 
 #-----Importing Modules------------------------------------------------------------------------------------------------
 
@@ -68,10 +70,10 @@ def chrange(data,low,high,datamode):
 
    -J.M.Court, 2015'''
 
-   if datamode=='B_2ms_4B_0_35_H':
+   if datamode in ['B_2ms_4B_0_35_H','B_8ms_16A_0_35_H']:
 
-      low=bihchan(low)
-      high=bihchan(high)+1
+      low=bihchan(datamode,low)
+      high=bihchan(datamode,high)+1
 
       ndat=zeros(len(data[0]))
 
@@ -127,8 +129,8 @@ def discnev(datas,datamode):
 
    -J.M.Court, 2014'''
 
-   if datamode=='B_2ms_4B_0_35_H':
-      return discnevb(datas.field(1))
+   if datamode in ['B_2ms_4B_0_35_H','B_8ms_16A_0_35_H']:
+      return discnevb(datamode,datas.field(1))
 
    mask=datas['Event'][:,0]==True                                         # Creating a mask to obscure any data not labelled as photons
    datas=datas[mask]                                                      # Applying the mask
@@ -137,7 +139,7 @@ def discnev(datas,datamode):
 
 #-----DiscNEvB---------------------------------------------------------------------------------------------------------
 
-def discnevb(datas):
+def discnevb(datamode,datas):
 
    '''Discard Non-Events: Binned Data Version
 
@@ -146,29 +148,37 @@ def discnevb(datas):
 
    -J.M.Court, 2014'''
 
-   cha=[]
-   chb=[]
-   chc=[]
-   chd=[]
+   chan={}
+
+   if datamode=='B_2ms_4B_0_35_H':
+      nbchan=4
+   elif datamode=='B_8ms_16A_0_35_H':
+      nbchan=16
+
+   for j in range(nbchan):
+      chan[j]=[]
 
    for i in range(len(datas)):
-      cha+=datas[i][0].tolist()
-      chb+=datas[i][1].tolist()
-      chc+=datas[i][2].tolist()
-      chd+=datas[i][3].tolist()
+      for j in range(nbchan):
+         chan[j]+=datas[i][j].tolist()
 
-   return [cha,chb,chc,chd]
+   outchan=[]
+
+   for j in range(nbchan):
+      outchan.append(chan[j])
+
+   return outchan
 
 
 #-----BiHChan----------------------------------------------------------------------------------------------------------
 
-def bihchan(chan):
+def bihchan(datamode,chan):
 
    '''Bin Mode H Channel-Get
 
    Description:
 
-    Converts a channel number into the ID of the range which contains that channel in B_2ms_4B_0_35_H
+    Converts a channel number into the ID of the range which contains that channel in B_2ms_4B_0_35_H or B_8ms_16A_0_35_H
     data from PCA on RXTE.
 
    Inputs:
@@ -188,10 +198,31 @@ def bihchan(chan):
       pan.signoff()
       exit()
 
-   if chan<14:     n_chan=0                                               # This is just a list of ifs.  It checks if the value falls into each and, if not, carries on.
-   elif chan<19:   n_chan=1
-   elif chan<26:   n_chan=2
-   else: n_chan=3
+   if datamode=='B_2ms_4B_0_35_H':
+
+      if chan<14:     n_chan=0                                            # This is just a list of ifs.  It checks if the value falls into each and, if not, carries on.
+      elif chan<19:   n_chan=1
+      elif chan<26:   n_chan=2
+      else: n_chan=3
+
+   elif datamode=='B_8ms_16A_0_35_H':
+
+      if chan<9:     n_chan=0                                            # This is also just a list of ifs.  It checks if the value falls into each and, if not, carries on.
+      elif chan<11:   n_chan=1
+      elif chan<12:   n_chan=2
+      elif chan<13:   n_chan=3
+      elif chan<14:   n_chan=4
+      elif chan<15:   n_chan=5
+      elif chan<16:   n_chan=6
+      elif chan<18:   n_chan=7
+      elif chan<20:   n_chan=8
+      elif chan<22:   n_chan=9
+      elif chan<24:   n_chan=10
+      elif chan<26:   n_chan=11
+      elif chan<28:   n_chan=12
+      elif chan<30:   n_chan=13
+      elif chan<33:   n_chan=14
+      else: n_chan=15
 
    return n_chan
 
@@ -355,7 +386,7 @@ def getbin(event,datamode):
 
    -J.M.Court, 2014'''
 
-   if datamode=='B_2ms_4B_0_35_H':
+   if datamode in ['B_2ms_4B_0_35_H','B_8ms_16A_0_35_H']:
       bsz=event[1].header['1CDLT2']
    else:
       bsz=event[1].header['TIMEDEL']
@@ -536,7 +567,7 @@ def gettim(data,tstart,res,datamode):
 
    -J.M.Court, 2015'''
 
-   if datamode=='B_2ms_4B_0_35_H':
+   if datamode in ['B_2ms_4B_0_35_H','B_8ms_16A_0_35_H']:
       times=[]
       for i in range(len(data)):
          times+=[(i*res)+tstart]
@@ -556,7 +587,7 @@ def getwrd(data,datamode):
 
    -J.M.Court, 2015'''
 
-   if datamode=='B_2ms_4B_0_35_H':
+   if datamode in ['B_2ms_4B_0_35_H','B_8ms_16A_0_35_H']:
       return None
    else:
       return data.field(1)
@@ -572,7 +603,7 @@ def getwrdrow(words,mask,datamode):
 
    -J.M.Court, 2015'''
 
-   if datamode=='B_2ms_4B_0_35_H':
+   if datamode in ['B_2ms_4B_0_35_H','B_8ms_16A_0_35_H']:
       return None
    else:
       return words[mask]
@@ -589,7 +620,7 @@ def maxen(datamode):
 
    -J.M.Court, 2015'''
 
-   if datamode=='B_2ms_4B_0_35_H':
+   if datamode in ['B_2ms_4B_0_35_H','B_8ms_16A_0_35_H']:
       return 35
    else:
       return 255

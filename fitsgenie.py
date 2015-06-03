@@ -50,7 +50,7 @@ version=4.2
 #-----Welcoming Header-------------------------------------------------------------------------------------------------
 
 print ''
-print '-------Running FITSGenie: J.M.Court, 2015------'
+print '-------Running FITSGenie: J.M.Court, 2015-------'
 print ''
 
 
@@ -147,7 +147,7 @@ except:
    pan.signoff()
    exit()
 
-if event[1].header['DATAMODE']=='B_2ms_4B_0_35_H':
+if event[1].header['DATAMODE'] in ['B_2ms_4B_0_35_H','B_8ms_16A_0_35_H']:
    spec=False
 
 #-----Checking validity of remaining inputs----------------------------------------------------------------------------
@@ -185,7 +185,7 @@ if lowc<0:    lowc=0                                                      # Forc
 if highc>maxen: highc=maxen
 
 if lowc>highc:
-   print 'Invalid '+etype+'"!  Aborting!'                                 # Abort if user gives lowc>highc
+   print 'Invalid '+etype+'!  Aborting!'                                 # Abort if user gives lowc>highc
    pan.signoff()
    exit()
 
@@ -258,14 +258,14 @@ except:
    pan.signoff()
    exit()
 
-if event[1].header['DATAMODE']=='B_2ms_4B_0_35_H':
+if event[1].header['DATAMODE'] in ['B_2ms_4B_0_35_H','B_8ms_16A_0_35_H']:
    olen=str(npsum(array(datas)))
 else:
    olen=str(len(datas))
 datas=inst.chrange(datas,lowc,highc,event[1].header['DATAMODE'])
 tstart=inst.getini(event)
 
-if event[1].header['DATAMODE']=='B_2ms_4B_0_35_H':
+if event[1].header['DATAMODE'] in ['B_2ms_4B_0_35_H','B_8ms_16A_0_35_H']:
    phcts=sum(datas)
 else:
    phcts=len(datas)
