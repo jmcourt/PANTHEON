@@ -269,6 +269,12 @@ if event[1].header['DATAMODE'] in ['B_2ms_4B_0_35_H','B_8ms_16A_0_35_H']:
    phcts=sum(datas)
 else:
    phcts=len(datas)
+
+if float(olen)==0:
+   print 'No photons!  Aborting!'
+   pan.signoff()
+   exit()
+
 pcg=str(int(100*phcts/float(olen)))+'%'
 
 print str(phcts)+'/'+olen+' photons fall within '+etype+' range ('+pcg+')!'

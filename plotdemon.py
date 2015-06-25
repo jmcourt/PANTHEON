@@ -399,27 +399,27 @@ while plotopt not in ['quit','exit']:                                     # If t
             x3l=len(x3)
 
       if wrongsize:                                                       # Forcing file lengths to match if possible
-         mindex=min(len(x1),len(x2),x3l)-1                                #
-         if x1[mindex]!=x2[mindex]:                                       #
-            print 'Cannot crop, aborting!'                                #
-            pan.signoff()                                                 #
-            exit()                                                        #
-         if nfiles==3:                                                    #
-            if x1[mindex]!=x3[mindex]:                                    #
-               print 'Cannot crop, aborting!'                             #
-               pan.signoff()                                              #
-               exit()                                                     #
-         mindex+=1                                                        #
-         x1=x1[:mindex]                                                   #
-         y1=y1[:mindex]                                                   #
-         ye1=ye1[:mindex]                                                 #
-         x2=x2[:mindex]                                                   #
-         y2=y2[:mindex]                                                   #
-         ye2=ye2[:mindex]                                                 #
-         if nfiles==3:                                                    #
-            x3=x3[:mindex]                                                #
-            y3=y3[:mindex]                                                #
-            ye3=ye3[:mindex]                                              #
+         mindex=min(len(x1),len(x2),x3l)-1
+         if x1[mindex]!=x2[mindex]:
+            print 'Cannot crop, aborting!'
+            pan.signoff()
+            exit()
+         if nfiles==3:
+            if x1[mindex]!=x3[mindex]:
+               print 'Cannot crop, aborting!'
+               pan.signoff()
+               exit()
+         mindex+=1
+         x1=x1[:mindex]
+         y1=y1[:mindex]
+         ye1=ye1[:mindex]
+         x2=x2[:mindex]
+         y2=y2[:mindex]
+         ye2=ye2[:mindex]
+         if nfiles==3:
+            x3=x3[:mindex]
+            y3=y3[:mindex]
+            ye3=ye3[:mindex]
 
       gmask=pan.gtimask(x1,gti)                                           # Re-establish gmask
 
