@@ -253,7 +253,7 @@ if nfiles==3:
       x3l=len(x3)
 
 if wrongsize:                                                             # Forcing file lengths to match if possible
-   print 'Attemtping to crop files...'
+   print 'Attempting to crop files...'
    mindex=min(len(x1),len(x2),x3l)-1
    if x1[mindex]!=x2[mindex]:
       print 'Cannot crop, aborting!'
