@@ -41,7 +41,7 @@
 
 #-----User-set Parameters----------------------------------------------------------------------------------------------
 
-ptdbinfac=16                                                              # To save space and time, the time bins for saved plotdemon data will be greater than the time
+ptdbinfac=1                                                               # To save space and time, the time bins for saved plotdemon data will be greater than the time
                                                                           # bins for the not-saved specangel data by this factor.  Must be power of 2.
 spcbinfac=4096                                                            # The binning factor for SpecAngel data to use when searching for data peaks and troughs
 usrmin=-13                                                                # The smallest time resolution to consider is 2^usrmin seconds
@@ -290,7 +290,7 @@ print ''
 #-----Fetching Bin Size------------------------------------------------------------------------------------------------
 
 bsz=inst.getbin(event,event[1].header['DATAMODE'])                        # Fetch 'Binning' as the time resolution of the data
-res=bsz
+ores=bsz
 
 if bszt>bsz:                                                              # If user enters a lower binning resolution than maximum, use that instead
    bsz=bszt
@@ -300,12 +300,14 @@ while (2**n)<bsz:
    n+=1
 bsz=2**n
 
+bsz=float(bsz)
+
 
 #-----Fetching Time Axis-----------------------------------------------------------------------------------------------
 
 print 'SpecAngel binsize rounded to 2^'+str(n)+'s ('+str(bsz)+'s)!'
 print 'PlotDemon binsize rounded to 2^'+str(n+int(log(ptdbinfac,2)))+'s ('+str(bsz*ptdbinfac)+'s)!'
-times=inst.gettim(datas,tstart,res,event[1].header['DATAMODE'])           # Extracting list of photon incident times as a separate object
+times=inst.gettim(datas,tstart,ores,event[1].header['DATAMODE'])           # Extracting list of photon incident times as a separate object
 pcwrds=inst.getwrd(datas,event[1].header['DATAMODE'])
 sttim=times[0]
 times=times-sttim
@@ -395,6 +397,7 @@ if spec==True:
 
       fc,null=histogram(datrow,tc+stpoint)                                  #  Coarsely bin this subrange of event data
       fp,null=histogram(datrow,tp+stpoint)                                  #  Very Coarsely bin this subrange of event data
+
       del null
 
       fullhist=fullhist+list(fc)
@@ -450,7 +453,7 @@ else:                                                                        # N
 
    print 'Number of PCUs unknown!'
    npcus=[int(raw_input('Number of Active PCUS: '))]                         # Ask the user how many there are
-   ta,fullhist,fullerrs=pan.binify(times,datas/res*bsz*ptdbinfac,sqrt(datas)/res*bsz*ptdbinfac,bsz)
+   ta,fullhist,fullerrs=pan.binify(times,datas/ores*bsz*ptdbinfac,sqrt(datas)/ores*bsz*ptdbinfac,bsz)
 
 
 #-----Save .speca and .plotd files-------------------------------------------------------------------------------------

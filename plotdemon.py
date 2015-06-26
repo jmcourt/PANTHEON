@@ -46,7 +46,7 @@ try:
    import pan_lib as pan
 
    from math import floor, log10, sqrt
-   from numpy import array, ones, zeros
+   from numpy import array, delete, ones, zeros
    from numpy import append as npappend                                   # Importing numpy append as npappend to avoid confusion with in-built append function
 
 except:
@@ -132,15 +132,58 @@ maxt=oet
 
 if nfiles>1:                                                              # Checking that start-times of files 1 & 2 match
    if tst1!=tst2:
-      print 'Starting times for files 1 & 2 do not match!  Aborting!'
-      pan.signoff()
-      exit()
+      if tst1>tst2:
+         while x1r[0]+tst1>x2r[0]+tst2:                                   # Hack data off of the start of file 2 until its startpoint matches file 1
+            x2r=delete(x2r,0)
+            y2r=delete(y2r,0)
+            ye2r=delete(ye2r,0)
+         if tst1+x1r[0]!=tst2+x2r[0]:
+            print 'Starting times for files 1 & 2 do not match!  Aborting!'# If this butchering overshoots, give up
+            pan.signoff()
+            exit()
+         else:
+            tst2+=x2r[0]                                                  # Amend new start time
+            x2r=x2r-x2r[0]
+      else:
+         while x2r[0]+tst2>x1r[0]+tst1:                                   # Or Hack data off of the start of file 1 until its startpoint matches file 2
+            x1r=delete(x1r,0)
+            y1r=delete(y1r,0)
+            ye1r=delete(ye1r,0)
+         if tst1+x1r[0]!=tst2+x2r[0]:
+            print 'Starting times for files 1 & 2 do not match!  Aborting!'
+            pan.signoff()
+            exit()
+         else:
+            tst1+=x1r[0]
+            x1r=x1r-x1r[0]
+
 
 if nfiles>2:                                                              # Checking that start-times of files 1 & 3 match (and thus 2 & 3 also match)
    if tst1!=tst3:
-      print 'Starting times for files 1 & 3 do not match!  Aborting!'
-      pan.signoff()
-      exit()
+      if tst1>tst3:
+         while x1r[0]+tst1>x3r[0]+tst3:                                   # Hack data off of the start of file 3 until its startpoint matches file 1
+            x3r=delete(x3r,0)
+            y3r=delete(y3r,0)
+            ye3r=delete(ye3r,0)
+         if tst1+x1r[0]!=tst3+x3r[0]:
+            print 'Starting times for files 1 & 3 do not match!  Aborting!'# If this butchering overshoots, give up
+            pan.signoff()
+            exit()
+         else:
+            tst3+=x3r[0]                                                  # Amend new start time
+            x3r=x3r-x3r[0]
+      else:
+         while x3r[0]+tst3>x1r[0]+tst1:                                   # Or Hack data off of the start of file 1 until its startpoint matches file 3
+            x1r=delete(x1r,0)
+            y1r=delete(y1r,0)
+            ye1r=delete(ye1r,0)
+         if tst1+x1r[0]!=tst3+x3r[0]:
+            print 'Starting times for files 1 & 3 do not match!  Aborting!'
+            pan.signoff()
+            exit()
+         else:
+            tst1+=x1r[0]
+            x1r=x1r-x1r[0]
 
 
 #-----Binning----------------------------------------------------------------------------------------------------------
