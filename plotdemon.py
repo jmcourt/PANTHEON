@@ -574,10 +574,10 @@ while plotopt not in ['quit','exit']:                                     # If t
                y3=y3[mint:maxt]
                ye3=ye3[mint:maxt]
 
-         gmask=pan.gtimask(x1,gti)                                        # Re-establish gmask
-         times,timese,flux,fluxe,col,cole=colorget()                      # Re-get colours
+            gmask=pan.gtimask(x1,gti)                                     # Re-establish gmask
+            times,timese,flux,fluxe,col,cole=colorget()                   # Re-get colours
 
-         print 'Data clipped!'
+            print 'Data clipped!'
 
 
    #-----'mask' Option-------------------------------------------------------------------------------------------------
