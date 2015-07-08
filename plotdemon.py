@@ -554,23 +554,25 @@ while plotopt not in ['quit','exit']:                                     # If t
          print 'Time range is '+str(x1[0])+'s - '+str(x1[-1])+'s'
 
          print 'Please choose new range of data:'
-         mint,maxt=pan.srinr(x1,binning,'time')                           # Fetch new time domain endpoints using srinr function from pan_lib
+         mint,maxt,srbool=pan.srinr(x1,binning,'time')                    # Fetch new time domain endpoints using srinr function from pan_lib
 
-         print 'Clipping...'
+         if srbool:
 
-         x1=x1[mint:maxt]                                                 # Clip file 1
-         y1=y1[mint:maxt]
-         ye1=ye1[mint:maxt]
+            print 'Clipping...'
 
-         if nfiles>1:
-            x2=x2[mint:maxt]                                              # Clip file 2
-            y2=y2[mint:maxt]
-            ye2=ye2[mint:maxt]
+            x1=x1[mint:maxt]                                              # Clip file 1
+            y1=y1[mint:maxt]
+            ye1=ye1[mint:maxt]
 
-         if nfiles==3:
-            x3=x3[mint:maxt]                                              # Clip file 3
-            y3=y3[mint:maxt]
-            ye3=ye3[mint:maxt]
+            if nfiles>1:
+               x2=x2[mint:maxt]                                           # Clip file 2
+               y2=y2[mint:maxt]
+               ye2=ye2[mint:maxt]
+
+            if nfiles==3:
+               x3=x3[mint:maxt]                                           # Clip file 3
+               y3=y3[mint:maxt]
+               ye3=ye3[mint:maxt]
 
          gmask=pan.gtimask(x1,gti)                                        # Re-establish gmask
          times,timese,flux,fluxe,col,cole=colorget()                      # Re-get colours
@@ -590,15 +592,16 @@ while plotopt not in ['quit','exit']:                                     # If t
          print 'Masking data'
          print ''
          print 'Select time range to mask: '
-         mint,maxt=pan.srinr(x1,binning,'time')                              # Fetch time domain endpoints of bad window using srinr function from pan_lib
+         mint,maxt,srbool=pan.srinr(x1,binning,'time')                       # Fetch time domain endpoints of bad window using srinr function from pan_lib
 
-         print 'Masking...'
+         if srbool:
+            print 'Masking...'
 
-         gmask[mint:maxt]=False                                              # Force all values inside the bad window to appear as outside of GTIs
+            gmask[mint:maxt]=False                                           # Force all values inside the bad window to appear as outside of GTIs
 
-         times,timese,flux,fluxe,col,cole=colorget()                         # Re-get colours
+            times,timese,flux,fluxe,col,cole=colorget()                      # Re-get colours
 
-         print 'Data masked!'
+            print 'Data masked!'
 
 
    #-----'lc' Option---------------------------------------------------------------------------------------------------
@@ -712,23 +715,25 @@ while plotopt not in ['quit','exit']:                                     # If t
             if nfiles>2:
                x3,y3,ye3=pan.binify(x3r,y3r,ye3r,animbin)                 # Bin File 3 using 'binify' in pan_lib
 
-         mina,maxa=pan.srinr(x1,binning,'time',minv=dst,maxv=det)         # Clip each individual lightcurve
+         mina,maxa,srbool=pan.srinr(x1,binning,'time',minv=dst,maxv=det)  # Clip each individual lightcurve
 
-         x1=x1[mina:maxa]                                                 # Clip file 1
-         y1=y1[mina:maxa]
-         ye1=ye1[mina:maxa]
+         if srbool:
 
-         if nfiles>1:
+            x1=x1[mina:maxa]                                              # Clip file 1
+            y1=y1[mina:maxa]
+            ye1=ye1[mina:maxa]
 
-            x2=x2[mina:maxa]                                              # Clip file 2
-            y2=y2[mina:maxa]
-            ye2=ye2[mina:maxa]
+            if nfiles>1:
 
-         if nfiles==3:
+               x2=x2[mina:maxa]                                           # Clip file 2
+               y2=y2[mina:maxa]
+               ye2=ye2[mina:maxa]
 
-            x3=x3[mint:maxt]                                              # Clip file 3
-            y3=y3[mint:maxt]
-            ye3=ye3[mint:maxt]
+            if nfiles==3:
+
+               x3=x3[mint:maxt]                                           # Clip file 3
+               y3=y3[mint:maxt]
+               ye3=ye3[mint:maxt]
 
          gmask=pan.gtimask(x1,gti)                                        # Re-establish gmask
 

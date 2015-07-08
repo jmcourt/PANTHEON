@@ -1171,6 +1171,7 @@ def srinr(t,binning,domain,minv=None,maxv=None):
 
     new_mn  -    INT: The array index of the subrange minimum.
     new_mx  -    INT: The array index of the subrange maximum.
+    boolv   -   BOOL: A flag to denote whether range was clipped.
 
    -J.M.Court, 2015'''
 
@@ -1197,9 +1198,12 @@ def srinr(t,binning,domain,minv=None,maxv=None):
 
    if new_mn>=new_mx:
       print 'Invalid clipping!  Resetting to full.'
+      boolv=False                                                         # Set the flag to propagate the fact no clipping took place
       new_mn=old_mn
       new_mx=old_mx
-   return new_mn,new_mx
+   else:
+      boolv=True
+   return new_mn,new_mx,boolv
 
 
 #-----TNorm------------------------------------------------------------------------------------------------------------
