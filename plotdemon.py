@@ -28,7 +28,7 @@
 
 minbin=0.015625                                                           # The minimum bin size the code is allowed to attempt to use.  This can prevent long hang-ups
 version=4.2                                                               # The version of PlotDemon
-
+cbin=32.0                                                                 # The number of bins to use when calculating inhomonogeneity in circfold
 
 #-----Welcoming Header-------------------------------------------------------------------------------------------------
 
@@ -45,8 +45,8 @@ try:
    import pylab as pl
    import pan_lib as pan
 
-   from math import floor, log10, sqrt
-   from numpy import array, delete, ones, zeros
+   from math import floor, isnan, log10, sqrt
+   from numpy import arange, array, delete, mean, ones, pi, zeros
    from numpy import append as npappend                                   # Importing numpy append as npappend to avoid confusion with in-built append function
 
 except:
@@ -800,7 +800,34 @@ while plotopt not in ['quit','exit']:                                     # If t
 
       pl.figure()
       ax = pl.subplot(111, polar=True)
-      ax.plot(theta,rad,'x')
+
+      # The binned curve #
+
+      bintheta=[]
+      binrad=[]
+      avetheta=[]
+      averad=[]
+
+      for i in range(0,int(cbin)):                                        # For each angular segment...
+         mask=((theta>=(2*pi*i/cbin)) & (theta<(2*pi*(i+1)/cbin)))        # Filter all points outside the segment
+         if sum(mask)>0:                                                  # Check that points actually fall within the angular segment
+            binrad.append(mean(rad[mask]))                                # Average all points within that phase segment
+            bintheta.append(2*pi*((2*i+1)/2.0)/cbin)
+            averad.append(mean(rad))
+            avetheta.append(2*pi*((2*i+1)/2.0)/cbin)
+
+      inhom=sqrt(mean(((array(binrad)-mean(rad))/mean(rad))**2))          # Inhomogeneity is a measure of standard deviation from the average circle
+
+      print 'Inhomogeneity =',inhom
+
+      bintheta.append(bintheta[0])
+      binrad.append(binrad[0])
+      avetheta.append(avetheta[0])
+      averad.append(averad[0])
+
+      ax.plot(avetheta,averad,'k-')                                       # Print average
+      ax.plot(bintheta,binrad,'b-')                                       # Print inhomogeneity line
+      ax.plot(theta,rad,color='#999999',linestyle='', marker='x')         # Print datapoints
       ax.set_title('Circle Diagram ('+str(cftime)+'s folding)')
       ax.set_rmax(1.05*limany)
       pl.show(block=True)
@@ -840,6 +867,8 @@ while plotopt not in ['quit','exit']:                                     # If t
 
       foldinx=castt
 
+      inhlist=[]
+
       while foldinx<caend:                                                # Set the maximum old index at one quarter of the observation length
 
          print "Creating",str(foldinx)+"s folded Circle Diagram"
@@ -851,9 +880,38 @@ while plotopt not in ['quit','exit']:                                     # If t
 
          pl.figure()
          ax = pl.subplot(111, polar=True)
-         ax.plot(theta,rad,'x')
+
+         # The binned curve #
+
+         bintheta=[]
+         binrad=[]
+         avetheta=[]
+         averad=[]
+
+         for i in range(0,int(cbin)):                                     # For each angular segment...
+            mask=((theta>=(2*pi*i/cbin)) & (theta<(2*pi*(i+1)/cbin)))     # Filter all points outside the segment
+            if sum(mask)>0:                                               # Check that points actually fall within the angular segment
+               binrad.append(mean(rad[mask]))                             # Average all points within that phase segment
+               bintheta.append(2*pi*((2*i+1)/2.0)/cbin)
+               averad.append(mean(rad))
+               avetheta.append(2*pi*((2*i+1)/2.0)/cbin)
+
+         inhom=sqrt(mean(((array(binrad)-mean(rad))/mean(rad))**2))       # Inhomogeneity is a measure of standard deviation from the average circle
+         inhlist.append(inhom)
+
+         bintheta.append(bintheta[0])
+         binrad.append(binrad[0])
+         avetheta.append(avetheta[0])
+         averad.append(averad[0])        
+
+         ax.plot(avetheta,averad,'k-')                                    # Print average
+         ax.plot(bintheta,binrad,'b-')                                    # Print inhomogeneity line
+         ax.plot(theta,rad,color='#999999',linestyle='', marker='x')      # Print datapoints
          ax.set_title('Circle Diagram ('+str(foldinx)+'s folding)')
          ax.set_rmax(1.05*limany)
+         ins=pl.axes([0.79,0.74,0.2,0.2])                                 # Save the inset inhomogeneity tracker
+         pl.setp(ins,xticks=[],yticks=[],xlim=[0,100],ylim=[0,max(inhlist)],title='Inhom.')
+         ins.plot(inhlist)
          pl.savefig(str("%04d" % cistep)+'.png')                          # Save the figure with leading zeroes to preserve order when int convereted to string
          pl.close()
 
@@ -865,6 +923,7 @@ while plotopt not in ['quit','exit']:                                     # If t
       os.system ("convert -delay 10 -loop 0 *.png animation.gif")         # Use the bash command 'convert' to create the animated gif
 
       print ''
+      print 'Maximum inhomogeneity =',max(inhlist)
       print "Animation saved to",circsloc+'/animation.gif!'
       os.chdir(here)        
 

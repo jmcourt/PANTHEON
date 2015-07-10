@@ -226,7 +226,7 @@ def circfold(x,y,t,pcoords=True):
    c=y*cos(a)
 
    if pcoords:
-      return a,y
+      return a%(2.0*pi),y
    else:
       return s,c
 
