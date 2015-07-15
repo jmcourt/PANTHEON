@@ -1150,7 +1150,7 @@ while plotopt not in ['quit','exit']:                                     # If t
 
    #-----'errors' Option-----------------------------------------------------------------------------------------------
 
-   elif plotopt=='errors':                                                # Toggle Errors
+   elif plotopt in ['errors','error']:                                    # Toggle Errors
 
       if es:
          es=False
