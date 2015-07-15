@@ -665,7 +665,7 @@ while specopt not in ['quit','exit']:                                     # If t
 
    #-----'errors' Option-----------------------------------------------------------------------------------------------
 
-   elif specopt=='errors':                                                # Toggle Errors
+   elif specopt in ['error', 'errors']:                                   # Toggle Errors
 
       if es:
          es=False
