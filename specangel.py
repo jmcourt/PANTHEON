@@ -476,8 +476,8 @@ while specopt not in ['quit','exit']:                                     # If t
       print ''
 
       print 'Please choose new range of data:'
-      mint,maxt=pan.srinr(tdlm,tmdbin,'time')                             # Fetch new time domain endpoints using srinr function from pan_lib
-      minf,maxf=pan.srinr(tflm,frqbin,'freq')                             # Fetch new freq domain endpoints using srinr function from pan_lib
+      mint,maxt,null=pan.srinr(tdlm,tmdbin,'time')                        # Fetch new time domain endpoints using srinr function from pan_lib
+      minf,maxf,null=pan.srinr(tflm,frqbin,'freq')                        # Fetch new freq domain endpoints using srinr function from pan_lib
 
       print 'Clipping...'
 

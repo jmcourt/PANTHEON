@@ -825,9 +825,9 @@ while plotopt not in ['quit','exit']:                                     # If t
       avetheta.append(avetheta[0])
       averad.append(averad[0])
 
+      ax.plot(theta,rad,color='#999999',linestyle='', marker='x')         # Print datapoints
       ax.plot(avetheta,averad,'k-')                                       # Print average
       ax.plot(bintheta,binrad,'b-')                                       # Print inhomogeneity line
-      ax.plot(theta,rad,color='#999999',linestyle='', marker='x')         # Print datapoints
       ax.set_title('Circle Diagram ('+str(cftime)+'s folding)')
       ax.set_rmax(1.05*limany)
       pl.show(block=True)
@@ -868,6 +868,8 @@ while plotopt not in ['quit','exit']:                                     # If t
       foldinx=castt
 
       inhlist=[]
+      maxinh=0                                                            # Set max inhomogeneity to zero initially
+      maxinl=0
 
       while foldinx<caend:                                                # Set the maximum old index at one quarter of the observation length
 
@@ -899,18 +901,23 @@ while plotopt not in ['quit','exit']:                                     # If t
          inhom=sqrt(mean(((array(binrad)-mean(rad))/mean(rad))**2))       # Inhomogeneity is a measure of standard deviation from the average circle
          inhlist.append(inhom)
 
+         if max(inhlist)>maxinh:
+            maxinh=max(inhlist)
+            maxinl=foldinx
+
          bintheta.append(bintheta[0])
          binrad.append(binrad[0])
          avetheta.append(avetheta[0])
          averad.append(averad[0])        
 
+
+         ax.plot(theta,rad,color='#999999',linestyle='', marker='x')      # Print datapoints
          ax.plot(avetheta,averad,'k-')                                    # Print average
          ax.plot(bintheta,binrad,'b-')                                    # Print inhomogeneity line
-         ax.plot(theta,rad,color='#999999',linestyle='', marker='x')      # Print datapoints
          ax.set_title('Circle Diagram ('+str(foldinx)+'s folding)')
          ax.set_rmax(1.05*limany)
          ins=pl.axes([0.79,0.74,0.2,0.2])                                 # Save the inset inhomogeneity tracker
-         pl.setp(ins,xticks=[],yticks=[],xlim=[0,100],ylim=[0,max(inhlist)],title='Inhom.')
+         pl.setp(ins,xticks=[],yticks=[0.05,0.1,0.15,0.2],xlim=[0,100],ylim=[0,max(inhlist)],title='Inhom.')
          ins.plot(inhlist)
          pl.savefig(str("%04d" % cistep)+'.png')                          # Save the figure with leading zeroes to preserve order when int convereted to string
          pl.close()
@@ -923,7 +930,7 @@ while plotopt not in ['quit','exit']:                                     # If t
       os.system ("convert -delay 10 -loop 0 *.png animation.gif")         # Use the bash command 'convert' to create the animated gif
 
       print ''
-      print 'Maximum inhomogeneity =',max(inhlist)
+      print 'Maximum inhomogeneity =',maxinh,'at',maxinl
       print "Animation saved to",circsloc+'/animation.gif!'
       os.chdir(here)        
 
