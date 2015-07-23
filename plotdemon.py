@@ -846,7 +846,7 @@ while plotopt not in ['quit','exit']:                                     # If t
       try:
          castt=float(raw_input('Lowest Fold time  (s): '))
       except:
-         castt=binning*1.05
+         castt=binning
       try:
          caend=float(raw_input('Highest Fold time (s): '))
       except:
@@ -862,7 +862,6 @@ while plotopt not in ['quit','exit']:                                     # If t
       here=os.getcwd()                                                    # Get current working directory (to move back to later)
       os.chdir(circsloc)                                                  # Change working directory to animation location
 
-      castt=max(binning*1.05,castt)                                       # Start with an arbitrarily low folding index
       caend=min((det-dst)/4.0,caend)
 
       foldinx=castt
@@ -930,7 +929,7 @@ while plotopt not in ['quit','exit']:                                     # If t
       os.system ("convert -delay 10 -loop 0 *.png animation.gif")         # Use the bash command 'convert' to create the animated gif
 
       print ''
-      print 'Maximum inhomogeneity =',maxinh,'at',maxinl
+      print 'Maximum inhomogeneity =',maxinh,'at',str(maxinl)+'s'
       print "Animation saved to",circsloc+'/animation.gif!'
       os.chdir(here)        
 
