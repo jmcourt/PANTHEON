@@ -267,7 +267,7 @@ def give_inst():                                                          # Defi
    print 'OTHER COMMANDS:'
    print '* "info" to display a list of facts and figures about the current SpecAngel session.'
    print '* "reflav" to rewrite the flavour text used for graph titles.'
-   print '* "leahy dump" to create an ASCII file of the Leahy-normalised average power density spectrum.'
+   print '* "export" to create an ASCII file of the average power density spectrum.'
    print '* "help" or "?" to display this list of instructions again.'
    print '* "quit" to Quit'
 
@@ -741,23 +741,23 @@ while specopt not in ['quit','exit']:                                     # If t
          print 'Invalid flavour!  Flavour remains "'+flavour+'"'
 
 
-   #-----'leahy dump' Option-------------------------------------------------------------------------------------------
+   #-----'export' Option-------------------------------------------------------------------------------------------
 
-   elif specopt=='leahy dump':
+   elif specopt=='export':
 
       aflname=raw_input('Filename:')
       try:
 
          assert len(aflname)>0
          fle=open(aflname,'w')
-         for i in range(len(tfl)):
-            a=[str(tfl[i]),' ',str(lspec[i]),' ',str(lspec[i]/sqrt(nleahy)),'\n']
+         spec=npsum(fourgrm, axis=1)/sum(good)                            # Sum all spectra in the matrix and divide by the number of good columns
+         err=sqrt(npsum( array(errgrm)**2, axis=1))/sum(good)
+         for i in range(len(tflm)):
+            a=[str(tflm[i]),' ',str(spec[i]),' ',str(err[i]),'\n']
             fle.writelines(a)
          fle.close()
 
          print 'ASCII Leahy-normalised spectrum saved to',aflname+'!'
-
-      except:
 
          print 'Invalid filename!'
 
