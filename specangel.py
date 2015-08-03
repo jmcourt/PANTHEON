@@ -284,7 +284,7 @@ sgceil=npmax(fourgrm)
 while specopt not in ['quit','exit']:                                     # If the previous command given was not quit, continue
 
    print ''
-   specopt=raw_input('Give command [? for help]: ')                       # Fetch command from user
+   specopt=raw_input('Give command [? for help]: ').lower()               # Fetch command from user
    print ''
 
 
@@ -758,6 +758,8 @@ while specopt not in ['quit','exit']:                                     # If t
          fle.close()
 
          print 'ASCII Leahy-normalised spectrum saved to',aflname+'!'
+
+      except:
 
          print 'Invalid filename!'
 

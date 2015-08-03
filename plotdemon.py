@@ -412,7 +412,7 @@ print ' --------------------'
 while plotopt not in ['quit','exit']:                                     # If the previous command given was not quit, continue
 
    print ''
-   plotopt=raw_input('Give command [? for help]: ')                       # Fetch command from user
+   plotopt=raw_input('Give command [? for help]: ').lower()               # Fetch command from user
    print ''
 
 

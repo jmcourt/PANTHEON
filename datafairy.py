@@ -18,7 +18,7 @@ reso=01                                                                   # The 
 ## Change the functions below to change the form of the data ##
 
 def band1(t):
-   return sin(2*pi*t/21.13)+0.5*sin(2*pi*t/24.65)+4*sin(2*pi*t/(22.6+(1.2*random.random())))+5.5+random.random()
+   return sin(2*pi*t/40.607)*sin(2*pi*sin(2*pi*t/40.607)*t/4.02)+1+0.5*random.random()
 
 def band2(t):
    return 0
