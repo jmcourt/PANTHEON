@@ -179,11 +179,14 @@ except:
 
 if event[1].header['DATAMODE'] in ['B_2ms_4B_0_35_H','B_8ms_16A_0_35_H']:
    spec_on=False
+   bin_dat=True
    print 'No .speca file can be produced!'
    if not plot_on:
       print 'Aborting!'
       pan.signoff()
       exit()
+else:
+   bin_dat=False
 
 #-----Checking validity of remaining inputs----------------------------------------------------------------------------
 
@@ -419,7 +422,7 @@ tcounts=0                                                                 # Init
 
 pcus=None
 
-if spec_on:
+if not bin_dat:
 
    for step in range(numstep):                                           ## For every [foures]s interval in the data:
       stpoint=step*slide                                                    #  Calculate the startpoint of the interval
