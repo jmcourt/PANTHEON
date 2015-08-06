@@ -14,6 +14,12 @@
 #  FILE1
 #   The absolute path to the file to be used.
 #
+#  PROD_REQ
+#   The products requested by the user.  The following inputs are valid:
+#      'spec','speca','s' will cause FITSGenie to produce only a .speca file as output
+#      'plot','plotd','p' will cause FITSGenie to produce only a .plotd file as output
+#      'both','all','b','a','sp','ps' will cause both files to be output
+#
 #  [LCHAN]
 #   Optional: The lowest channel on the PCA instrument on RXTE which will be used to populate the data.
 #   Default of 0 (minimum).
@@ -29,6 +35,10 @@
 #  [FOURIER RES]
 #   Optional: The size of the individual time windows in which the data is to be split.  Fourier
 #   spectra will be made of each of these windows.  Default of 128s.
+#
+#  [FOURIER RES]
+#   Optional: The separation of the startpoints of individual time windows in which the data is to be
+#   split.  Fourier spectra will be made of each of these windows.  Default of 128s.
 #
 #  [BGEST]
 #   Optional: The approximate average background count rate during the observation in cts/s.  Default
@@ -79,10 +89,30 @@ except:
 #-----Checking Validity of Filename------------------------------------------------------------------------------------
 
 args=sys.argv
-pan.argcheck(args,2)                                                      # Must give at least 2 args (Filename and the function call)
+pan.argcheck(args,3)                                                      # Must give at least 3 args (Filename, products and the function call)
 
 filename=args[1]                                                          # Fetch file name from arguments
-spec=True
+prod_req=args[2]                                                          # Fetch products request from arguments
+
+
+#-----Identifying Products---------------------------------------------------------------------------------------------
+
+if prod_req.lower() in ['spec','speca','s','both','all','a','b','ps','sp']:
+   spec_on=True
+   print '.speca File will be created!'
+else:
+   spec_on=False
+   print '.speca File will NOT be created!'
+
+if prod_req.lower() in ['plot','plotd','p','both','all','a','b','ps','sp']:
+   plot_on=True
+   print '.plotd File will be created!'
+else:
+   plot_on=False
+   print '.plotd File will NOT be created!'
+
+del prod_req
+print ''
 
 #-----Opening FITS file, identifying mission---------------------------------------------------------------------------
 
@@ -148,7 +178,12 @@ except:
    exit()
 
 if event[1].header['DATAMODE'] in ['B_2ms_4B_0_35_H','B_8ms_16A_0_35_H']:
-   spec=False
+   spec_on=False
+   print 'No .speca file can be produced!'
+   if not plot_on:
+      print 'Aborting!'
+      pan.signoff()
+      exit()
 
 #-----Checking validity of remaining inputs----------------------------------------------------------------------------
 
@@ -161,8 +196,8 @@ maxen=inst.maxen(event[1].header['DATAMODE'])                             # Get 
 print 'Inputs:'
 print ''
 
-if len(args)>2:
-   lowc=int(args[2])                                                      # Collect minimum channel label from user
+if len(args)>3:
+   lowc=int(args[3])                                                      # Collect minimum channel label from user
    print 'Min Channel =',lowc
 else:
    try:
@@ -171,8 +206,8 @@ else:
       lowc=0
       print "Using min "+etype+" of 0"+escale+"!"
 
-if len(args)>3:
-   highc=int(args[3])                                                     # Collect maximum channel label from user
+if len(args)>4:
+   highc=int(args[4])                                                     # Collect maximum channel label from user
    print 'Max Channel =',highc
 else:
    try:
@@ -191,8 +226,8 @@ if lowc>highc:
 
 cs=str(int(lowc))+'-'+str(int(highc))
 
-if len(args)>4:
-   bszt=float(args[4])                                                    # Collect binsize from inputs if given, else ask user, else use resolution encoded in .fits file
+if len(args)>5:
+   bszt=float(args[5])                                                    # Collect binsize from inputs if given, else ask user, else use resolution encoded in .fits file
    print 'Bin size (s)=',bszt
 else:
    try:
@@ -201,8 +236,8 @@ else:
       bszt=0
       print "Using max time resolution..."
 
-if len(args)>5:
-   foures=float(args[5])                                                  # Collect Fourier resolution from inputs if given, else ask user, else use 128s
+if len(args)>6:
+   foures=float(args[6])                                                  # Collect Fourier resolution from inputs if given, else ask user, else use 128s
    print 'Fourier Res.=',foures
 else:
    try:
@@ -211,8 +246,8 @@ else:
       foures=128
       print "Using 128s per spectrum..."
 
-if len(args)>6:
-   slide=float(args[6])                                                   # Collect Fourier resolution from inputs if given, else ask user, else use 128s
+if len(args)>7:
+   slide=float(args[7])                                                   # Collect Fourier resolution from inputs if given, else ask user, else use 128s
    print 'Fourier Sep.=',slide
 else:
    try:
@@ -221,8 +256,8 @@ else:
       slide=foures
       print "Using "+str(slide)+"s per spectrum..."
 
-if len(args)>7:
-   bgest=float(args[7])                                                   # Collect background estimate from inputs if given, else ask user, else use 30c/s
+if len(args)>8:
+   bgest=float(args[8])                                                   # Collect background estimate from inputs if given, else ask user, else use 30c/s
    print 'Background  =',bgest
 else:
    try:
@@ -232,8 +267,8 @@ else:
       print "Using 30c/s background..."
    print ''
 
-if len(args)>8:
-   flavour=args[8]                                                        # Collect flavour if given, else flavourless
+if len(args)>9:
+   flavour=args[9]                                                        # Collect flavour if given, else flavourless
    print 'Flavour     =',flavour
 else:
    flavour=''
@@ -330,6 +365,13 @@ foures=2**n
 
 if slidelock:
    slide=foures
+else:
+   plot_on=False
+   print 'No .plotd file can be produced!'
+   if not spec_on:
+      print 'Aborting!'
+      pan.signoff()
+      exit()
 
 print 'Fourier window length rounded to 2^'+str(n)+'s ('+str(foures)+'s)!'
 print 'Fourier window separation rounded to',str(slide)+'s!'
@@ -377,7 +419,7 @@ tcounts=0                                                                 # Init
 
 pcus=None
 
-if spec==True:
+if spec_on:
 
    for step in range(numstep):                                           ## For every [foures]s interval in the data:
       stpoint=step*slide                                                    #  Calculate the startpoint of the interval
@@ -470,13 +512,13 @@ if filext!=filename:
 
 filename=filename+'_'+cs
 
-if slidelock:
+if plot_on:
    pfilename=pan.plotdsv(filename,ta,fullhist,fullerrs,tstart,bsz*ptdbinfac,gti,max(npcus),bgest,flavour,cs,mission,obsdata,version)
    print "PlotDemon file saved to "+pfilename
 else:
    print "PlotDemon file not saved."
 
-if spec:
+if spec_on:
    sfilename=pan.specasv(filename,fourgrlin,good,rates,prates,trates,tcounts,npcus,bsz,bgest,foures,flavour,cs,mission,obsdata,wtype,slide,spcbinfac,version)
    print "SpecAngel file saved to "+sfilename
 else:
