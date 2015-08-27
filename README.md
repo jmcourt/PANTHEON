@@ -27,15 +27,18 @@ _____
 * The following modules for Python are required:
   * astropy
   * cPickle
+  * imp
   * math
   * numba
   * numpy
   * os
-  * PyAstronomy (for data folding only)
   * pylab
   * scipy
   * sys
   * warnings
+* The following modules for Python are required for certain features:
+  * PyAstronomy (for data folding only)
+  * GatsPy (for Lomb-Scargle Periodograms only)
 * You must have the 'fkeyprint' and 'make\_se' tools from [HEASARC](http://heasarc.gsfc.nasa.gov/ftools/)'s FTOOLS package in order to use _Xte GoodXenon-Extractor_.  If you do not intend to work with XTE _GoodXenon_ files, or want to select and make the files manually, no HEASARC products are required.
 
 _____
@@ -102,6 +105,7 @@ The lightcurve and colour analysis software for hardness and intensity plotting!
 * Opens up to 3 .plotd files and allows creation of a large number of plots comparing them.
 * Allows plotting and manipulation of lightcurves, colour-colour diagrams and hardness-intensity diagrams.
 * Lets users plot lightcurves of multiple different energy bands alongside each other to see how they correlate.
+* Allows creation of Lomb-Scargle periodograms to complement Fourier Transforms made with SpecAngel.
 * Creates animations of how lightcurves change as the binning is increased.
 * Allows folding of data over a period of the user's selection.
 * Exports data to ASCII text files for compatibility with, for example, GnuPlot.

@@ -77,7 +77,7 @@ try:
    from scipy.fftpack import fft
    import pylab as pl
 
-except:
+except ImportError:
 
    print 'Modules missing!  Aborting!'
    print ''

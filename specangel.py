@@ -51,7 +51,7 @@ try:
    from scipy.stats import spearmanr
    from scipy.optimize import brentq
 
-except:
+except ImportError:
 
    print 'Modules missing!  Aborting!'
    print ''

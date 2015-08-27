@@ -41,7 +41,7 @@ print ''
 
 try:
 
-   import sys,os
+   import sys,os,imp
    import pylab as pl
    import pan_lib as pan
 
@@ -49,13 +49,36 @@ try:
    from numpy import arange, array, delete, mean, ones, pi, zeros
    from numpy import append as npappend                                   # Importing numpy append as npappend to avoid confusion with in-built append function
 
-except:
+except ImportError:
 
    print 'Modules missing!  Aborting!'
    print ''
    print '------------------------------------------------'
    print ''
    exit()
+
+try:
+   from gatspy.periodic import LombScargleFast
+   module_gatspy=True
+
+   def lombscargle(x,y,ye):                                               # If gatspy loads succesfully, define a Lombscargle routine
+      x=x[array(ye)!=0]
+      y=y[array(ye)!=0]
+      ye=ye[array(ye)!=0]
+      model=LombScargleFast().fit(x,y,ye)
+      x_out,y_out=model.periodogram_auto(nyquist_factor=0.5/binning)
+      y_out=y_out[x_out<x[-1]/4.0]                                        # Don't seek for periods greater than 1/4 the time of the data window
+      x_out=1.0/x_out[x_out<x[-1]/4.0]
+      return x_out,y_out                                                  # Return list of frequencies and powers
+
+except ImportError:
+   module_gatspy=False                                                    # Flag that gatspy module was not found but silently proceed
+
+try:
+   imp.find_module('PyAstronomy')                                         # Check if PyAstronomy exists
+   module_pyastro=True
+except ImportError:
+   module_pyastro=False
 
 
 #-----Opening Files----------------------------------------------------------------------------------------------------
@@ -357,13 +380,14 @@ def give_inst():                                                          # Defi
    print '* "rebin" to reset the data and load it with a different binning.'
    print '* "clip" to clip the data.'
    print '* "mask" to remove a range of data.'
-   print '* "fold" to fold data over a period of your choosing.'
+   print '* "fold" to fold data over a period of your choosing'+(' (requires PyAstronomy module)' if not module_pyastro else '')+'.'
    print '* "circfold" to circularly fold data over a period of your choosing.'
    print ''
    print '1+ DATASET PLOTS:'
    print '* "lc" to plot a simple graph of flux over time.'
    print '* "animate" to create an animation of the lightcurve as the binning is increased.'
    print '* "circanim" to create an animation of the lightcurve circularly folded as the period is increased.'
+   print '* "lombscargle" to create a Lomb-Scargle periodogram of the lightcurve'+(' (requires Gatspy module)' if not module_gatspy else '')+'.'
    if nfiles>1:                                                           # Only display 2-data-set instructions if 2+ datasets given
       print ''
       print '2+ DATASET PLOTS:'
@@ -502,43 +526,47 @@ while plotopt not in ['quit','exit']:                                     # If t
 
    elif plotopt=='fold':                                                  # Fold lightcurve
 
-      goodfold=False                                                      # Keep asking user until they give a sensible period
-      while goodfold==False:
-         try:
-            period=float(raw_input('Input period to fold over (s): '))    # Fetch period from user
-            goodfold=True
-         except:
-            print "Invalid period!"                                       # Keep trying until they give a sensible input
+      if module_pyastro:                                                  # Only attempt to fold if pyastro is present
 
-      goodfold=False                                                      # Keep asking user until they give a sensible phase resolution
-      while goodfold==False:
-         try:
-            phres=float(raw_input('Input phase resolution (0-1): '))      # Fetch phase resolution from user
-            assert phres<=1.0
-            goodfold=True
-         except:
-            print "Invalid phase resolution!"                             # Keep trying until they give a sensible input
+         goodfold=False                                                   # Keep asking user until they give a sensible period
+         while goodfold==False:
+            try:
+               period=float(raw_input('Input period to fold over (s): ')) # Fetch period from user
+               goodfold=True
+            except:
+               print "Invalid period!"                                    # Keep trying until they give a sensible input
 
-      x1=x1[gmask];y1=y1[gmask];ye1=ye1[gmask]                            # Zeroing all data points outside of GTI
-      x1,y1,ye1=pan.foldify(x1,y1,ye1,period,binning,phres=phres,name='ch. '+ch[1])         # Fold using foldify function from pan_lib
+         goodfold=False                                                   # Keep asking user until they give a sensible phase resolution
+         while goodfold==False:
+            try:
+               phres=float(raw_input('Input phase resolution (0-1): '))   # Fetch phase resolution from user
+               assert phres<=1.0
+               goodfold=True
+            except:
+               print "Invalid phase resolution!"                          # Keep trying until they give a sensible input
 
-      fldtxt='Folded '
+         x1=x1[gmask];y1=y1[gmask];ye1=ye1[gmask]                         # Zeroing all data points outside of GTI
+         x1,y1,ye1=pan.foldify(x1,y1,ye1,period,binning,phres=phres,name='ch. '+ch[1])      # Fold using foldify function from pan_lib
 
-      if nfiles>1:
-         x2=x2[gmask];y2=y2[gmask];ye2=ye2[gmask]                         # Zeroing all data points outside of GTI
-         x2,y2,ye2=pan.foldify(x2,y2,ye2,period,binning,phres=phres,name='ch. '+ch[2])      # Fold data of file 2 if present
+         fldtxt='Folded '
 
-      if nfiles==3:
-         x3=x3[gmask];y3=y3[gmask];ye3=ye3[gmask]                         # Zeroing all data points outside of GTI
-         x3,y3,ye3=pan.foldify(x3,y3,ye3,period,binning,phres=phres,name='ch. '+ch[3])      # Fold data of file 3 if present
+         if nfiles>1:
+            x2=x2[gmask];y2=y2[gmask];ye2=ye2[gmask]                      # Zeroing all data points outside of GTI
+            x2,y2,ye2=pan.foldify(x2,y2,ye2,period,binning,phres=phres,name='ch. '+ch[2])   # Fold data of file 2 if present
 
-      gmask=ones(len(x1),dtype=bool)                                      # Re-establish gmask
-      times,timese,flux,fluxe,col,cole=colorget()                         # Re-get colours
-      folded=True
+         if nfiles==3:
+            x3=x3[gmask];y3=y3[gmask];ye3=ye3[gmask]                      # Zeroing all data points outside of GTI
+            x3,y3,ye3=pan.foldify(x3,y3,ye3,period,binning,phres=phres,name='ch. '+ch[3])   # Fold data of file 3 if present
 
-      print 'Folding Complete!'
-      print ''
+         gmask=ones(len(x1),dtype=bool)                                   # Re-establish gmask
+         times,timese,flux,fluxe,col,cole=colorget()                      # Re-get colours
+         folded=True
 
+         print 'Folding Complete!'
+         print ''
+
+      else:
+         print 'PyAstronomy Module not found!  Cannot perform fold!'      # Warn user they cannot fold as module is missing
 
    #-----'clip' Option-------------------------------------------------------------------------------------------------
 
@@ -1152,6 +1180,59 @@ while plotopt not in ['quit','exit']:                                     # If t
       pl.title(fldtxt+'Lightcurve'+qflav)
       pl.show(block=False)
       print 'Banded lightcurves plotted!'
+
+
+   #-----'lombscargle' Option------------------------------------------------------------------------------------------
+
+   elif plotopt=='lombscargle':
+
+      if module_gatspy and not folded:                                    # If gatspy module is present and data unfolded, proceed
+
+         if nfiles==1:
+            user_scargle_bands='1'                                        # Select energy bands to LombScargle
+         else:
+            if nfiles==3:
+               is_band_3=', 3'
+            else:
+               is_band_3=''
+            user_scargl_bands=raw_input('Select Energy Band [1, 2'+is_band_3+', All]: ').lower()
+
+         avail_scargl_bands=['1','2','all']                               # Define valid user inputs
+         if nfiles==3:
+            avail_scargl_bands.append('3')                                # Add '3' as a valid input if 3 bands present
+
+         if user_scargl_bands in avail_scargl_bands:
+            if user_scargl_bands=='1':
+               scarglx,scargly=lombscargle(times,y1[gmask],ye1[gmask])    # Perform LombScargle of band 1 using lombscargle function defined in header
+               s_band_name='band 1'
+            elif user_scargl_bands=='2':
+               scarglx,scargly=lombscargle(times,y2[gmask],ye2[gmask])    # Perform LombScargle of band 2 using lombscargle function defined in header
+               s_band_name='band 2'
+            elif user_scargl_bands=='3':
+               scarglx,scargly=lombscargle(times,y3[gmask],ye3[gmask])    # Perform LombScargle of band 3 using lombscargle function defined in header
+               s_band_name='band 3'
+            else:
+               scarglx,scargly=lombscargle(times,flux,fluxe)              # Perform LombScargle of all bands using lombscargle function defined in header
+               s_band_name='all bands'
+
+            pl.figure()
+            pl.plot(scarglx,scargly,'k')                                  # Plot lombscargle
+            pl.xlabel('Frequency (Hz)')
+            pl.ylabel('Power')
+            pl.xlimit(0,max(scarglx))
+            pl.title('Lomb-Scargle Periodogram of '+s_band_name+qflav)
+            pl.show(block=False)
+
+            print ''
+            print 'Lomb-Scargle Diagram of '+s_band_name+' plotted!'
+
+         else:
+            print 'Invalid energy band!'
+
+      elif not module_gatspy:                                             # Error messages explaining why you cant always LombScargle
+         print 'Gatspy module not found!  Cannot perform Lomb-Scargle!'
+      else:
+         print 'Cannot perform Lomb-Scargle on folded data!'
 
 
    #-----'errors' Option-----------------------------------------------------------------------------------------------
