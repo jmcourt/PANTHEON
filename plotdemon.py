@@ -393,9 +393,9 @@ def give_inst():                                                          # Defi
       print '2+ DATASET PLOTS:'
       print '* "hid21" to plot a hardness-intensity diagram of file2/file1 colour against total flux.'
       print '* "hid12" to plot a hardness-intensity diagram of file1/file2 colour against total flux.'
-
       print '* "col21" to plot file2/file1 colour against time.'
       print '* "col12" to plot file1/file2 colour against time.'
+      print '* "band" to plot the lightcurve of a single energy band.'
       print '* "bands" to plot lightcurves of all bands on adjacent axes.'
       print '* "xbands" to plot lightcurves of all bands on the same axes.'
       print '* "all" to plot all available data products.'
@@ -1129,6 +1129,46 @@ while plotopt not in ['quit','exit']:                                     # If t
       print 'All products plotted!'
 
 
+   #-----'band' Option------------------------------------------------------------------------------------------------
+
+   elif plotopt=='band':                                                  # Plot lightcurve of individual band
+
+      if nfiles==1:
+         user_b_band='1'                                                  # Select energy band to plot
+      else:
+         if nfiles==3:
+            is_band_3=', 3'
+         else:
+            is_band_3=''
+         user_b_band=raw_input('Select Energy Band [1, 2'+is_band_3+']: ')
+
+      avail_b_band=['1','2']                                              # Define valid user inputs
+      if nfiles==3:
+         avail_b_band.append('3')                                         # Add '3' as a valid input if 3 bands present
+
+      if user_b_band in avail_b_band:
+
+         taxis='Phase' if folded else 'Time (s)'
+         pl.figure()
+
+         if user_b_band=='1':
+            doplot(times,timese,y1[gmask],ye1[gmask],ovr=True)            # Plot flux/time using doplot from pan_lib
+            b_band_name='Band 1'
+         elif user_b_band=='2':
+            doplot(times,timese,y2[gmask],ye2[gmask],ovr=True)
+            b_band_name='Band 2'
+         else:
+            b_band_name='Band 3'
+            doplot(times,timese,y3[gmask],ye3[gmask],ovr=True)
+
+         pl.xlabel(taxis)                                                 # Format plot
+         pl.ylabel('Flux (counts/s/PCU)')
+         pl.ylim(ymin=0)
+         pl.title(fldtxt+b_band_name+'Lightcurve'+qflav)
+         pl.show(block=False)
+         print b_band_name+' lightcurve plotted!'
+
+
    #-----'bands' Option------------------------------------------------------------------------------------------------
 
    elif plotopt=='bands':                                                 # Plot lightcurves of individual bands apart
@@ -1141,18 +1181,21 @@ while plotopt not in ['quit','exit']:                                     # If t
       pl.xlabel(taxis)
       pl.ylabel('Flux (counts/s/PCU)')
       pl.title(fldtxt+ch[1]+' Lightcurve'+qflav)
+
       if nfiles>1:
          pl.subplot(nfiles,1,2)
          doplot(times,timese,y2[gmask],ye2[gmask],ovr=True)               # Plot the second band
          pl.xlabel(taxis)
          pl.ylabel('Flux (counts/s/PCU)')
          pl.title(fldtxt+ch[2]+' Lightcurve'+flv2)
+
       if nfiles>2:
          pl.subplot(nfiles,1,3)
          doplot(times,timese,y3[gmask],ye3[gmask],ovr=True)               # Plot the third band
          pl.xlabel(taxis)
          pl.ylabel('Flux (counts/s/PCU)')
          pl.title(fldtxt+ch[3]+' Lightcurve'+flv3)
+
       pl.show(block=False)
       print 'Banded lightcurves plotted!'
 
@@ -1214,6 +1257,8 @@ while plotopt not in ['quit','exit']:                                     # If t
             else:
                scarglx,scargly=lombscargle(times,flux,fluxe)              # Perform LombScargle of all bands using lombscargle function defined in header
                s_band_name='all bands'
+               if user_scargl_bands!='all':
+                  print 'Invalid band!  Using all.'
 
             pl.figure()
             pl.plot(scarglx,scargly,'k')                                  # Plot lombscargle
