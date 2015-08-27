@@ -65,9 +65,9 @@ try:
       x=x[array(ye)!=0]
       y=y[array(ye)!=0]
       ye=ye[array(ye)!=0]
-      model=LombScargleFast().fit(x,y,ye)
-      x_out,y_out=model.periodogram_auto(nyquist_factor=0.5/binning)
-      y_out=y_out[x_out<x[-1]/4.0]                                        # Don't seek for periods greater than 1/4 the time of the data window
+      model=LombScargleFast().fit(x,y,ye)                 
+      x_out,y_out=model.periodogram_auto(nyquist_factor=0.5/binning,oversampling=1)
+      y_out=y_out[x_out<x[-1]/4.0]                                        # Don't seek for periods greater than 1/4 the time of the data window  
       x_out=1.0/x_out[x_out<x[-1]/4.0]
       return x_out,y_out                                                  # Return list of frequencies and powers
 
@@ -1264,7 +1264,9 @@ while plotopt not in ['quit','exit']:                                     # If t
             pl.plot(scarglx,scargly,'k')                                  # Plot lombscargle
             pl.xlabel('Frequency (Hz)')
             pl.ylabel('Power')
-            pl.xlimit(0,max(scarglx))
+            pl.xlim(0,max(scarglx))
+            pl.ylim(0.0001,1)
+            pl.yscale('log')
             pl.title('Lomb-Scargle Periodogram of '+s_band_name+qflav)
             pl.show(block=False)
 
