@@ -72,8 +72,8 @@ pan.filenamecheck(filename,'speca')
 #-----Extracting data from file-----------------------------------------------------------------------------------------
 
 print 'Opening '+str(filename)                                            # Use SpecaLd from pan_lib to load data from file
-loadmatrix,good,rates,pk_rates,tr_rates,ph_cts,bg,binsize,four_res,bg_est,flv,cs,mis,obsid,wtype,slide,binfac,v=pan.specald(filename)
-flavour=flv
+loadmatrix,good,rates,pk_rates,tr_rates,ph_cts,bg,binsize,four_res,bg_est,load_flavour,cs,mis,obsid,wtype,slide,binfac,v=pan.specald(filename)
+flavour=load_flavour
 if flavour=='':
    qflav=''
 else:
@@ -695,7 +695,7 @@ while specopt not in ['quit','exit']:                                     # If t
       else:
          print ' Channel        = ',cs
       print ' Resolution     = ',str(binsize)+'s'
-      print ' Flavour        = ',flv
+      print ' Flavour        = ',load_flavour
       print ' FITSGenie Ver. = ',v
       print ''
       print 'Windowing:'
@@ -710,7 +710,7 @@ while specopt not in ['quit','exit']:                                     # If t
       print ' Leahy constant = ',const
       print ''
       print 'Other Info:'
-      print ' Main Flavour   = ',flavour
+      print ' Global Flavour = ',flavour
       print ' Obs length     = ',str(four_res*numstep)+'s'
       print ' Time. Bin-size = ',str(tmdbin)+'s'
       print ' Freq. Bin-size = ',logfreqres

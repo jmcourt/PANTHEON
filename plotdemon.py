@@ -1378,7 +1378,7 @@ while plotopt not in ['quit','exit']:                                     # If t
          print ' FITSGenie Ver. = ',v3
       print ''
       print 'Other Info:'
-      print ' Main Flavour   = ',flavour
+      print ' Global Flavour = ',flavour
       print ' Obs. Starttime = ',str(tst1)+'s (0.0s)'                     # The start of the observation
       print ' Obs. Endtime   = ',str(oet+tst1)+'s ('+str(oet)+'s)'        # The end of the observation
       print ' Data Starttime = ',str(dst+tst1)+'s ('+str(dst)+'s)'        # The start of the data set (i.e. after GTI considerations and clipping)
