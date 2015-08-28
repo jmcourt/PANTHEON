@@ -21,7 +21,7 @@
 
 #-----User-set Parameters----------------------------------------------------------------------------------------------
 
-lplresdefault=0.005                                                       # The best resolution, in log10 space, in which the data will be analysed
+logfreqres_default=0.005                                                  # The best resolution, in log10 space, in which the data will be analysed
 version=4.2                                                               # The version of SpecAngel
 
 
@@ -66,13 +66,13 @@ args=sys.argv
 pan.argcheck(args,2)                                                      # Must give at least 2 args (Filename and the function call)
 
 filename=args[1]                                                          # Fetch file name from arguments
-pan.flncheck(filename,'speca')
+pan.filenamecheck(filename,'speca')
 
 
 #-----Extracting data from file-----------------------------------------------------------------------------------------
 
 print 'Opening '+str(filename)                                            # Use SpecaLd from pan_lib to load data from file
-loadmatrix,good,rates,prates,trates,phcts,bg,bsz,foures,bgest,flv,cs,mis,obsd,wtype,slide,binfac,v=pan.specald(filename)
+loadmatrix,good,rates,pk_rates,tr_rates,ph_cts,bg,binsize,four_res,bg_est,flv,cs,mis,obsid,wtype,slide,binfac,v=pan.specald(filename)
 flavour=flv
 if flavour=='':
    qflav=''
@@ -85,28 +85,28 @@ else:
 print ''
 print 'Normalizing and binning...'
 
-if len(args)>2:                                                           # Check for lplres input, else request one
+if len(args)>2:                                                           # Check for logfreqres input, else request one
    try:
-      lplres=float(args[2])
-      assert lplres>0
+      logfreqres=float(args[2])
+      assert logfreqres>0
    except:
-      lplres=lplresdefault
+      logfreqres=logfreqres_default
 else:
    try:
-      lplres=float(raw_input('Logarithmic binning factor: '))
+      logfreqres=float(raw_input('Logarithmic binning factor: '))
    except:
-      lplres=lplresdefault
+      logfreqres=logfreqres_default
 
-if len(args)>3:                                                           # Check for knorm input, else request one
+if len(args)>3:                                                           # Check for normalization input, else request one
    try:
-      knorm=str(args[3])
+      norm=str(args[3])
    except:
-      knorm='nupnu'
+      norm='nupnu'
 else:
    try:
-      knorm=str(raw_input('Input normalisation [leahy, rms, nupnu]: '))
+      norm=str(raw_input('Input normalisation [leahy, rms, nupnu]: '))
    except:
-      knorm='nupnu'
+      norm='nupnu'
 
 numstep=len(loadmatrix)
 
@@ -123,16 +123,16 @@ def constmi(k):                                                           # Defi
 
 const=(brentq(constmi,const-0.1,const+0.1))                               # Minimise the above function to improve the constant
 
-datres=int(foures/bsz)
-tfl=linspace(0.0, (1.0/2.0)*datres/float(foures), (datres/2)+1)           # Create linearly spaced frequency domain up to the Nyquist frequency 1/2 (N/T)
+datres=int(four_res/binsize)
+tfl=linspace(0.0, (1.0/2.0)*datres/float(four_res), (datres/2)+1)         # Create linearly spaced frequency domain up to the Nyquist frequency 1/2 (N/T)
 tfl=tfl[:-1]
 nulldat=zeros((datres/2))                                                 # Create null data with the same number of points as tfl
-tf,null,null=pan.lbinify(tfl[1:],nulldat[1:],nulldat[1:],lplres)          # Fetch new array of bins to be output after lbinning
+tf,null,null=pan.lbinify(tfl[1:],nulldat[1:],nulldat[1:],logfreqres)      # Fetch new array of bins to be output after lbinning
 del null
 
 print ''
 
-def lbin(lplres,norm='nupnu',prt=False):                                  # Defining a log-binning function that just depends on bin resolution and normalisation
+def lbin(logfreqres,pow_norm='nupnu',prt=False):                          # Defining a log-binning function that just depends on bin resolution and normalisation
 
    if True:                                                               # Instructions with a list of possible normalisations
       if norm not in ['rms','nupnu','leahy']:
@@ -144,9 +144,9 @@ def lbin(lplres,norm='nupnu',prt=False):                                  # Defi
          print '* "nupnu" for RMS-normalised power multiplied by frequency'
          print ''
          print 'Using "leahy" normalisation:'
-         norm='leahy'
+         pow_norm='leahy'
       else:
-         print 'Using "'+norm+'" normalisation:'
+         print 'Using "'+pow_norm+'" normalisation:'
 
    errgr=[]                                                               # Set up matrix of errors
    fourgr=[]
@@ -155,15 +155,15 @@ def lbin(lplres,norm='nupnu',prt=False):                                  # Defi
       errs=pan.lh2rms(tsfdata,rates[i],bg[i],0)                           # Errors of a Leahy spectrum = the Leahy spectrum
 
       if norm in ['rms','nupnu']:
-         if norm=='nupnu':
+         if pow_norm=='nupnu':
             sconst=const                                                  # For nuP(nu) normalisation, the Leahy constant will need subtracting
          else:
             sconst=0                                                      # In RMS norm, it can stay
          tsfdata=pan.lh2rms(tsfdata,rates[i],bg[i],sconst)                # Convert to RMS-normalised data using the LH2RMS function from pan_lib
-         if norm=='nupnu':
+         if pow_norm=='nupnu':
             tsfdata=tsfdata*tfl                                           # Multiply by frequency if nupnu normalisation requested
             errs=errs*tfl
-      tf,fours,errs=pan.lbinify(tfl[1:],tsfdata[1:],errs[1:],lplres)      # Logarithmically bin the data using lbinify from pan_lib
+      tf,fours,errs=pan.lbinify(tfl[1:],tsfdata[1:],errs[1:],logfreqres)  # Logarithmically bin the data using lbinify from pan_lib
       fourgr.append(fours)                                                # Populate the data matrix
       errgr.append(abs(errs))                                             # Populate the error matrix
 
@@ -175,16 +175,16 @@ def lbin(lplres,norm='nupnu',prt=False):                                  # Defi
    errgr=transpose(errgr)
    return fourgr,errgr,norm
 
-fourgr,errgr,knorm=lbin(lplres,prt=True,norm=knorm)  
+fourgr,errgr,norm=lbin(logfreqres,prt=True,pow_norm=norm)  
 
 print ''
 print 'Preparing spectrogram...'
 
 deftitle='Spectrogram'+qflav                                              # Define default title for spectrogram
 
-if knorm=='leahy':                                                        # Define default key label for spectrogram
+if norm=='leahy':                                                         # Define default key label for spectrogram
    defzlabl='Leahy-Normalised Power (Hz^-1)'
-elif knorm=='rms':
+elif norm=='rms':
    defzlabl='RMS Normalised Power (Hz^-1)'
 else:
    defzlabl='Frequency x RMS Normalised Power'
@@ -199,7 +199,7 @@ speclog=False                                                             # Indi
 stitle=deftitle                                                           # Give an initial title
 rtlabl=defzlabl                                                           # Give an initial key label
 
-tmdbin=foures                                                             # Initial time binning
+tmdbin=four_res                                                           # Initial time binning
 frqbin=(tf[-1]-tf[0])/(len(tf)-1)                                         # Initial freq binning
 tdgd=tdg                                                                  # Saving default grid [Time Domain Grid- Default]
 tfgd=tfg
@@ -292,11 +292,11 @@ while specopt not in ['quit','exit']:                                     # If t
 
    if specopt=='rebin':                                                   # Rebinning data    
 
-      print 'Data currently binned in '+str(tmdbin)+'s and 10^'+str(lplres)+'Hz bins.'
+      print 'Data currently binned in '+str(tmdbin)+'s and 10^'+str(logfreqres)+'Hz bins.'
 
       speclog=False                                                       # Indicate that the spectrogram is not logarithmic
       stitle=deftitle                                                     # Restore initial title
-      tmdbin=foures                                                       # Initial time binning
+      tmdbin=four_res                                                     # Initial time binning
       frqbin=(tf[-1]-tf[1])/(len(tf)-2)                                   # Initial freq binning
       fourgrm=fourgr                                                      # Reload original, unmodified data
       errgrm=errgr
@@ -306,7 +306,7 @@ while specopt not in ['quit','exit']:                                     # If t
       tflm=tf
       good=ogood
 
-      knorm=raw_input('Select normalisation [leahy, rms, nupnu]: ')
+      norm=raw_input('Select normalisation [leahy, rms, nupnu]: ')
 
       try:
          tbinmult=int(raw_input('Input time-domain binning factor: '))
@@ -317,11 +317,11 @@ while specopt not in ['quit','exit']:                                     # If t
          tbinmult=1                                                       # Cancel binning if a non-number is entered
          print 'Invalid time binning!'
 
-      tmdbin=foures*tbinmult                                              # Recover current binning
+      tmdbin=four_res*tbinmult                                            # Recover current binning
 
       try:
          newfbin=float(raw_input('Input new freq-domain exponent: '))
-         if newfbin>0: lplres=newfbin                                     # Prevent bin-sizes smaller than zero
+         if newfbin>0: logfreqres=newfbin                                 # Prevent bin-sizes smaller than zero
              
       except:
          newfbin=0                                                        # Cancel binning if a non-number is entered
@@ -330,9 +330,9 @@ while specopt not in ['quit','exit']:                                     # If t
       print ''
       print 'Re-binning...'
 
-      tflm,null,null=pan.lbinify(tfl[1:],nulldat,nulldat,lplres)          # Fetch new array of bins to be output after lbinning
+      tflm,null,null=pan.lbinify(tfl[1:],nulldat,nulldat,logfreqres)      # Fetch new array of bins to be output after lbinning
       del null
-      fourgrm,errgrm,knorm=lbin(lplres,prt=True,norm=knorm)               # Re log-bin data
+      fourgrm,errgrm,norm=lbin(logfreqres,prt=True,pow_norm=norm)         # Re log-bin data
 
       if tbinmult!=1:                                                     # Cancel binning if new bin is not greater than old bin
 
@@ -341,12 +341,12 @@ while specopt not in ['quit','exit']:                                     # If t
       tdgd,tfgd=meshgrid(tdlm,tflm)                                       # Recreate grid from rescaled axes
 
       print ''
-      print 'Data rebinned by '+str(tmdbin)+'s, [10^'+str(lplres)+'n]Hz.'
+      print 'Data rebinned by '+str(tmdbin)+'s, [10^'+str(logfreqres)+'n]Hz.'
       print str(int(sum(good)))+'/'+str(len(good))+' power spectra are good'
 
-      if knorm=='leahy':
+      if norm=='leahy':
          sylab='Leahy-Normalised Power (Hz^-1)'
-      elif knorm=='rms':
+      elif norm=='rms':
          sylab='RMS Normalised Power (Hz^-1)'
       else:
          sylab='Frequency x RMS Normalised Power'
@@ -471,8 +471,8 @@ while specopt not in ['quit','exit']:                                     # If t
       print 'Clipping data'
       print ''
 
-      print 'Time range is '+str(tdlm[0])+'s - '+str(tdlm[-2]+foures)+'s'
-      print 'Freq range is '+str(tflm[0])+'Hz- '+str(tflm[-1]+foures)+'Hz'
+      print 'Time range is '+str(tdlm[0])+'s - '+str(tdlm[-2]+four_res)+'s'
+      print 'Freq range is '+str(tflm[0])+'Hz- '+str(tflm[-1]+four_res)+'Hz'
       print ''
 
       print 'Please choose new range of data:'
@@ -500,7 +500,7 @@ while specopt not in ['quit','exit']:                                     # If t
       stitle=deftitle                                                     # Restore initial title
       rtlabl=defzlabl                                                     # Restore initial key label
       szlab=defzlabl                                                      # Restore initial key label, storing second copy
-      tmdbin=foures                                                       # Initial time binning
+      tmdbin=four_res                                                       # Initial time binning
       frqbin=(tf[-1]-tf[1])/(len(tf)-2)                                   # Initial freq binning
       fourgrm=fourgr                                                      # Reload original, unmodified data
       errgrm=errgr
@@ -519,7 +519,7 @@ while specopt not in ['quit','exit']:                                     # If t
 
    elif specopt=='aspec':                                                 # Find the time-averaged spectrum
 
-      if slide!=foures:
+      if slide!=four_res:
          print "Warning!  Data taken with sliding window: data points not independent!"
          print ''
 
@@ -541,7 +541,7 @@ while specopt not in ['quit','exit']:                                     # If t
 
    elif specopt=='gspec':                                                 # Find the power spectrum at a specific point in time
 
-      if slide!=foures:
+      if slide!=four_res:
          print "Warning!  Data taken with sliding window: data points not independent!"
          print ''
 
@@ -600,22 +600,22 @@ while specopt not in ['quit','exit']:                                     # If t
    elif specopt=='rates':
 
       print 'Average rate of',str(mean(rates[ogood]))+'c/s.'
-      print str(phcts),'total counts.'
+      print str(ph_cts),'total counts.'
 
       print ''
 
       datasel=raw_input('Select Rates to plot [ave/peak/trough]: ')
 
       titles['ave']='Flux (photons/s/PCU)'
-      titles['peak']='Peak '+str(binfac*bsz)+'s Flux (photons/s/PCU)'
-      titles['trough']='Trough '+str(binfac*bsz)+'s Flux (photons/s/PCU)'
+      titles['peak']='Peak '+str(binfac*binsize)+'s Flux (photons/s/PCU)'
+      titles['trough']='Trough '+str(binfac*binsize)+'s Flux (photons/s/PCU)'
       if datasel not in ('ave','peak','trough'):
          print 'Invalid selection!  Using Average flux.'
          datasel='ave'
 
       brates['ave']=rates
-      brates['peak']=prates
-      brates['trough']=trates
+      brates['peak']=pk_rates
+      brates['trough']=tr_rates
 
       pl.close('lc')
       pl.figure('lc')
@@ -640,12 +640,12 @@ while specopt not in ['quit','exit']:                                     # If t
       titles={}
 
       titles['ave']='Flux (photons/s/PCU)'
-      titles['peak']='Peak '+str(binfac*bsz)+'s Flux (photons/s/PCU)'
-      titles['trough']='Trough '+str(binfac*bsz)+'s Flux (photons/s/PCU)'
+      titles['peak']='Peak '+str(binfac*binsize)+'s Flux (photons/s/PCU)'
+      titles['trough']='Trough '+str(binfac*binsize)+'s Flux (photons/s/PCU)'
 
       brates['ave']=pan.vcrebin(rates,len(rates)/len(peaks))
-      brates['peak']=pan.vcrebin(prates,len(prates)/len(peaks))
-      brates['trough']=pan.vcrebin(trates,len(trates)/len(peaks))
+      brates['peak']=pan.vcrebin(pk_rates,len(pk_rates)/len(peaks))
+      brates['trough']=pan.vcrebin(tr_rates,len(tr_rates)/len(peaks))
 
       datasel=raw_input('Select Rates to plot against [ave/peak/trough]: ')
       if datasel not in ('ave','peak','trough'):
@@ -683,42 +683,42 @@ while specopt not in ['quit','exit']:                                     # If t
       print ''
       print '1 file loaded:'
       print ''
-      filn,loca=pan.xtrfilloc(filename)
+      local_name,file_path=pan.xtrfilloc(filename)
       print 'File 1:'
-      print ' Filename       = ',filn
-      print ' Location       = ',loca
+      print ' Filename       = ',local_name
+      print ' Location       = ',file_path
       print ' Mission        = ',mis
-      print ' Object         = ',obsd[0]
-      print ' Obs_ID         = ',obsd[1]
+      print ' Object         = ',obsid[0]
+      print ' Obs_ID         = ',obsid[1]
       if mis in ['SUZAKU']:
          print ' Energy         = ',cs,'eV'
       else:
          print ' Channel        = ',cs
-      print ' Resolution     = ',str(bsz)+'s'
+      print ' Resolution     = ',str(binsize)+'s'
       print ' Flavour        = ',flv
       print ' FITSGenie Ver. = ',v
       print ''
       print 'Windowing:'
       print ' Shape          = ',wtype
-      print ' Sliding        = ',slide!=foures
-      print ' Length         = ',str(foures)+'s'
-      if slide!=foures:
+      print ' Sliding        = ',slide!=four_res
+      print ' Length         = ',str(four_res)+'s'
+      if slide!=four_res:
          print ' Separation     = ',str(slide)+'s'
       print ''
       print 'Normalisation:'
-      print ' Normalisation  = ',knorm
+      print ' Normalisation  = ',norm
       print ' Leahy constant = ',const
       print ''
       print 'Other Info:'
       print ' Main Flavour   = ',flavour
-      print ' Obs length     = ',str(foures*numstep)+'s'
+      print ' Obs length     = ',str(four_res*numstep)+'s'
       print ' Time. Bin-size = ',str(tmdbin)+'s'
-      print ' Freq. Bin-size = ',lplres
+      print ' Freq. Bin-size = ',logfreqres
       print ' Num. Time Bins = ',str(int(len(good)))
       print ' Good Time Bins = ',str(int(sum(good)))
       print ' Avg. Rates     = ',str(mean(rates[ogood]))
-      print ' Total photons  = ',phcts
-      print ' Background     = ',str(bgest)+'cts/s/PCU'
+      print ' Total photons  = ',ph_cts
+      print ' Background     = ',str(bg_est)+'cts/s/PCU'
       print ' Errorbars      = ',es
 
 

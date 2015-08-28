@@ -18,7 +18,7 @@
 #
 #  BOOLVAL   - takes a list of Boolean values and, interpreting it as binary, returns its integer value.
 #
-#  FLNCHECK  - checks to see whether a proposed input file has the correct file extension.
+#  FILENAMECHECK  - checks to see whether a proposed input file has the correct file extension.
 #
 #  FOLDIFY   - takes a time series with its associated y-axis data and y-axis errors.  Folds this data
 #              over a time period of the user's choosing, and returns them as the tuple x,y,y_error.
@@ -233,7 +233,7 @@ def circfold(x,y,t,pcoords=True):
 
 #-----FlnCheck---------------------------------------------------------------------------------------------------------
 
-def flncheck(filename,validext,cont=False):
+def filenamecheck(filename,validext,cont=False):
 
    '''Filename Checker
 

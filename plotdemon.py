@@ -96,7 +96,7 @@ nfiles=len(args)-isbininp-1                                               # Fetc
 if nfiles>3: nfiles=3
 
 file1=args[1]
-pan.flncheck(file1,'plotd')
+pan.filenamecheck(file1,'plotd')
 
 ch={}                                                                     # Save channel info in a library
 
@@ -113,7 +113,7 @@ else:
 
 if nfiles>1:
    file2=args[2]
-   if pan.flncheck(file2,'plotd'):
+   if pan.filenamecheck(file2,'plotd'):
       print 'Opening',file2                                               # Opening file 2
       x2r,y2r,ye2r,tst2,bsz2,null,pcus2,null,flv2,ch[2],mis2,obsd2,v2=pan.plotdld(file2)
       del null
@@ -127,7 +127,7 @@ else: x2r=y2r=ye2r=tst2=bsz2=None
 
 if nfiles>2:
    file3=args[3]
-   if pan.flncheck(file2,'plotd'):
+   if pan.filenamecheck(file2,'plotd'):
       print 'Opening',file3                                               # Opening file 3
       x3r,y3r,ye3r,tst3,bsz3,null,pcus3,null,flv3,ch[3],mis3,obsd3,v3=pan.plotdld(file3)
       del null
