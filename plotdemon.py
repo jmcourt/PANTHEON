@@ -233,11 +233,10 @@ if nfiles>2:                                                              # Chec
 if isbininp:
    binning=float(args[-1])                                                # Collect binsize input if given
 else:
-   goodbin=False
-   while not goodbin:                                                     # Keep asking until a good response is given
+   while True:                                                            # Keep asking until a good response is given
       try:
          binning=float(raw_input("Enter bin size (s): "))                 # Ask for binsize in dialogue box
-         goodbin=True
+         break
       except:
          print 'Invalid bin size input!'
 
@@ -456,13 +455,12 @@ while plotopt not in ['quit','exit']:                                     # If t
 
    if plotopt=='rebin':                                                   # Rebin data
 
-      goodbin=False
       fldtxt=''
-      while not goodbin:                                                  # Keep asking until a good response is given
+      while True:                                                         # Keep asking until a good response is given
          try:
             binning=float(raw_input("Enter bin size (s): "))              # Ask for binsize in dialogue box
             assert binning>=minbin
-            goodbin=True
+            break
          except:
             print 'Invalid bin size input!'
 
@@ -528,20 +526,18 @@ while plotopt not in ['quit','exit']:                                     # If t
 
       if module_pyastro:                                                  # Only attempt to fold if pyastro is present
 
-         goodfold=False                                                   # Keep asking user until they give a sensible period
-         while goodfold==False:
+         while True:                                                      # Keep asking user until they give a sensible period
             try:
                period=float(raw_input('Input period to fold over (s): ')) # Fetch period from user
-               goodfold=True
+               break
             except:
                print "Invalid period!"                                    # Keep trying until they give a sensible input
 
-         goodfold=False                                                   # Keep asking user until they give a sensible phase resolution
-         while goodfold==False:
+         while True:                                                      # Keep asking user until they give a sensible phase resolution
             try:
                phres=float(raw_input('Input phase resolution (0-1): '))   # Fetch phase resolution from user
                assert phres<=1.0
-               goodfold=True
+               break
             except:
                print "Invalid phase resolution!"                          # Keep trying until they give a sensible input
 
@@ -815,16 +811,16 @@ while plotopt not in ['quit','exit']:                                     # If t
 
       goodfp=False
 
-      while not goodfp:
+      while True:                                                         # Keep trying until user gives a sensible fold-time
 
          try:
             cftime=float(raw_input('Fold Period (s): '))
-            goodfp=True
+            break
          except:
             print 'Invalid entry!'
 
       theta,rad=pan.circfold(times,flux,cftime)
-      limany=max(rad)
+      limany=max(rad)                                                     # Fetch radius of plot
 
       pl.figure()
       ax = pl.subplot(111, polar=True)
