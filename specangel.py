@@ -75,9 +75,9 @@ print 'Opening '+str(filename)                                            # Use 
 loadmatrix,good,rates,pk_rates,tr_rates,ph_cts,bg,binsize,four_res,bg_est,load_flavour,cs,mis,obsid,wtype,slide,binfac,v=pan.specald(filename)
 flavour=load_flavour
 if flavour=='':
-   qflav=''
+   q_flav=''
 else:
-   qflav=' "'+flavour+'"'
+   q_flav=' "'+flavour+'"'
 
 
 #-----Initially normalising data----------------------------------------------------------------------------------------
@@ -180,7 +180,7 @@ fourgr,errgr,norm=lbin(logfreqres,prt=True,pow_norm=norm)
 print ''
 print 'Preparing spectrogram...'
 
-deftitle='Spectrogram'+qflav                                              # Define default title for spectrogram
+deftitle='Spectrogram'+q_flav                                             # Define default title for spectrogram
 
 if norm=='leahy':                                                         # Define default key label for spectrogram
    defzlabl='Leahy-Normalised Power (Hz^-1)'
@@ -527,7 +527,7 @@ while specopt not in ['quit','exit']:                                     # If t
 
       spec=npsum(fourgrm, axis=1)/sum(good)                               # Sum all spectra in the matrix and divide by the number of good columns
       err=sqrt(npsum( array(errgrm)**2, axis=1))/sum(good)
-      ttl='Average power density spectrum'+qflav
+      ttl='Average power density spectrum'+q_flav
       pan.slplot(tflm,spec,err,sxlab,sylab,ttl,'spc',typ='log',errors=es) # SLPlot from the pan_lib plots data on standard and log-log axes
       scerr=spec-(err**0.5)
 
@@ -591,7 +591,7 @@ while specopt not in ['quit','exit']:                                     # If t
       pl.semilogy(array(tdlm[:-1])[good],array(peaks)[good],'-ok')
       pl.xlabel('Time (s)')
       pl.ylabel('Frequency (Hz)')
-      pl.title('Peak Frequency/Time Plot'+qflav)
+      pl.title('Peak Frequency/Time Plot'+q_flav)
       pl.show(block=False)
 
 
@@ -622,7 +622,7 @@ while specopt not in ['quit','exit']:                                     # If t
       pl.plot(td[:-1][ogood],brates[datasel][ogood],'-ok')
       pl.xlabel('Time (s)')
       pl.ylabel('Flux (photons/s/PCU)')
-      pl.title('Lightcurve'+qflav)
+      pl.title('Lightcurve'+q_flav)
       pl.show(block=False)
 
 
@@ -659,7 +659,7 @@ while specopt not in ['quit','exit']:                                     # If t
       pl.semilogx(array(peaks)[good],brates[datasel][good],'ok')
       pl.ylabel(titles[datasel])
       pl.xlabel('Frequency (Hz)')
-      pl.title('Flux/Peak Frequency Plot'+qflav)
+      pl.title('Flux/Peak Frequency Plot'+q_flav)
       pl.show(block=False)
 
 
@@ -733,9 +733,9 @@ while specopt not in ['quit','exit']:                                     # If t
          assert nflavour!=''
          flavour=nflavour
          if flavour=='':
-            qflav=''
+            q_flav=''
          else:
-            qflav=' "'+flavour+'"'
+            q_flav=' "'+flavour+'"'
          print 'Flavour set to "'+flavour+'"'
       except:
          print 'Invalid flavour!  Flavour remains "'+flavour+'"'

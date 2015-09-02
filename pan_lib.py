@@ -18,6 +18,9 @@
 #
 #  BOOLVAL   - takes a list of Boolean values and, interpreting it as binary, returns its integer value.
 #
+#  CIRCFOLD  - 'circularly folds' data by converting [time, data] points into polar-coordinate [phase, data]
+#              pairs and returning these in cartesian or polar coordinates.
+#
 #  FILENAMECHECK  - checks to see whether a proposed input file has the correct file extension.
 #
 #  FOLDIFY   - takes a time series with its associated y-axis data and y-axis errors.  Folds this data
@@ -190,7 +193,7 @@ def boolval(data,reverse=True):
    Description:
 
     Given a list of Boolean values, interprets them as binary and returns the corresponding integer.
-    By default reads lists as having the highest first.
+    By default reads lists as having the highest-value digit first.
 
    Inputs:
 
@@ -220,14 +223,37 @@ def boolval(data,reverse=True):
 
 def circfold(x,y,t,pcoords=True):
 
+   '''Circular folder
+
+   Description:
+
+    Circularly folds data by converting the x array into an array of phase angles between 0 and 2pi
+    and the y array into an array of radial distances.  The coordinates of these points are then
+    returned in Cartesian or Polar co-ordinates, as specified by the user.
+
+   Inputs:
+
+    x      - ARRAY: The x (time) co-ordinates of the data.
+    y      - ARRAY: The y co-ordinates of the data.
+    t      - FLOAT: The period over which the data is to be folded.
+    pcoord -  BOOL: [optional] defaults to True.  If set to true, the output co-ordinates will be
+                      theta, r as in polar co-ordinates.  If set to false, the output co-ordinates
+                      will be x, y as in Cartesian co-ordinates.
+
+   Outputs:
+
+    See inputs: pcoord
+
+   -J.M.Court, 2015'''
+
    mult=(2*pi)/float(t)
    a=x*mult
-   s=y*sin(a)
-   c=y*cos(a)
 
    if pcoords:
       return a%(2.0*pi),y
    else:
+      s=y*sin(a)
+      c=y*cos(a)
       return s,c
 
 
@@ -552,17 +578,6 @@ def lhconst(data):
    if const>2.5 or const<1.5:
       print "WARNING: Leahy constant of "+str(const)+" outside of accepted range!"
    return const
-
-
-#-----LHImprov---------------------------------------------------------------------------------------------------------
-
-def lhimprov(spec):
-
-   def rmsnoise(x,a,b):
-      return x*a+b
-
-   const_corr=optm.curve_fit(rmsnoise,arange(len(spec)),spec*arange(len(spec)))
-   return const_corr[0][0]
 
 
 #-----MXRebin----------------------------------------------------------------------------------------------------------
