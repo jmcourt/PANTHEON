@@ -58,23 +58,6 @@ except ImportError:
    exit()
 
 try:
-   from gatspy.periodic import LombScargleFast
-   module_gatspy=True
-
-   def lombscargle(x,y,ye):                                               # If gatspy loads succesfully, define a Lombscargle routine
-      x=x[array(ye)!=0]
-      y=y[array(ye)!=0]
-      ye=ye[array(ye)!=0]
-      model=LombScargleFast().fit(x,y,ye)                 
-      x_out,y_out=model.periodogram_auto(nyquist_factor=0.5/binning,oversampling=1)
-      y_out=y_out[x_out<x[-1]/4.0]                                        # Don't seek for periods greater than 1/4 the time of the data window  
-      x_out=1.0/x_out[x_out<x[-1]/4.0]
-      return x_out,y_out                                                  # Return list of frequencies and powers
-
-except ImportError:
-   module_gatspy=False                                                    # Flag that gatspy module was not found but silently proceed
-
-try:
    imp.find_module('PyAstronomy')                                         # Check if PyAstronomy exists
    module_pyastro=True
 except ImportError:
@@ -386,7 +369,7 @@ def give_inst():                                                          # Defi
    print '* "lc" to plot a simple graph of flux over time.'
    print '* "animate" to create an animation of the lightcurve as the binning is increased.'
    print '* "circanim" to create an animation of the lightcurve circularly folded as the period is increased.'
-   print '* "lombscargle" to create a Lomb-Scargle periodogram of the lightcurve'+(' (requires Gatspy module)' if not module_gatspy else '')+'.'
+   print '* "lombscargle" to create a Lomb-Scargle periodogram of the lightcurve.'
    if nfiles>1:                                                           # Only display 2-data-set instructions if 2+ datasets given
       print ''
       print '2+ DATASET PLOTS:'
@@ -1225,7 +1208,7 @@ while plotopt not in ['quit','exit']:                                     # If t
 
    elif plotopt=='lombscargle':
 
-      if module_gatspy and not folded:                                    # If gatspy module is present and data unfolded, proceed
+      if not folded:                                                      # If data is unfolded, proceed
 
          if nfiles==1:
             user_scargle_bands='1'                                        # Select energy bands to LombScargle
@@ -1236,32 +1219,36 @@ while plotopt not in ['quit','exit']:                                     # If t
                is_band_3=''
             user_scargl_bands=raw_input('Select Energy Band [1, 2'+is_band_3+', All]: ').lower()
 
+         ls_st=max(4.0/(times[-1]-times[0]),0.005)
+         ls_end=0.5/binning
+         lsx=arange(ls_st,ls_end,(ls_end-ls_st)/2500.0)
+
          avail_scargl_bands=['1','2','all']                               # Define valid user inputs
          if nfiles==3:
             avail_scargl_bands.append('3')                                # Add '3' as a valid input if 3 bands present
 
          if user_scargl_bands in avail_scargl_bands:
             if user_scargl_bands=='1':
-               scarglx,scargly=lombscargle(times,y1[gmask],ye1[gmask])    # Perform LombScargle of band 1 using lombscargle function defined in header
+               lsy=pan.lomb_scargle(times,y1[gmask],ye1[gmask],lsx)       # Perform LombScargle of band 1 using lombscargle function defined in header
                s_band_name='band 1'
             elif user_scargl_bands=='2':
-               scarglx,scargly=lombscargle(times,y2[gmask],ye2[gmask])    # Perform LombScargle of band 2 using lombscargle function defined in header
+               lsy=pan.lomb_scargle(times,y2[gmask],ye2[gmask],lsx)       # Perform LombScargle of band 2 using lombscargle function defined in header
                s_band_name='band 2'
             elif user_scargl_bands=='3':
-               scarglx,scargly=lombscargle(times,y3[gmask],ye3[gmask])    # Perform LombScargle of band 3 using lombscargle function defined in header
+               lsy=pan.lomb_scargle(times,y3[gmask],ye3[gmask],lsx)       # Perform LombScargle of band 3 using lombscargle function defined in header
                s_band_name='band 3'
             else:
-               scarglx,scargly=lombscargle(times,flux,fluxe)              # Perform LombScargle of all bands using lombscargle function defined in header
+               lsy=pan.lomb_scargle(times,flux,fluxe,lsx)                 # Perform LombScargle of all bands using lombscargle function defined in header
                s_band_name='all bands'
                if user_scargl_bands!='all':
                   print 'Invalid band!  Using all.'
 
             pl.figure()
-            pl.plot(scarglx,scargly,'k')                                  # Plot lombscargle
+            pl.plot(lsx,lsy,'k')                                          # Plot lombscargle
             pl.xlabel('Frequency (Hz)')
             pl.ylabel('Power')
-            pl.xlim(0,max(scarglx))
-            pl.ylim(0.0001,1)
+            pl.xlim(0,max(lsx))
+            pl.ylim(0.00001,1)
             pl.yscale('log')
             pl.title('Lomb-Scargle Periodogram of '+s_band_name+qflav)
             pl.show(block=False)
@@ -1272,8 +1259,6 @@ while plotopt not in ['quit','exit']:                                     # If t
          else:
             print 'Invalid energy band!'
 
-      elif not module_gatspy:                                             # Error messages explaining why you cant always LombScargle
-         print 'Gatspy module not found!  Cannot perform Lomb-Scargle!'
       else:
          print 'Cannot perform Lomb-Scargle on folded data!'
 

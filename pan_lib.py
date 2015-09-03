@@ -89,9 +89,12 @@ import warnings
 import scipy.optimize as optm
 from matplotlib.ticker import ScalarFormatter
 from numba import jit
-from numpy import pi, sin, cos, array, arange, ceil, exp, floor, log10, mean, ones, sqrt, zeros
+from numpy import (pi, sin, cos, array, arange, ceil, exp, floor, log10, mean, ones, sqrt, zeros, multiply,
+                  arctan)
 from numpy import append as npappend
 from numpy import sum as npsum
+
+import time
 
 
 #-----ArgCheck---------------------------------------------------------------------------------------------------------
@@ -578,6 +581,57 @@ def lhconst(data):
    if const>2.5 or const<1.5:
       print "WARNING: Leahy constant of "+str(const)+" outside of accepted range!"
    return const
+
+
+#-----Lomb_Scargle-----------------------------------------------------------------------------------------------------
+
+def lomb_scargle(x,y,ye,freqs):
+
+   '''Lomb Scargle
+
+   Decription:
+
+    Returns the Lomb-Scargle periodogram of data provided by the user, scanning over a set of frequencies
+    also provided by the user.
+
+   Inputs:
+
+    x     -  LIST: the time-array for the data to be converted.
+    y     -  LIST: the data associated with time array x.
+    ye    -  LIST: the errors associated with each point in y.
+    freqs -  LIST: the list of discrete frequencies over which the user wants the L-S periodogram to scan.
+
+   Outputs:
+
+    pgram - ARRAY: the Lomb-Scargle power associated with each frequency provided in freqs.
+
+   -J.M.Court, 2015'''
+
+   assert len(x)==len(y)
+   x=array(x)
+   y=array(y)/sqrt(array(ye))
+   freqs=array(freqs)*2*pi
+
+   wt=multiply.outer(x,freqs)
+
+   sin2wt=sin(2*wt)
+   cos2wt=cos(2*wt)
+
+   tau=(arctan(npsum(sin2wt,axis=0)/npsum(cos2wt,axis=0)))/(2*freqs)
+
+   wttau=wt-(freqs*tau)
+
+   sinw=sin(wttau)
+   cosw=cos(wttau)
+
+   yT=y.reshape(len(y),1)
+
+   ysin=yT*sinw
+   ycos=yT*cosw
+
+   pgram=((npsum(ycos,axis=0)**2)/npsum(cosw**2,axis=0)+(npsum(ysin,axis=0)**2)/npsum(sinw**2,axis=0))/sum(y**2)
+
+   return pgram
 
 
 #-----MXRebin----------------------------------------------------------------------------------------------------------

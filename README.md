@@ -38,7 +38,6 @@ _____
   * warnings
 * The following modules for Python are required for certain features:
   * PyAstronomy (for data folding only)
-  * GatsPy (for Lomb-Scargle Periodograms only)
 * You must have the 'fkeyprint' and 'make\_se' tools from [HEASARC](http://heasarc.gsfc.nasa.gov/ftools/)'s FTOOLS package in order to use _Xte GoodXenon-Extractor_.  If you do not intend to work with XTE _GoodXenon_ files, or want to select and make the files manually, no HEASARC products are required.
 
 _____
