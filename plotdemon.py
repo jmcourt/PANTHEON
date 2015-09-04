@@ -1248,7 +1248,7 @@ while plotopt not in ['quit','exit']:                                     # If t
             pl.xlabel('Frequency (Hz)')
             pl.ylabel('Power')
             pl.xlim(0,max(lsx))
-            pl.ylim(0.00001,1)
+            pl.ylim(1,100000)
             pl.yscale('log')
             pl.title('Lomb-Scargle Periodogram of '+s_band_name+qflav)
             pl.show(block=False)

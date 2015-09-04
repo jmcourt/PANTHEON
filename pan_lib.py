@@ -55,6 +55,10 @@
 #
 #  SIGNOFF   - prints an dividing line with some space.  That's all it does.
 #
+#  SINFROMCOS- calculates the sines of an array of values when also passed their cosines.  If both sines
+#              and cosines of the array are required, this method is faster than calling both trig functions.
+#              Also contains function COSFROMSIN.
+#
 #  SLPLOT    - plots an x-y line plot of two sets of data, and then below plots the same data on another
 #              set of axes in log-log space.
 #
@@ -89,12 +93,10 @@ import warnings
 import scipy.optimize as optm
 from matplotlib.ticker import ScalarFormatter
 from numba import jit
-from numpy import (pi, sin, cos, array, arange, ceil, exp, floor, log10, mean, ones, sqrt, zeros, multiply,
-                  arctan)
+from numpy import (absolute, arctan, array, arange, ceil, cos, exp, floor, log10, mean, multiply, ones, pi,    
+                   sign, sin, sqrt, vstack, zeros)
 from numpy import append as npappend
 from numpy import sum as npsum
-
-import time
 
 
 #-----ArgCheck---------------------------------------------------------------------------------------------------------
@@ -585,6 +587,7 @@ def lhconst(data):
 
 #-----Lomb_Scargle-----------------------------------------------------------------------------------------------------
 
+@jit
 def lomb_scargle(x,y,ye,freqs):
 
    '''Lomb Scargle
@@ -609,27 +612,34 @@ def lomb_scargle(x,y,ye,freqs):
 
    assert len(x)==len(y)
    x=array(x)
-   y=array(y)/sqrt(array(ye))
+   y=array(y)
+   ye=array(ye)
+   w=ye**-2
+   y=y-(sum(y*w)/sum(w))
+
    freqs=array(freqs)*2*pi
 
    wt=multiply.outer(x,freqs)
 
    sin2wt=sin(2*wt)
-   cos2wt=cos(2*wt)
+   cos2wt=cosfromsin(2*wt,sin2wt)
 
    tau=(arctan(npsum(sin2wt,axis=0)/npsum(cos2wt,axis=0)))/(2*freqs)
 
    wttau=wt-(freqs*tau)
 
    sinw=sin(wttau)
-   cosw=cos(wttau)
+   cosw=cosfromsin(wttau,sinw)
 
-   yT=y.reshape(len(y),1)
+   yT=vstack(y)
 
    ysin=yT*sinw
    ycos=yT*cosw
 
-   pgram=((npsum(ycos,axis=0)**2)/npsum(cosw**2,axis=0)+(npsum(ysin,axis=0)**2)/npsum(sinw**2,axis=0))/sum(y**2)
+   norm=2*npsum(w*(y**2)/(len(y)-2))
+
+   w=vstack(w)
+   pgram=((npsum(w*ycos,axis=0)**2)/npsum((w*cosw)**2,axis=0)+(npsum(w*ysin,axis=0)**2)/npsum((w*sinw)**2,axis=0)) / norm
 
    return pgram
 
@@ -952,6 +962,7 @@ def rms_n(data,counts,datres,rate,bg,const):
    rms=lh2rms(leahy,rate,bg,const)                                        # Convert to RMS
    return rms
 
+
 #-----SignOff----------------------------------------------------------------------------------------------------------
 
 def signoff():
@@ -967,6 +978,58 @@ def signoff():
    print ''
    print '------------------------------------------------'
    print ''
+
+
+#-----sinfromcos-------------------------------------------------------------------------------------------------------
+
+def sinfromcos(x,cosx):
+
+   '''Sine from Cosine
+
+   Description:
+
+    Returns the sine of an array of values when also given their cosines.  Using this function is
+    faster than using sine if the cosine values are already stored.
+
+   Inputs:
+
+    x    - ARRAY: the array of values to calculate the sine of.
+    cosx - ARRAY: the cosines array of values to calculate the sines of.
+
+   Outputs:
+
+    sinx - ARRAY: the sines of x.
+
+   -J.M.Court, 2015'''
+
+   sinx=absolute((1-cosx**2)**0.5)
+   signx=sign(((x+pi)%(2*pi))-pi)
+   return sinx*signx
+
+def cosfromsin(x,sinx):
+
+   '''Sine from Cosine
+
+   Description:
+
+    Returns the cosine of an array of values when also given their sines.  Using this function is
+    faster than using cosine if the sine values are already stored.
+
+   Inputs:
+
+    x    - ARRAY: the array of values to calculate the cosine of.
+    sinx - ARRAY: the sines array of values to calculate the cosines of.
+
+   Outputs:
+
+    cosx - ARRAY: the sines of x.
+
+   -J.M.Court, 2015'''
+
+   cosx=absolute((1-sinx**2)**0.5)
+   signx=sign(((x-pi/2)%(2*pi))-pi)
+   return cosx*signx
+
 
 
 #-----SLPlot-----------------------------------------------------------------------------------------------------------
