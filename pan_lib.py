@@ -26,6 +26,9 @@
 #  FOLDIFY   - takes a time series with its associated y-axis data and y-axis errors.  Folds this data
 #              over a time period of the user's choosing, and returns them as the tuple x,y,y_error.
 #
+#  GET_BURSTS- takes an array of data, looks for bursts and returns an array of tuples containing
+#              the start and end points of these bursts.
+#
 #  GTIMASK   - returns a data mask when given a time series and a GTI object
 #
 #  LBINIFY   - takes a linearly binned x-series with associated y-axis data and y-axis errors and rebins
@@ -191,6 +194,7 @@ def binify(x,y,ye,binsize):                                               # Defi
 
 #-----BoolVal----------------------------------------------------------------------------------------------------------
 
+@jit
 def boolval(data,reverse=True):
 
    '''Boolean Evaluator
@@ -203,7 +207,7 @@ def boolval(data,reverse=True):
    Inputs:
 
     data    - LIST: a list of lists Boolean values.
-    reverse - BOOL: [optional] defaults to True.  If set to False, then the Boolean strings will be
+    reverse - BOOL: [Optional: Defaults=True] If set to False, then the Boolean strings will be
                     interpreted as binaries with the lowest value (1) first.
 
    Outputs:
@@ -226,6 +230,7 @@ def boolval(data,reverse=True):
 
 #-----Circfold---------------------------------------------------------------------------------------------------------
 
+@jit
 def circfold(x,y,t,pcoords=True):
 
    '''Circular folder
@@ -241,9 +246,9 @@ def circfold(x,y,t,pcoords=True):
     x      - ARRAY: The x (time) co-ordinates of the data.
     y      - ARRAY: The y co-ordinates of the data.
     t      - FLOAT: The period over which the data is to be folded.
-    pcoord -  BOOL: [optional] defaults to True.  If set to true, the output co-ordinates will be
-                      theta, r as in polar co-ordinates.  If set to false, the output co-ordinates
-                      will be x, y as in Cartesian co-ordinates.
+    pcoord -  BOOL: [Optional: Default=True] If set to true, the output co-ordinates will be theta, r
+                    as in polar co-ordinates.  If set to false, the output co-ordinates will be x, y
+                    as in Cartesian co-ordinates.
 
    Outputs:
 
@@ -262,9 +267,45 @@ def circfold(x,y,t,pcoords=True):
       return s,c
 
 
+#-----Eval_Burst-------------------------------------------------------------------------------------------------------
+
+# Evaluate Burst
+
+@jit
+def eval_burst(t,y):
+
+   '''Evaluate Burst
+
+   Description:
+
+    Takes a piece of data and its associated time array, and treats it as a single 'burst'-like pattern.
+    Returns the peak flux, peak time, rise time, fall time of this burst.  Works best with Get_Bursts.
+
+   Inputs:
+
+    t         - ARRAY: The t (time) co-ordinates of the data.
+    y         - ARRAY: The y co-ordinates of the data.
+
+   Outputs:
+
+    peak      - FLOAT: The highest y-value in the burst
+    peak_time - FLOAT: The time at which the peak occurs
+    rise_time - FLOAT: The time between the start of the burst and its peak
+    fall_time - FLOAT: The time between the peak of the burst and its end
+
+   '''
+
+   peak=max(y)
+   p_ind=y.tolist().index(peak)
+   rise_time=t[p_ind]-t[0]
+   fall_time=t[-1]-t[p_ind]
+   peak_time=t[p_ind]
+   return peak,peak_time,rise_time,fall_time
+
+
 #-----FlnCheck---------------------------------------------------------------------------------------------------------
 
-def filenamecheck(filename,validext,cont=False):
+def filenamecheck(filename,validext,continu=False):
 
    '''Filename Checker
 
@@ -277,8 +318,9 @@ def filenamecheck(filename,validext,cont=False):
 
     filename - STRING: The filename to be checked.
     validext - STRING: The extenstion expected for the file (WITHOUT the leading '.')
-    cont     -   BOOL: [Optional] if True, returns a value of False for an incorrect file extension.
-                       If False (default), kills the script upon finding an incorrect file extension.
+    continu  -   BOOL: [Optional: Default=False] If True, returns a value of False for an incorrect
+                       file extension.  If False (default), kills the script upon finding an
+                       incorrect file extension.
 
    Outputs:
 
@@ -289,7 +331,7 @@ def filenamecheck(filename,validext,cont=False):
    flext=(filename.split('.')[-1])
 
    if flext != validext:
-      if cont:
+      if continu:
          return False
       else:
          print 'Invalid input file!  Must use .'+str(validext)+' file!'
@@ -320,12 +362,13 @@ def foldify(t,y,ye,period,binsize,phres=None,name='',compr=False,verb=True):
                       the same length as x and y.
     period  -  FLOAT: The period of the data, in the same units as the data's x-values.
     binsize -  FLOAT: The size of the new x-axis bins in which to re-bin the data.
-    phres   -  FLOAT: [optional] The resolution, in frequency space, at which data will be shown.
-    name    - STRING: [optional] the name of the file to be folded.  This name will be used in text
-                      outputs printed to screen.
-    compr   -   BOOL: [optional] if set True, gives a fourth output which is the amount by which the
-                      min-max difference of the data-set was compressed by folding.
-    verb    -   BOOL: [optional] if set false, suppresses all non-error text output.
+    phres   -  FLOAT: [Optional: Default=None] The resolution, in frequency space, at which data will
+                      be shown.
+    name    - STRING: [Optional: Default=''] the name of the file to be folded.  This name will be
+                      used in text outputs printed to screen.
+    compr   -   BOOL: [Optional: Default=False] if set True, gives a fourth output which is the amount
+                      by which the min-max difference of the data-set was compressed by folding.
+    verb    -   BOOL: [Optional: Default=True] if set false, suppresses all non-error text output.
 
    Outputs:
 
@@ -385,6 +428,104 @@ def foldify(t,y,ye,period,binsize,phres=None,name='',compr=False,verb=True):
 
    else:
       return phasx,phasy,phasye
+
+
+#-----Get_Bursts-------------------------------------------------------------------------------------------------------
+
+@jit
+def get_bursts(data,q_low=30,q_mid=50,q_hi=70,trigger=2):
+
+   '''Return Bursts
+
+   Description:
+
+    Takes a lightcurve and identifies 'bursts' in the data; short, discrete regions of increased flux.
+    Returns the locations of all peaks identified as a list of tuples, each of which consist of two
+    integers which correspond to the indices of the start and end of a peak in the original data.
+
+   Inputs:
+
+    data       - ARRAY: The data in which bursts are sought.
+    q_low      - FLOAT: [Optional: Default=30] The percentile value of the data which will be used as
+                        the low-pass threshold.  This threshold determines the edges of already-located
+                        bursts, and thus changing it will change the quality of bursts but not the
+                        quantity.
+    q_mid      - FLOAT: [Optional: Default=50] The percentile value of the data which will be used as
+                        the med-pass threshold.  This threshold determines how deep an trough must be
+                        before the regions either side of it are considered separate bursts-candidate
+                        regions.  Must be larger than q_low.
+    q_hi       - FLOAT: [Optional: Default=70] The percentile value of the data which will be used as
+                        the hi-pass threshold.  This threshold determines how much peak flux a previously
+                        defined burst-candidate region must be before it is considered a true burst.
+                        larger than q_med.
+    trigger    -   INT: [Optional: Default=2] The number of consecutive data points which must fall
+                        below the low threshold before the start or end of a burst is declared.
+
+   Outputs:
+
+    burst_locs -  LIST: A list of tuples containing the start and end indices of each burst.
+
+   -J.M.Court, 2015'''
+
+   assert q_mid>=q_low
+   assert q_hi>=q_mid
+
+   high_thresh=percentile(data,q_hi)
+   mid_thresh=percentile(data,q_mid)
+   low_thresh=percentile(data,q_low)
+   over_thresh=data>mid_thresh                                            # Create a Boolean array by testing whether the input array is above the mid
+                                                                          #  threshold.  Each region of consecutive 'True' objects is considered a burst-
+                                                                          #  -candidate region.
+   peak_locs=[]
+   burst_locs=[]
+   while True:                                                            
+                                                                          
+      masked=data*over_thresh                                             # Reduce all data outside of burst-candidate regions to zero
+      if max(masked)<high_thresh:                                         # If highest peak in all remaining burst-candidate regions is below the high threshold,
+                                                                          #  assume there are no more bursts to be found.
+         break
+
+      peak_loc=masked.tolist().index(max(masked))                         # Find peak in remaining data
+      peak_locs.append(peak_loc)                                          # Construct list of peak location
+      i=peak_loc
+      while i<len(data) and over_thresh[i]:                               # Scrub the True objects in the Boolean array corresponding to that peak's candidate
+                                                                          #  region, thus removing it
+         over_thresh[i]=False
+         i+=1
+      i=peak_loc-1
+      while i>=0 and over_thresh[i]:
+         over_thresh[i]=False
+         i-=1
+
+   peak_locs.sort()                                                       # Sort the list so peaks can be returned in chronological order
+
+   for peak in peak_locs:
+
+      i=peak+1                                                            # Search for the peak end point
+      testps=0                                                            # Counter of how many data points in a row failed to exceed the low threshold
+      while i<len(data) and (i not in peak_locs) and testps<trigger:
+         if data[i]<low_thresh:                                           # Proceed away from peak to the right, check that each data point exceeds
+                                                                          #  the low threshold
+            testps+=1
+         else:
+            testps=0
+         i+=1
+      b_end=i-1
+
+      i=peak-1                                                            # Search for the peak start point
+      testps=0                                                            # Counter of how many data points in a row failed to exceed the low threshold
+      while i>=0 and (i not in peak_locs) and testps<trigger:
+         if data[i]<low_thresh:                                           # Proceed away from peak to the lef, check that each data point exceeds
+                                                                          #  the low threshold
+            testps+=1
+         else:
+            testps=0
+         i-=1
+      b_start=i+1
+
+      burst_locs.append((b_start,b_end))
+
+   return burst_locs
 
 
 #-----GTIMask----------------------------------------------------------------------------------------------------------
@@ -492,6 +633,7 @@ def lbinify(x,y,ye,logres):
 
 #-----LeahyN-----------------------------------------------------------------------------------------------------------
 
+@jit
 def leahyn(data,counts,datres):
 
    '''Leahy Normaliser
@@ -518,6 +660,7 @@ def leahyn(data,counts,datres):
 
 #-----Lh2RMS-----------------------------------------------------------------------------------------------------------
 
+@jit
 def lh2rms(leahy,rate,bg,const):
 
    '''Leahy 2 RMS Converter
@@ -932,6 +1075,7 @@ def plotdsv(filename,times,counts,errors,tstart,binsize,gti,mxpcus,bgest,flavour
 
 #-----RMS_N------------------------------------------------------------------------------------------------------------
 
+@jit
 def rms_n(data,counts,datres,rate,bg,const):
 
    '''RMS Normaliser
@@ -982,6 +1126,7 @@ def signoff():
 
 #-----sinfromcos-------------------------------------------------------------------------------------------------------
 
+@jit
 def sinfromcos(x,cosx):
 
    '''Sine from Cosine
@@ -1006,6 +1151,7 @@ def sinfromcos(x,cosx):
    signx=sign(((x+pi)%(2*pi))-pi)
    return sinx*signx
 
+@jit
 def cosfromsin(x,sinx):
 
    '''Sine from Cosine
@@ -1029,7 +1175,6 @@ def cosfromsin(x,sinx):
    cosx=absolute((1-sinx**2)**0.5)
    signx=sign(((x-pi/2)%(2*pi))-pi)
    return cosx*signx
-
 
 
 #-----SLPlot-----------------------------------------------------------------------------------------------------------
@@ -1366,7 +1511,8 @@ def tnorm(t,res):
    t=array(t)
    sttime=t[0]
    for i in range(len(t)):
-      t[i]=res*floor((t[i]-sttime)/float(res))                            # Rescaling time to start at 0, rounding to deal with errors incurred by subtraction of large numbers
+      t[i]=res*floor((t[i]-sttime)/float(res))                            # Rescaling time to start at 0, rounding to deal with errors incurred 
+                                                                          # by subtraction of large numbers
    return t
 
 
@@ -1450,6 +1596,7 @@ def vcrebin(vecdata,bfac):
 
 #-----XtrFilLoc--------------------------------------------------------------------------------------------------------
 
+@jit
 def xtrfilloc(filepath):
 
    '''Extract File Location
