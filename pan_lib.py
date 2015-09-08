@@ -96,8 +96,8 @@ import warnings
 import scipy.optimize as optm
 from matplotlib.ticker import ScalarFormatter
 from numba import jit
-from numpy import (absolute, arctan, array, arange, ceil, cos, exp, floor, log10, mean, multiply, ones, pi,    
-                   sign, sin, sqrt, vstack, zeros)
+from numpy import (absolute, arctan, array, arange, ceil, cos, exp, floor, log10, mean, multiply, ones, percentile,    
+                   pi, sign, sin, sqrt, vstack, zeros)
 from numpy import append as npappend
 from numpy import sum as npsum
 
@@ -194,7 +194,6 @@ def binify(x,y,ye,binsize):                                               # Defi
 
 #-----BoolVal----------------------------------------------------------------------------------------------------------
 
-@jit
 def boolval(data,reverse=True):
 
    '''Boolean Evaluator
@@ -207,8 +206,8 @@ def boolval(data,reverse=True):
    Inputs:
 
     data    - LIST: a list of lists Boolean values.
-    reverse - BOOL: [Optional: Defaults=True] If set to False, then the Boolean strings will be
-                    interpreted as binaries with the lowest value (1) first.
+    reverse - BOOL: If set to False, then the Boolean strings will be interpreted as binaries with the
+                    lowest value (1) first.
 
    Outputs:
 
@@ -230,7 +229,6 @@ def boolval(data,reverse=True):
 
 #-----Circfold---------------------------------------------------------------------------------------------------------
 
-@jit
 def circfold(x,y,t,pcoords=True):
 
    '''Circular folder
@@ -296,7 +294,7 @@ def eval_burst(t,y):
    '''
 
    peak=max(y)
-   p_ind=y.tolist().index(peak)
+   p_ind=array(y).tolist().index(peak)
    rise_time=t[p_ind]-t[0]
    fall_time=t[-1]-t[p_ind]
    peak_time=t[p_ind]
@@ -432,7 +430,6 @@ def foldify(t,y,ye,period,binsize,phres=None,name='',compr=False,verb=True):
 
 #-----Get_Bursts-------------------------------------------------------------------------------------------------------
 
-@jit
 def get_bursts(data,q_low=30,q_mid=50,q_hi=70,trigger=2):
 
    '''Return Bursts
@@ -480,7 +477,7 @@ def get_bursts(data,q_low=30,q_mid=50,q_hi=70,trigger=2):
    burst_locs=[]
    while True:                                                            
                                                                           
-      masked=data*over_thresh                                             # Reduce all data outside of burst-candidate regions to zero
+      masked=array(data)*over_thresh                                      # Reduce all data outside of burst-candidate regions to zero
       if max(masked)<high_thresh:                                         # If highest peak in all remaining burst-candidate regions is below the high threshold,
                                                                           #  assume there are no more bursts to be found.
          break
