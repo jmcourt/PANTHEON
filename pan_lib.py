@@ -494,32 +494,6 @@ def get_bursts(data,q_lo=50,q_hi=90):
 
    peak_locs.sort()                                                       # Sort the list so peaks can be returned in chronological order
 
-#   for peak in peak_locs:
-
-#      i=peak+1                                                            # Search for the peak end point
-#      testps=0                                                            # Counter of how many data points in a row failed to exceed the low threshold
-#      while i<len(data) and (i not in peak_locs) and testps<trigger:
-#         if data[i]<low_thresh:                                           # Proceed away from peak to the right, check that each data point exceeds
-                                                                          #  the low threshold
-#            testps+=1
-#         else:
-#            testps=0
-#         i+=1
-#      b_end=i-1
-
-#      i=peak-1                                                            # Search for the peak start point
-#      testps=0                                                            # Counter of how many data points in a row failed to exceed the low threshold
-#      while i>=0 and (i not in peak_locs) and testps<trigger:
-#         if data[i]<low_thresh:                                           # Proceed away from peak to the left, check that each data point exceeds
-                                                                          #  the low threshold
-#            testps+=1
-#         else:
-#            testps=0
-#         i-=1
-#      b_start=i+1
-
-#      burst_locs.append((b_start,b_end))
-
    def get_dip(data,start,finish):
       data=array(data)
       data_l=arange(len(data))
