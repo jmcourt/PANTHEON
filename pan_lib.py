@@ -430,7 +430,7 @@ def foldify(t,y,ye,period,binsize,phres=None,name='',compr=False,verb=True):
 
 #-----Get_Bursts-------------------------------------------------------------------------------------------------------
 
-def get_bursts(data,q_low=30,q_mid=50,q_hi=70,trigger=2):
+def get_bursts(data,q_lo=50,q_hi=90):
 
    '''Return Bursts
 
@@ -464,13 +464,11 @@ def get_bursts(data,q_low=30,q_mid=50,q_hi=70,trigger=2):
 
    -J.M.Court, 2015'''
 
-   assert q_mid>=q_low
-   assert q_hi>=q_mid
+   assert q_hi>=q_lo
 
    high_thresh=percentile(data,q_hi)
-   mid_thresh=percentile(data,q_mid)
-   low_thresh=percentile(data,q_low)
-   over_thresh=data>mid_thresh                                            # Create a Boolean array by testing whether the input array is above the mid
+   low_thresh=percentile(data,q_lo)
+   over_thresh=data>low_thresh                                            # Create a Boolean array by testing whether the input array is above the mid
                                                                           #  threshold.  Each region of consecutive 'True' objects is considered a burst-
                                                                           #  -candidate region.
    peak_locs=[]
@@ -496,31 +494,52 @@ def get_bursts(data,q_low=30,q_mid=50,q_hi=70,trigger=2):
 
    peak_locs.sort()                                                       # Sort the list so peaks can be returned in chronological order
 
-   for peak in peak_locs:
+#   for peak in peak_locs:
 
-      i=peak+1                                                            # Search for the peak end point
-      testps=0                                                            # Counter of how many data points in a row failed to exceed the low threshold
-      while i<len(data) and (i not in peak_locs) and testps<trigger:
-         if data[i]<low_thresh:                                           # Proceed away from peak to the right, check that each data point exceeds
+#      i=peak+1                                                            # Search for the peak end point
+#      testps=0                                                            # Counter of how many data points in a row failed to exceed the low threshold
+#      while i<len(data) and (i not in peak_locs) and testps<trigger:
+#         if data[i]<low_thresh:                                           # Proceed away from peak to the right, check that each data point exceeds
                                                                           #  the low threshold
-            testps+=1
-         else:
-            testps=0
-         i+=1
-      b_end=i-1
+#            testps+=1
+#         else:
+#            testps=0
+#         i+=1
+#      b_end=i-1
 
-      i=peak-1                                                            # Search for the peak start point
-      testps=0                                                            # Counter of how many data points in a row failed to exceed the low threshold
-      while i>=0 and (i not in peak_locs) and testps<trigger:
-         if data[i]<low_thresh:                                           # Proceed away from peak to the lef, check that each data point exceeds
+#      i=peak-1                                                            # Search for the peak start point
+#      testps=0                                                            # Counter of how many data points in a row failed to exceed the low threshold
+#      while i>=0 and (i not in peak_locs) and testps<trigger:
+#         if data[i]<low_thresh:                                           # Proceed away from peak to the left, check that each data point exceeds
                                                                           #  the low threshold
-            testps+=1
-         else:
-            testps=0
-         i-=1
-      b_start=i+1
+#            testps+=1
+#         else:
+#            testps=0
+#         i-=1
+#      b_start=i+1
 
-      burst_locs.append((b_start,b_end))
+#      burst_locs.append((b_start,b_end))
+
+   def get_dip(data,start,finish):
+      data=array(data)
+      data_l=arange(len(data))
+      data=data*(data_l>=start)*(data_l<finish)
+      data[data==0]=max(data)
+      for i in range(start+1,finish-1):
+         data[i]=(data[i]+data[i+1]+data[i-1])/3.0
+      keycol_loc=data.tolist().index(min(data))
+      return keycol_loc 
+
+   start_col=get_dip(data,0,peak_locs[0])
+
+   for i in range(len(peak_locs)):
+      if i==len(peak_locs)-1:
+         n_peak=len(data)-1
+      else:
+         n_peak=peak_locs[i+1]
+      end_col=get_dip(data,peak_locs[i],n_peak)
+      burst_locs.append((start_col,end_col))
+      start_col=end_col
 
    return burst_locs
 

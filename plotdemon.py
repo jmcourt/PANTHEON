@@ -46,7 +46,7 @@ try:
    import pan_lib as pan
 
    from math import floor, isnan, log10, sqrt
-   from numpy import arange, array, delete, mean, ones, pi, zeros
+   from numpy import arange, array, delete, mean, ones, percentile, pi, zeros
    from numpy import append as npappend                                   # Importing numpy append as npappend to avoid confusion with in-built append function
 
 except ImportError:
@@ -394,6 +394,10 @@ def give_inst():                                                          # Defi
       print '* "col13" to plot file1/file3 colour against time.'
       print '* "ccd" to plot a colour-colour diagram (3/1 colour against 2/1 colour).'
    print ''
+   print 'BURST ANALYSIS:'
+   print '* "burst show" to visually show what will be identified as bursts if burst analysis is run.'
+   print '* "burst help" for further information on burst analysis.'
+   print ''
    print 'SAVING DATA TO ASCII:'
    print '* "export" to dump the lightcurve and colour data into an ASCII file.'
    print ''
@@ -501,51 +505,51 @@ while plotopt not in ['quit','exit']:                                     # If t
 
    #-----'fold' Option-------------------------------------------------------------------------------------------------
 
-   elif plotopt=='fold' and folded:
-
-      print 'Data already folded!  Rebin before re-folding.'
-
    elif plotopt=='fold':                                                  # Fold lightcurve
 
-      if module_pyastro:                                                  # Only attempt to fold if pyastro is present
+      if folded:
+         print 'Data already folded!  Rebin before re-folding.'
+         continue
 
-         while True:                                                      # Keep asking user until they give a sensible period
-            try:
-               period=float(raw_input('Input period to fold over (s): ')) # Fetch period from user
-               break
-            except:
-               print "Invalid period!"                                    # Keep trying until they give a sensible input
-
-         while True:                                                      # Keep asking user until they give a sensible phase resolution
-            try:
-               phres=float(raw_input('Input phase resolution (0-1): '))   # Fetch phase resolution from user
-               assert phres<=1.0
-               break
-            except:
-               print "Invalid phase resolution!"                          # Keep trying until they give a sensible input
-
-         x1=x1[gmask];y1=y1[gmask];ye1=ye1[gmask]                         # Zeroing all data points outside of GTI
-         x1,y1,ye1=pan.foldify(x1,y1,ye1,period,binning,phres=phres,name='ch. '+ch[1])      # Fold using foldify function from pan_lib
-
-         fldtxt='Folded '
-
-         if nfiles>1:
-            x2=x2[gmask];y2=y2[gmask];ye2=ye2[gmask]                      # Zeroing all data points outside of GTI
-            x2,y2,ye2=pan.foldify(x2,y2,ye2,period,binning,phres=phres,name='ch. '+ch[2])   # Fold data of file 2 if present
-
-         if nfiles==3:
-            x3=x3[gmask];y3=y3[gmask];ye3=ye3[gmask]                      # Zeroing all data points outside of GTI
-            x3,y3,ye3=pan.foldify(x3,y3,ye3,period,binning,phres=phres,name='ch. '+ch[3])   # Fold data of file 3 if present
-
-         gmask=ones(len(x1),dtype=bool)                                   # Re-establish gmask
-         times,timese,flux,fluxe,col,cole=colorget()                      # Re-get colours
-         folded=True
-
-         print 'Folding Complete!'
-         print ''
-
-      else:
+      if not module_pyastro:                                              # Only attempt to fold if pyastro is present
          print 'PyAstronomy Module not found!  Cannot perform fold!'      # Warn user they cannot fold as module is missing
+         continue
+
+      while True:                                                         # Keep asking user until they give a sensible period
+         try:
+            period=float(raw_input('Input period to fold over (s): '))    # Fetch period from user
+            break
+         except:
+            print "Invalid period!"                                       # Keep trying until they give a sensible input
+
+      while True:                                                         # Keep asking user until they give a sensible phase resolution
+         try:
+            phres=float(raw_input('Input phase resolution (0-1): '))      # Fetch phase resolution from user
+            assert phres<=1.0
+            break
+         except:
+            print "Invalid phase resolution!"                             # Keep trying until they give a sensible input
+
+      x1=x1[gmask];y1=y1[gmask];ye1=ye1[gmask]                            # Zeroing all data points outside of GTI
+      x1,y1,ye1=pan.foldify(x1,y1,ye1,period,binning,phres=phres,name='ch. '+ch[1])    # Fold using foldify function from pan_lib
+
+      fldtxt='Folded '
+
+      if nfiles>1:
+         x2=x2[gmask];y2=y2[gmask];ye2=ye2[gmask]                         # Zeroing all data points outside of GTI
+         x2,y2,ye2=pan.foldify(x2,y2,ye2,period,binning,phres=phres,name='ch. '+ch[2]) # Fold data of file 2 if present
+
+      if nfiles==3:
+         x3=x3[gmask];y3=y3[gmask];ye3=ye3[gmask]                         # Zeroing all data points outside of GTI
+         x3,y3,ye3=pan.foldify(x3,y3,ye3,period,binning,phres=phres,name='ch. '+ch[3]) # Fold data of file 3 if present
+
+      gmask=ones(len(x1),dtype=bool)                                      # Re-establish gmask
+      times,timese,flux,fluxe,col,cole=colorget()                         # Re-get colours
+      folded=True
+
+      print 'Folding Complete!'
+      print ''
+
 
    #-----'clip' Option-------------------------------------------------------------------------------------------------
 
@@ -1204,63 +1208,119 @@ while plotopt not in ['quit','exit']:                                     # If t
       print 'Banded lightcurves plotted!'
 
 
+   #-----'bursts show'-------------------------------------------------------------------------------------------------
+
+   elif plotopt in ['bursts show','burstsshow','bursts_show']:
+
+      if folded:
+         print 'Cannot perform burst analsysis on folded data!'
+         continue
+
+      while True:
+         try:
+            iq_lo=float(raw_input('Low Threshold:  '))
+            iq_hi=float(raw_input('High Threshold: '))
+            assert iq_hi>iq_lo
+            assert iq_hi<=100
+            assert iq_lo>=0
+            break
+         except:
+            print 'Invalid Entry!  Valid entry is of the form High>Low.'
+
+      bursts=pan.get_bursts(flux,q_lo=iq_lo,q_hi=iq_hi)
+
+      pl.figure()
+      doplot(times,timese,flux,fluxe,ovr=True)                            # Plot flux/time using doplot from pan_lib
+
+      t_lo=percentile(flux,iq_lo)                                         # Fetch thresholds used in get_bursts
+      t_hi=percentile(flux,iq_hi)
+
+      col_toggle=True
+
+      for i in bursts:
+         if col_toggle:
+            col_toggle=False
+            burst_colour='#c7c7c7'
+         else:
+            col_toggle=True
+            burst_colour='#e7e7e7'
+         pl.axvspan(times[i[0]],times[i[1]], facecolor=burst_colour, edgecolor='none')
+
+      pl.plot([times[0],times[-1]],[t_lo,t_lo],'g')
+      pl.plot([times[0],times[-1]],[t_hi,t_hi],'b')
+      pl.legend(['Flux','Low Pass Threshold','High Pass Threshold'])
+      pl.xlabel('Time (s)')
+      pl.ylabel('Flux (counts/s/PCU)')
+      pl.ylim(ymin=0)
+      pl.title(fldtxt+'Lightcurve with Bursts Highlighted'+qflav)
+      pl.show(block=False)
+      print ''
+      print 'Bursts plotted!'
+      print len(bursts),'bursts found!'
+
+
+   #-----'bursts help'-------------------------------------------------------------------------------------------------
+
+   elif plotopt in ['bursts help','burstshelp','bursts_help']:
+      print 'Help coming soon.'
+
+
    #-----'lombscargle' Option------------------------------------------------------------------------------------------
 
    elif plotopt=='lombscargle':
 
-      if not folded:                                                      # If data is unfolded, proceed
+      if folded:                                                          # If data is folded, abort
+         print 'Cannot perform Lomb-Scargle on folded data!'
+         continue
 
-         if nfiles==1:
-            user_scargle_bands='1'                                        # Select energy bands to LombScargle
-         else:
-            if nfiles==3:
-               is_band_3=', 3'
-            else:
-               is_band_3=''
-            user_scargl_bands=raw_input('Select Energy Band [1, 2'+is_band_3+', All]: ').lower()
-
-         ls_st=max(4.0/(times[-1]-times[0]),0.005)
-         ls_end=0.5/binning
-         lsx=arange(ls_st,ls_end,(ls_end-ls_st)/2500.0)
-
-         avail_scargl_bands=['1','2','all']                               # Define valid user inputs
+      if nfiles==1:
+         user_scargle_bands='1'                                           # Select energy bands to LombScargle
+      else:
          if nfiles==3:
-            avail_scargl_bands.append('3')                                # Add '3' as a valid input if 3 bands present
-
-         if user_scargl_bands in avail_scargl_bands:
-            if user_scargl_bands=='1':
-               lsy=pan.lomb_scargle(times,y1[gmask],ye1[gmask],lsx)       # Perform LombScargle of band 1 using lombscargle function defined in header
-               s_band_name='band 1'
-            elif user_scargl_bands=='2':
-               lsy=pan.lomb_scargle(times,y2[gmask],ye2[gmask],lsx)       # Perform LombScargle of band 2 using lombscargle function defined in header
-               s_band_name='band 2'
-            elif user_scargl_bands=='3':
-               lsy=pan.lomb_scargle(times,y3[gmask],ye3[gmask],lsx)       # Perform LombScargle of band 3 using lombscargle function defined in header
-               s_band_name='band 3'
-            else:
-               lsy=pan.lomb_scargle(times,flux,fluxe,lsx)                 # Perform LombScargle of all bands using lombscargle function defined in header
-               s_band_name='all bands'
-               if user_scargl_bands!='all':
-                  print 'Invalid band!  Using all.'
-
-            pl.figure()
-            pl.plot(lsx,lsy,'k')                                          # Plot lombscargle
-            pl.xlabel('Frequency (Hz)')
-            pl.ylabel('Power')
-            pl.xlim(0,max(lsx))
-            pl.ylim(1,100000)
-            pl.yscale('log')
-            pl.title('Lomb-Scargle Periodogram of '+s_band_name+qflav)
-            pl.show(block=False)
-
-            print ''
-            print 'Lomb-Scargle Diagram of '+s_band_name+' plotted!'
-
+            is_band_3=', 3'
          else:
-            print 'Invalid energy band!'
+            is_band_3=''
+         user_scargl_bands=raw_input('Select Energy Band [1, 2'+is_band_3+', All]: ').lower()
+
+      ls_st=max(4.0/(times[-1]-times[0]),0.005)
+      ls_end=0.5/binning
+      lsx=arange(ls_st,ls_end,(ls_end-ls_st)/2500.0)
+
+      avail_scargl_bands=['1','2','all']                                  # Define valid user inputs
+      if nfiles==3:
+         avail_scargl_bands.append('3')                                   # Add '3' as a valid input if 3 bands present
+
+      if user_scargl_bands in avail_scargl_bands:
+         if user_scargl_bands=='1':
+            lsy=pan.lomb_scargle(times,y1[gmask],ye1[gmask],lsx)          # Perform LombScargle of band 1 using lombscargle function defined in header
+            s_band_name='band 1'
+         elif user_scargl_bands=='2':
+            lsy=pan.lomb_scargle(times,y2[gmask],ye2[gmask],lsx)          # Perform LombScargle of band 2 using lombscargle function defined in header
+            s_band_name='band 2'
+         elif user_scargl_bands=='3':
+            lsy=pan.lomb_scargle(times,y3[gmask],ye3[gmask],lsx)          # Perform LombScargle of band 3 using lombscargle function defined in header
+            s_band_name='band 3'
+         else:
+            lsy=pan.lomb_scargle(times,flux,fluxe,lsx)                    # Perform LombScargle of all bands using lombscargle function defined in header
+            s_band_name='all bands'
+            if user_scargl_bands!='all':
+               print 'Invalid band!  Using all.'
+
+         pl.figure()
+         pl.plot(lsx,lsy,'k')                                          # Plot lombscargle
+         pl.xlabel('Frequency (Hz)')
+         pl.ylabel('Power')
+         pl.xlim(0,max(lsx))
+         pl.ylim(1,100000)
+         pl.yscale('log')
+         pl.title('Lomb-Scargle Periodogram of '+s_band_name+qflav)
+         pl.show(block=False)
+
+         print ''
+         print 'Lomb-Scargle Diagram of '+s_band_name+' plotted!'
 
       else:
-         print 'Cannot perform Lomb-Scargle on folded data!'
+         print 'Invalid energy band!'
 
 
    #-----'errors' Option-----------------------------------------------------------------------------------------------
