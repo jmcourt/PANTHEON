@@ -1155,7 +1155,7 @@ def safe_div(x,y):
    Description:
 
     Divides the first inputs by the second inputs if the latter is nonzero.  If an element of the second input is zero,
-    the element in the output is zero.
+    the corresponding element in the output is zero.
 
    Inputs:
 
@@ -1168,8 +1168,6 @@ def safe_div(x,y):
 
    -J.M.Court, 2015'''
 
-   x=array(x)
-   y=array(y)
    r=zeros(len(y))
    r[y!=0]=x[y!=0]/y[y!=0]
    return r
