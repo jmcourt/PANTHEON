@@ -29,6 +29,8 @@
 #  GET_BURSTS- takes an array of data, looks for bursts and returns an array of tuples containing
 #              the start and end points of these bursts.
 #
+#  GET_DIP   - returns the index of the lowest point between two user-defined flags in a dataset.
+#
 #  GTIMASK   - returns a data mask when given a time series and a GTI object
 #
 #  LBINIFY   - takes a linearly binned x-series with associated y-axis data and y-axis errors and rebins
@@ -47,6 +49,8 @@
 #  MXREBIN   - takes a 2-dimensional set of data and corresponding errors linearly binned on the x-axis and
 #              rebins them by an integer binning factor of the user's choice.
 #
+#  NONES     - like np.zeros, but with None.
+#
 #  PDCOLEX   - extracts colours from a set of 2 or 3 lightcurves
 #
 #  PLOTDLD   - load and unpickle a .plotd file and extract its data.
@@ -55,6 +59,9 @@
 #
 #  RMS_N     - takes the raw power spectrum output from the scipy FFT algorithm and normalises it using
 #              (RMS/Mean)^2 normalisation.
+#
+#  SAFE_DIV  - Divides two arrays by each other, replacing NaNs that would be caused by div 0 errors with
+#              zeroes.
 #
 #  SIGNOFF   - prints an dividing line with some space.  That's all it does.
 #
@@ -430,7 +437,8 @@ def foldify(t,y,ye,period,binsize,phres=None,name='',compr=False,verb=True):
 
 #-----Get_Bursts-------------------------------------------------------------------------------------------------------
 
-def get_bursts(data,q_lo=50,q_hi=90):
+@jit
+def get_bursts(data,q_lo=50,q_hi=90,just_peaks=False):
 
    '''Return Bursts
 
@@ -464,7 +472,7 @@ def get_bursts(data,q_lo=50,q_hi=90):
 
    -J.M.Court, 2015'''
 
-   assert q_hi>=q_lo
+   #assert q_hi>=q_lo
 
    high_thresh=percentile(data,q_hi)
    low_thresh=percentile(data,q_lo)
@@ -476,6 +484,11 @@ def get_bursts(data,q_lo=50,q_hi=90):
    while True:                                                            
                                                                           
       masked=array(data)*over_thresh                                      # Reduce all data outside of burst-candidate regions to zero
+      #pl.figure()
+      #pl.plot(masked,'k')
+      #pl.plot([low_thresh]*len(masked),'r')
+      #pl.plot([high_thresh]*len(masked),'g')
+      #pl.show(block=True)
       if max(masked)<high_thresh:                                         # If highest peak in all remaining burst-candidate regions is below the high threshold,
                                                                           #  assume there are no more bursts to be found.
          break
@@ -492,17 +505,8 @@ def get_bursts(data,q_lo=50,q_hi=90):
          over_thresh[i]=False
          i-=1
 
+   if just_peaks: return peak_locs
    peak_locs.sort()                                                       # Sort the list so peaks can be returned in chronological order
-
-   def get_dip(data,start,finish):
-      data=array(data)
-      data_l=arange(len(data))
-      data=data*(data_l>=start)*(data_l<finish)
-      data[data==0]=max(data)
-      for i in range(start+1,finish-1):
-         data[i]=(data[i]+data[i+1]+data[i-1])/3.0
-      keycol_loc=data.tolist().index(min(data))
-      return keycol_loc 
 
    start_col=get_dip(data,0,peak_locs[0])
 
@@ -517,6 +521,38 @@ def get_bursts(data,q_lo=50,q_hi=90):
 
    return burst_locs
 
+
+#-----Get Dip----------------------------------------------------------------------------------------------------------
+
+@jit
+def get_dip(data,start,finish):
+
+   '''Return Dip
+
+   Description:
+
+    Returns the index of the lowest value between two given points in a dataset
+
+   Inputs:
+
+    data    - LIST: The dataset in which a trough is to be found
+    start   -  INT: The index of the startpoint of the user-defined sub-range
+    finish  -  INT: The index of the endpoint of the user-defined sub-range
+
+   Outputs:
+
+    key_col -  INT: The index of the lowest value in the user-defined sub-range
+
+   -J.M.Court, 2015'''
+
+   data=array(data)
+   data_l=arange(len(data))
+   data=data*(data_l>=start)*(data_l<finish)
+   data[data==0]=max(data)
+   for i in range(start+1,finish-1):
+      data[i]=(data[i]+data[i+1]+data[i-1])/3.0
+   keycol_loc=data.tolist().index(min(data))
+   return keycol_loc 
 
 #-----GTIMask----------------------------------------------------------------------------------------------------------
 
@@ -747,7 +783,7 @@ def lomb_scargle(x,y,ye,freqs):
    x=array(x)
    y=array(y)
    ye=array(ye)
-   w=ye**-2
+   w=safe_div(ones(len(ye)),ye**2)
    y=y-(sum(y*w)/sum(w))
 
    freqs=array(freqs)*2*pi
@@ -845,6 +881,18 @@ def mxrebin(spcdata,spcerrs,xaxis,good,bfac):
       b_xaxis.append(xaxis[i*bfac])
 
    return b_spcdata,b_spcerrs,b_xaxis,b_good
+
+
+#-----Nones------------------------------------------------------------------------------------------------------------
+
+def nones(shape):
+    
+    '''Function to basically do what np.zeros and np.ones do, but creating an array of Nones.
+
+    -J.Coxon, 2015'''
+
+    makeNone = np.vectorize(lambda x: None)
+    return makeNone(np.zeros(shape))
 
 
 #-----PDColEx----------------------------------------------------------------------------------------------------------
@@ -1096,6 +1144,35 @@ def rms_n(data,counts,datres,rate,bg,const):
    rms=lh2rms(leahy,rate,bg,const)                                        # Convert to RMS
    return rms
 
+
+#-----Safe_Div---------------------------------------------------------------------------------------------------------
+
+@jit
+def safe_div(x,y):
+
+   '''Safe Div
+
+   Description:
+
+    Divides the first inputs by the second inputs if the latter is nonzero.  If an element of the second input is zero,
+    the element in the output is zero.
+
+   Inputs:
+
+    x - ARRAY: The numerator
+    y - ARRAY: The denominator
+
+   Outputs:
+
+    r - ARRAY: The result of division, or zero
+
+   -J.M.Court, 2015'''
+
+   x=array(x)
+   y=array(y)
+   r=zeros(len(y))
+   r[y!=0]=x[y!=0]/y[y!=0]
+   return r
 
 #-----SignOff----------------------------------------------------------------------------------------------------------
 

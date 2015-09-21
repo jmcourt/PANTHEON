@@ -271,7 +271,7 @@ def give_inst():                                                          # Defi
    print '* "help" or "?" to display this list of instructions again.'
    print '* "quit" to Quit'
 
-give_inst()                                                               # Print the list of instructions
+#give_inst()                                                              # Print the list of instructions
 print ''
 print ' --------------------'
 

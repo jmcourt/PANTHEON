@@ -350,7 +350,23 @@ def doplot(x,xe,y,ye,ovr=False,ft='-k'):                                  # Defi
          pl.plot(x[3],y[3],'oc')
          pl.plot(x[4],y[4],'ob')
 
+def burstplot(key,text,units):
+
+   if bursts==None:
+      print 'No burst data to plot!  Run "burst get" first!'
+      return
+
+   print 'Plotting Histogram of Burst '+text+'...'
+
+   pl.figure()
+   pl.hist(bursts[key],bins=arange(min(bursts[key]),max(bursts[key]),(max(bursts[key])-min(bursts[key]))/21.0))
+   pl.xlabel(text,'('+units+')')
+   pl.ylabel('Frequency')
+   pl.title('Histogram of Burst '+text)
+   pl.show(block=False)
+
 fldtxt=''
+bursts=None
 
 
 #-----User Menu--------------------------------------------------------------------------------------------------------
@@ -395,7 +411,11 @@ def give_inst():                                                          # Defi
       print '* "ccd" to plot a colour-colour diagram (3/1 colour against 2/1 colour).'
    print ''
    print 'BURST ANALYSIS:'
-   print '* "burst show" to visually show what will be identified as bursts if burst analysis is run.'
+   print '* "burst get" to interactively extract burst data for analysis.'
+   print '* "burst peaks" for a histogram of peak heights of extracted bursts.'
+   print '* "burst risetimes" for a histogram of rise times of extracted bursts.'
+   print '* "burst falltimes" for a histogram of fall times of extracted bursts.'
+   print '* "burst lengths" for a histogram of durations of extracted bursts.'
    print '* "burst help" for further information on burst analysis.'
    print ''
    print 'SAVING DATA TO ASCII:'
@@ -412,7 +432,7 @@ def give_inst():                                                          # Defi
    print '* "help" or "?" to display this list of instructions again.'
    print '* "quit" to quit.'
 
-give_inst()                                                               # Print the list of instructions
+#give_inst()                                                              # Print the list of instructions
 print ''
 print ' --------------------'
 
@@ -442,6 +462,7 @@ while plotopt not in ['quit','exit']:                                     # If t
 
    if plotopt=='rebin':                                                   # Rebin data
 
+      bursts=None                                                         # Remove burst data
       fldtxt=''
       while True:                                                         # Keep asking until a good response is given
          try:
@@ -507,6 +528,7 @@ while plotopt not in ['quit','exit']:                                     # If t
 
    elif plotopt=='fold':                                                  # Fold lightcurve
 
+      bursts=None                                                         # Remove burst data
       if folded:
          print 'Data already folded!  Rebin before re-folding.'
          continue
@@ -555,6 +577,7 @@ while plotopt not in ['quit','exit']:                                     # If t
 
    elif plotopt=='clip':                                                  # Clipping data
 
+      bursts=None                                                         # Remove burst data
       if folded:
          print 'Cannot clip folded data!'
 
@@ -595,6 +618,7 @@ while plotopt not in ['quit','exit']:                                     # If t
 
    elif plotopt=='mask':
 
+      bursts=None                                                         # Remove burst data
       if folded:
          print 'Cannot mask folded data!'
 
@@ -603,14 +627,14 @@ while plotopt not in ['quit','exit']:                                     # If t
          print 'Masking data'
          print ''
          print 'Select time range to mask: '
-         mint,maxt,srbool=pan.srinr(x1,binning,'time')                       # Fetch time domain endpoints of bad window using srinr function from pan_lib
+         mint,maxt,srbool=pan.srinr(x1,binning,'time')                    # Fetch time domain endpoints of bad window using srinr function from pan_lib
 
          if srbool:
             print 'Masking...'
 
-            gmask[mint:maxt]=False                                           # Force all values inside the bad window to appear as outside of GTIs
+            gmask[mint:maxt]=False                                        # Force all values inside the bad window to appear as outside of GTIs
 
-            times,timese,flux,fluxe,col,cole=colorget()                      # Re-get colours
+            times,timese,flux,fluxe,col,cole=colorget()                   # Re-get colours
 
             print 'Data masked!'
 
@@ -1208,9 +1232,9 @@ while plotopt not in ['quit','exit']:                                     # If t
       print 'Banded lightcurves plotted!'
 
 
-   #-----'bursts show'-------------------------------------------------------------------------------------------------
+   #-----'burst get'--------------------------------------------------------------------------------------------------
 
-   elif plotopt in ['bursts show','burstsshow','bursts_show']:
+   elif plotopt in ['burst get','burstget','burst_get','bursts get','burstsget','bursts_get']:
 
       if folded:
          print 'Cannot perform burst analsysis on folded data!'
@@ -1227,7 +1251,8 @@ while plotopt not in ['quit','exit']:                                     # If t
          except:
             print 'Invalid Entry!  Valid entry is of the form High>Low.'
 
-      bursts=pan.get_bursts(flux,q_lo=iq_lo,q_hi=iq_hi)
+      bursts={}
+      bursts['endpoints']=pan.get_bursts(flux,q_lo=iq_lo,q_hi=iq_hi)
 
       pl.figure()
       doplot(times,timese,flux,fluxe,ovr=True)                            # Plot flux/time using doplot from pan_lib
@@ -1237,7 +1262,7 @@ while plotopt not in ['quit','exit']:                                     # If t
 
       col_toggle=True
 
-      for i in bursts:
+      for i in bursts['endpoints']:
          if col_toggle:
             col_toggle=False
             burst_colour='#c7c7c7'
@@ -1254,14 +1279,63 @@ while plotopt not in ['quit','exit']:                                     # If t
       pl.ylim(ymin=0)
       pl.title(fldtxt+'Lightcurve with Bursts Highlighted'+qflav)
       pl.show(block=False)
+
       print ''
       print 'Bursts plotted!'
-      print len(bursts),'bursts found!'
+      print len(bursts['endpoints']),'bursts found!'
+      print ''
+      print 'Analysing Bursts...'
+
+      bursts['peaks']=[]
+      bursts['rises']=[]
+      bursts['falls']=[]
+      bursts['duras']=[]
+
+      for endpoints in bursts['endpoints']:
+         burst=flux[endpoints[0]:endpoints[1]]
+         btime=times[endpoints[0]:endpoints[1]]
+         peak,pk_time,rise_time,fall_time=pan.eval_burst(btime,burst)
+         bursts['peaks'].append(peak)
+         bursts['rises'].append(rise_time)
+         bursts['falls'].append(fall_time)
+         bursts['duras'].append(btime[-1]-btime[0])
+
+      print ''
+      print 'Analysis Complete!'
+      print 'Burst Products now available!'
+
+
+   #-----'burst peaks'-------------------------------------------------------------------------------------------------
+
+   elif plotopt in ['burst peaks','burstpeaks','burst_peaks','bursts peaks','burstspeaks','bursts_peaks']:
+
+      burstplot('peaks','Peak Heights','cts/s/PCU')
+
+
+   #-----'burst risetimes'---------------------------------------------------------------------------------------------
+
+   elif plotopt in ['burst risetimes','burstrisetimes','burst_risetimes','bursts risetimes','burstsrisetimes','bursts_risetimes']:
+
+      burstplot('rises','Rise Times','s')
+
+
+   #-----'burst falltimes'---------------------------------------------------------------------------------------------
+
+   elif plotopt in ['burst falltimes','burstfalltimes','burst_falltimes','bursts falltimes','burstsfalltimes','bursts_falltimes']:
+
+      burstplot('falls','Fall Times','s')
+
+
+   #-----'burst lengths'-----------------------------------------------------------------------------------------------
+
+   elif plotopt in ['burst lengths','burstlengths','burst_lengths','bursts lengths','burstslengths','bursts_lengths']:
+
+      burstplot('duras','Durations','s')
 
 
    #-----'bursts help'-------------------------------------------------------------------------------------------------
 
-   elif plotopt in ['bursts help','burstshelp','bursts_help']:
+   elif plotopt in ['burst help','bursthelp','burst_help','bursts help','burstshelp','bursts_help']:
       print 'Help coming soon.'
 
 
