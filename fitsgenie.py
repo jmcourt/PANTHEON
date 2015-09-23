@@ -6,6 +6,9 @@
 
 # Call as ./fitsgenie.py FILE1 [LCHAN] [HCHAN] [BINNING] [FOURIER RES] [BGEST] [FLAVOUR]
 
+# Requirements:
+#  pcabackest from FTOOLS (if background subtraction is to be performed)
+
 # Takes 1 FITS Event file and produces .speca and .plotd formatted products to be analysed by plotdemon
 # and specangel.
 #
@@ -40,9 +43,10 @@
 #   Optional: The separation of the startpoints of individual time windows in which the data is to be
 #   split.  Fourier spectra will be made of each of these windows.  Default of 128s.
 #
-#  [BGEST]
+#  [BACKGROUND]
 #   Optional: The approximate average background count rate during the observation in cts/s.  Default
-#   of 30cts/s.
+#   of 30cts/s.  If a file is given, a background model will be used along with PCABackEst to more
+#   thoroughly define the background.
 #
 #  [FLAVOUR]
 #   Optional: A useful bit of text to put on plots to help identify them later on.
@@ -223,7 +227,7 @@ if lowc<0:    lowc=0                                                      # Forc
 if highc>maxen: highc=maxen
 
 if lowc>highc:
-   print 'Invalid '+etype+'!  Aborting!'                                 # Abort if user gives lowc>highc
+   print 'Invalid '+etype+'!  Aborting!'                                  # Abort if user gives lowc>highc
    pan.signoff()
    exit()
 
