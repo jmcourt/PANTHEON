@@ -4,7 +4,7 @@
 # |-----------------------------FITS GENIE-------------------------------|
 # |----------------------------------------------------------------------|
 
-# Call as ./fitsgenie.py FILE1 [LCHAN] [HCHAN] [BINNING] [FOURIER RES] [BGEST] [FLAVOUR]
+# Call as ./fitsgenie.py FILE1 PROD_REQ [LCHAN] [HCHAN] [BINNING] [FOURIER RES] [FOURIER SEP] [BGEST] [FLAVOUR]
 
 # Takes 1 FITS Event file and produces .speca and .plotd formatted products to be analysed by plotdemon
 # and specangel.
@@ -36,7 +36,7 @@
 #   Optional: The size of the individual time windows in which the data is to be split.  Fourier
 #   spectra will be made of each of these windows.  Default of 128s.
 #
-#  [FOURIER RES]
+#  [FOURIER SEP]
 #   Optional: The separation of the startpoints of individual time windows in which the data is to be
 #   split.  Fourier spectra will be made of each of these windows.  Default of 128s.
 #
@@ -55,7 +55,7 @@ ptdbinfac=1                                                               # To s
                                                                           # bins for the not-saved specangel data by this factor.  Must be power of 2.
 spcbinfac=4096                                                            # The binning factor for SpecAngel data to use when searching for data peaks and troughs
 usrmin=-13                                                                # The smallest time resolution to consider is 2^usrmin seconds
-version=4.2
+version=5.0
 
 #-----Welcoming Header-------------------------------------------------------------------------------------------------
 
@@ -189,6 +189,8 @@ else:
    bin_dat=False
 
 #-----Checking validity of remaining inputs----------------------------------------------------------------------------
+
+print len(args)
 
 print 'Object =',obsdata[0]
 print 'Obs_ID =',obsdata[1]
@@ -517,13 +519,13 @@ if filext!=filename:
 filename=filename+'_'+cs
 
 if plot_on:
-   pfilename=pan.plotdsv(filename,ta,fullhist,fullerrs,tstart,bsz*ptdbinfac,gti,max(npcus),bgest,flavour,cs,mission,obsdata,version)
+   pfilename=pan.plotdsv(filename,ta,fullhist,fullerrs,tstart,bsz*ptdbinfac,gti,max(npcus),bgest,'False',flavour,cs,mission,obsdata,version)
    print "PlotDemon file saved to "+pfilename
 else:
    print "PlotDemon file not saved."
 
 if spec_on:
-   sfilename=pan.specasv(filename,fourgrlin,good,rates,prates,trates,tcounts,npcus,bsz,bgest,foures,flavour,cs,mission,obsdata,wtype,slide,spcbinfac,version)
+   sfilename=pan.specasv(filename,fourgrlin,good,rates,prates,trates,tcounts,max(npcus),bsz,bgest,foures,flavour,cs,mission,obsdata,wtype,slide,spcbinfac,version)
    print "SpecAngel file saved to "+sfilename
 else:
    print "SpecAngel file not saved."

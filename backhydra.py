@@ -1,13 +1,12 @@
 #! /usr/bin/env python
 
 # |----------------------------------------------------------------------|
-# |-----------------------------Back HYDRA-------------------------------|
+# |-----------------------------BACK HYDRA-------------------------------|
 # |----------------------------------------------------------------------|
 
 # Call as ./bckghydra.py DATA_FILE BACK_FILE SAVE_FILE
 
-# Takes 2 .plotd infiles, one of data and one of the background of the same observation,
-# and returns the first file after background subtraction.
+# Takes a .plotd file and a background file created with PCABACKEST and returns
 #
 # Arguments:
 #
@@ -36,6 +35,7 @@ try:
 
    import sys
    import pan_lib as pan
+   from astropy.io import fits
    import numpy   as np
    import pylab as pl
 
@@ -60,13 +60,14 @@ save_filename=args[3]
 print 'Loading Data...'
 datafile_packed=pan.plotdld(data_filename)                                # Load datafile
 print 'Loading Background...'
-backfile_packed=pan.plotdld(back_filename)                                # Load background file
+backfile_packed=fits.open(back_filename)
 
 
 #-----Unpack Data------------------------------------------------------------------------------------------------------
 
 # Collect all data from the data file
 
+b_sub='True'
 data_x        = datafile_packed[0]
 data_f        = datafile_packed[1]
 data_fe       = datafile_packed[2]
@@ -75,34 +76,46 @@ data_bin_size = datafile_packed[4]
 data_gti      = datafile_packed[5]
 data_maxpcus  = datafile_packed[6]
 data_bg_est   = datafile_packed[7]
-data_flavour  = datafile_packed[8]
-data_channels = datafile_packed[9]
-data_mission  = datafile_packed[10]
-data_obs_data = datafile_packed[11]
-data_fitsg_v  = datafile_packed[12]
+data_flavour  = datafile_packed[9]
+data_channels = datafile_packed[10]
+data_mission  = datafile_packed[11]
+data_obs_data = datafile_packed[12]
+data_fitsg_v  = datafile_packed[13]
 
 data_obsid=data_obs_data[1]
 
 # Collect only relevant data from the background file
 
-back_x        = backfile_packed[0]
-back_f        = backfile_packed[1]
-back_fe       = backfile_packed[2]
-back_t_start  = backfile_packed[3]
-back_bin_size = backfile_packed[4]
-back_maxpcus  = backfile_packed[6]
-back_channels = backfile_packed[9]
-back_mission  = backfile_packed[10]
-back_obs_data = backfile_packed[11]
+backfile_data=backfile_packed[1].data
+back_mission=backfile_packed[1].header['TELESCOP']
 
-back_obsid=back_obs_data[1]
+if back_mission == 'XTE' :
+   try:
+      import xtepan_lib as inst                                           # Import XTE extraction functions
+   except:
+      print 'XTE PANTHEON Library not found!  Aborting!'
+      pan.signoff()
+      exit()
+
+elif back_mission == 'SUZAKU':
+   try:
+      import szkpan_lib as inst                                           # Import SUZAKU extraction functions
+   except:
+      print 'Suzaku PANTHEON Library not found!  Aborting!'
+      pan.signoff()
+      exit()
+
+low_chan,high_chan=data_channels.split('-')
+
+back_x,back_f = inst.getbg(backfile_data,int(low_chan),int(high_chan))
+back_fe       = back_f**0.5
+back_t_start  = inst.getini(backfile_packed)
+back_bin_size = inst.getbin(backfile_packed,None)
 
 
 #-----Check Background and Data files are compatible-------------------------------------------------------------------
 
-same_channels = (data_channels == back_channels)                          # Check the channel ranges match
 same_mission  = ( data_mission == back_mission )                          # Check the mission names match
-same_obsid    = (   data_obsid == back_obsid   )                          # Check the OBSIDs match
 
 if not same_mission:                                                      # Abort if missions differ
    print 'Files are from different missions!'
@@ -110,23 +123,20 @@ if not same_mission:                                                      # Abor
    pan.signoff()
    exit()
 
-if not same_obsid:                                                        # Abort if observations differ
-   print 'Files are from different observations!'
-   print 'Aborting!'
-   pan.signoff()
-   exit()
-
-if not same_channels:                                                     # Abort if channel ranges differ
-   print 'Files contain data from different energy ranges!'
-   print 'Aborting!'
-   pan.signoff()
-   exit()
  
 #-----Shift Arrays-----------------------------------------------------------------------------------------------------
-  
-shifted_data_x=data_x+(back_t_start-(data_t_start+back_x[0]))             # Created a 'data_x array' with its startpoint aligned with background
+
+shifted_data_x=data_x-(back_x[0]-data_t_start)                            # Created a 'data_x array' with its startpoint aligned with background
 back_x=pan.tnorm(back_x,back_bin_size)                                    # Force background x array to start at 0
-back_f=back_f*(back_bin_size/data_bin_size)                               # Rescale background counts to reflect the imminent rebinning
+back_f=back_f*(data_bin_size/back_bin_size)                               # Rescale background counts to reflect the imminent rebinning
+back_fe=back_fe*(data_bin_size/back_bin_size)                             # Rescale background errors to reflect the imminent rebinning
+
+if back_x[0]>shifted_data_x[-1] or shifted_data_x[0]>back_x[-1]:          # Abort if the timescales don't overlap
+   print 'WARNING! Files times do not overlap!'
+   print ''
+   print 'Estimating constant background.'
+   print ''
+   b_sub='Estimate'
 
 
 #-----Define Background Subtraction------------------------------------------------------------------------------------
@@ -161,10 +171,10 @@ for i in pan.eqrange(data_x):
 print 'Saving...'
 
 pan.plotdsv(save_filename,data_x,data_f,data_fe,data_t_start,data_bin_size,
-            data_gti,data_maxpcus,data_bg_est,data_flavour,data_channels,
+            data_gti,data_maxpcus,data_bg_est,b_sub,data_flavour,data_channels,
             data_mission,data_obs_data,data_fitsg_v)
 
 print ''
-print 'Background Subtracted file saved as "'+save_filename+'"!'
+print 'Background Subtracted file saved as "'+save_filename+'.plotd"!'
 
 

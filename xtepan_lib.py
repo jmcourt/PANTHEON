@@ -43,6 +43,8 @@
 
 import pan_lib as pan
 from numpy import array, zeros
+from numpy import sum as npsum
+from numba import jit
 
 
 #-----ChRange----------------------------------------------------------------------------------------------------------
@@ -365,6 +367,45 @@ def evmchan(chan):
 
    return n_chan
 
+
+#-----GetBG------------------------------------------------------------------------------------------------------------
+
+@jit
+def getbg(data,low_channel,high_channel):
+
+   '''Get BG
+
+   Description:
+
+    Returns the counts from a standard XTE Background file created with pcabackest
+
+   Inputs:
+
+    event        - FITS OBJECT: The data array of FITS file that has been opened.
+    low_channel  -         INT: The highest channel data is to be collected from.
+    high_channel -         INT: The lowest channel data is to be collected from.
+
+   Outputs:
+
+    times  -              LIST: The time array associated with the fluxes
+    fluxes -              LIST: The fluxes at each time
+
+   -J.M.Court,2015'''
+
+   times=data.field(0)
+
+   PCU0=data.field(1)                                                     # Collect data from PCU0
+   PCU1=data.field(2)                                                     # Collect data from PCU1
+   PCU2=data.field(3)                                                     # Collect data from PCU2
+   PCU3=data.field(4)                                                     # Collect data from PCU3
+   PCU4=data.field(5)                                                     # Collect data from PCU4
+   PCU=array([PCU0,PCU1,PCU2,PCU3,PCU4])
+   PCU[:,:,:low_channel]=0                                                # Remove data from outside of channel arrays
+   PCU[:,:,(high_channel+1):]=0
+   PCU=npsum(PCU,axis=2)
+   fluxes=npsum(PCU,axis=0)
+
+   return times,fluxes
 
 #-----GetBin-----------------------------------------------------------------------------------------------------------
 

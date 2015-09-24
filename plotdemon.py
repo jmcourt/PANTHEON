@@ -75,7 +75,7 @@ try:
 except:
    isbininp=False
 
-nfiles=len(args)-isbininp-1                                               # Fetch number of files the user is attempting to plot (total args minus one or two iff binsize given)
+nfiles=len(args)-isbininp-1                                               # Fetch number of infiles (total args minus one or two iff binsize given)
 if nfiles>3: nfiles=3
 
 file1=args[1]
@@ -84,7 +84,7 @@ pan.filenamecheck(file1,'plotd')
 ch={}                                                                     # Save channel info in a library
 
 print 'Opening',file1                                                     # Opening file 1
-x1r,y1r,ye1r,tst1,bsz1,gti,pcus1,bg,flv1,ch[1],mis1,obsd1,v1=pan.plotdld(file1)
+x1r,y1r,ye1r,tst1,bsz1,gti,pcus1,bg,bsub1,flv1,ch[1],mis1,obsd1,v1=pan.plotdld(file1)
 y1r=y1r/float(pcus1)                                                      # Normalising flux by dividing by the number of active PCUs and the binsize
 ye1r=ye1r/float(pcus1)
 
@@ -98,7 +98,7 @@ if nfiles>1:
    file2=args[2]
    if pan.filenamecheck(file2,'plotd'):
       print 'Opening',file2                                               # Opening file 2
-      x2r,y2r,ye2r,tst2,bsz2,null,pcus2,null,flv2,ch[2],mis2,obsd2,v2=pan.plotdld(file2)
+      x2r,y2r,ye2r,tst2,bsz2,null,pcus2,null,bsub2,flv2,ch[2],mis2,obsd2,v2=pan.plotdld(file2)
       del null
       y2r=y2r/float(pcus2)                                                # Normalising flux by dividing by the number of active PCUs and the binsize
       ye2r=ye2r/float(pcus2)
@@ -112,7 +112,7 @@ if nfiles>2:
    file3=args[3]
    if pan.filenamecheck(file2,'plotd'):
       print 'Opening',file3                                               # Opening file 3
-      x3r,y3r,ye3r,tst3,bsz3,null,pcus3,null,flv3,ch[3],mis3,obsd3,v3=pan.plotdld(file3)
+      x3r,y3r,ye3r,tst3,bsz3,null,pcus3,null,bsub3,flv3,ch[3],mis3,obsd3,v3=pan.plotdld(file3)
       del null
       y3r=y3r/float(pcus3)                                                # Normalising flux by dividing by the number of active PCUs and the binsize
       ye3r=ye3r/float(pcus3)
@@ -1458,6 +1458,7 @@ while plotopt not in ['quit','exit']:                                     # If t
       else:
          print ' Channel        = ',ch[1]
       print ' Resolution     = ',str(bsz1)+'s'
+      print ' BG Subtracted  = ',bsub1
       print ' No. of PCUs    = ',pcus1
       print ' Flavour        = ',flv1
       print ' FITSGenie Ver. = ',v1
@@ -1475,6 +1476,7 @@ while plotopt not in ['quit','exit']:                                     # If t
          else:
             print ' Channel        = ',ch[2]
          print ' Resolution     = ',str(bsz2)+'s'
+         print ' BG Subtracted  = ',bsub2
          print ' No. of PCUs    = ',pcus2
          print ' Flavour        = ',flv2
          print ' FITSGenie Ver. = ',v2
@@ -1491,6 +1493,7 @@ while plotopt not in ['quit','exit']:                                     # If t
             print ' Energy         = ',ch[3],'eV'
          else:
             print ' Channel        = ',ch[3]
+         print ' BG Subtracted  = ',bsub3
          print ' Resolution     = ',str(bsz3)+'s'
          print ' No. of PCUs    = ',pcus3
          print ' Flavour        = ',flv3

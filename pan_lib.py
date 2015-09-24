@@ -1064,6 +1064,7 @@ def plotdld(filename):
    gti=data['gtis']
    mxpcus=data['pcus']
    bgest=data['bkgr']
+   bgsub=data['bsub']
    flavour=data['flav']
    chanstr=data['chan']
    mission=data['miss']
@@ -1074,13 +1075,13 @@ def plotdld(filename):
 
    readfile.close()
 
-   return times,rates,errors,tstart,binsize,gti,mxpcus,bgpcu,flavour,chanstr,mission,obsdata,version
+   return times,rates,errors,tstart,binsize,gti,mxpcus,bgpcu,bgsub,flavour,chanstr,mission,obsdata,version
 
 
 #-----PlotdSv----------------------------------------------------------------------------------------------------------
 
 @jit
-def plotdsv(filename,times,counts,errors,tstart,binsize,gti,mxpcus,bgest,flavour,chanstr,mission,obsdata,version):
+def plotdsv(filename,times,counts,errors,tstart,binsize,gti,mxpcus,bgest,bgsub,flavour,chanstr,mission,obsdata,version):
 
    '''.Plotd Save
 
@@ -1127,6 +1128,7 @@ def plotdsv(filename,times,counts,errors,tstart,binsize,gti,mxpcus,bgest,flavour
    savedata['flav']=flavour
    savedata['chan']=chanstr
    savedata['miss']=mission
+   savedata['bsub']=bgsub
    savedata['obsd']=obsdata
    savedata['vers']=version
 
