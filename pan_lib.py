@@ -21,6 +21,10 @@
 #  CIRCFOLD  - 'circularly folds' data by converting [time, data] points into polar-coordinate [phase, data]
 #              pairs and returning these in cartesian or polar coordinates.
 #
+#  EQRANGE   -
+#
+#  EVAL_BURST-
+#
 #  FILENAMECHECK  - checks to see whether a proposed input file has the correct file extension.
 #
 #  FOLDIFY   - takes a time series with its associated y-axis data and y-axis errors.  Folds this data
@@ -271,6 +275,30 @@ def circfold(x,y,t,pcoords=True):
       c=y*cos(a)
       return s,c
 
+
+#-----EqRange----------------------------------------------------------------------------------------------------------
+
+# Equal Length Range
+
+def eqrange(array):
+
+   '''Equal Length Array
+
+   Description:
+
+    Creates a range with an equal length to that of the array or list given as an argument
+
+   Inputs:
+
+    array - ARRAYLIKE: The array to be used as comparison.
+
+   Outputs:
+
+    A range with equal length to the input
+
+   -J.M.Court, 2015'''
+
+   return range(len(array))
 
 #-----Eval_Burst-------------------------------------------------------------------------------------------------------
 

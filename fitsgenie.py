@@ -72,7 +72,7 @@ try:
    import pan_lib as pan
    from astropy.io import fits
    from math import log
-   from numpy import arange, array, histogram, sqrt, zeros
+   from numpy import arange, array, histogram, zeros
    from numpy import sum as npsum
    from scipy.fftpack import fft
    import pylab as pl
@@ -384,7 +384,7 @@ print ''
 
 #-----Rescaling GTI----------------------------------------------------------------------------------------------------
 
-for j in range(len(gti)):
+for j in pan.eqrange(gti):
    gti[j]=gti[j][0]-sttim,gti[j][1]-sttim
 
 
@@ -430,7 +430,7 @@ if not bin_dat:
 
       in_gti=False                                                          #  Assume the subrange is not in the GTI
 
-      for j in range(len(gti)):
+      for j in pan.eqrange(gti):
          if gti[j][0]<=stpoint<edpoint<=gti[j][1]: in_gti=True              #  Change in_gti flag if this range is wholly within one GTI
 
       mask=times>=stpoint
@@ -446,7 +446,7 @@ if not bin_dat:
       del null
 
       fullhist=fullhist+list(fc)
-      fullerrs=fullerrs+list(sqrt(array(fc)))
+      fullerrs=fullerrs+list((array(fc)**0.5))
 
       if in_gti:
 
@@ -498,7 +498,7 @@ else:                                                                        # N
 
    print 'Number of PCUs unknown!'
    npcus=[int(raw_input('Number of Active PCUS: '))]                         # Ask the user how many there are
-   ta,fullhist,fullerrs=pan.binify(times,datas/ores*bsz*ptdbinfac,sqrt(datas)/ores*bsz*ptdbinfac,bsz)
+   ta,fullhist,fullerrs=pan.binify(times,datas/ores*bsz*ptdbinfac,(datas**0.5)/ores*bsz*ptdbinfac,bsz)
 
 
 #-----Save .speca and .plotd files-------------------------------------------------------------------------------------
@@ -509,6 +509,7 @@ print ''
 
 filext=(filename.split('.')[-1])                                          # Identify file extension from the original filename
 if filext!=filename:
+   print filename
    tfilename=filename[:-len(filext)-1]                                    # Remove file extension, if present
    if tfilename[-1]!='.':                                                 # Saving extensionless files with .. in the path name breaks without this
       filename=tfilename
