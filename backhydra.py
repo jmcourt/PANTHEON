@@ -137,6 +137,9 @@ if back_x[0]>shifted_data_x[-1] or shifted_data_x[0]>back_x[-1]:          # Abor
    print 'Estimating constant background.'
    print ''
    b_sub='Estimate'
+   dump_file=open('backhydra_log.txt','w')
+   dump_file.write('File and background times did not overlap!')
+   dump_file.close()
 
 
 #-----Define Background Subtraction------------------------------------------------------------------------------------
