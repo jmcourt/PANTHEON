@@ -128,7 +128,7 @@ if not same_mission:                                                      # Abor
 #-----Shift Arrays-----------------------------------------------------------------------------------------------------
 
 shifted_data_x=data_x-(back_x[0]-data_t_start)
-shifted_back_x=back_x+(back_x[0]-data_t_start)
+shifted_back_x=back_x-(back_x[0]+data_t_start)
 back_x=pan.tnorm(back_x,back_bin_size)                                    # Force background x array to start at 0
 
 if back_x[0]>shifted_data_x[-1] or shifted_data_x[0]>back_x[-1]:          # Abort if the timescales don't overlap
