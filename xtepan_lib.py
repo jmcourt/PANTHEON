@@ -404,8 +404,11 @@ def getbg(data,low_channel,high_channel):
    PCU[:,:,(high_channel+1):]=0
    PCU=npsum(PCU,axis=2)
    fluxes=npsum(PCU,axis=0)
+   flux_ers=fluxes**0.5
+   fluxes=fluxes/16.0                                                     # Change from counts to counts/s
+   flux_ers=flux_ers/16.0                                                 # Change from counts to counts/s
 
-   return times,fluxes
+   return times,fluxes,flux_ers
 
 #-----GetBin-----------------------------------------------------------------------------------------------------------
 

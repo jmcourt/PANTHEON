@@ -107,8 +107,7 @@ elif back_mission == 'SUZAKU':
 
 low_chan,high_chan=data_channels.split('-')
 
-back_x,back_f = inst.getbg(backfile_data,int(low_chan),int(high_chan))
-back_fe       = back_f**0.5
+back_x,back_f,back_fe = inst.getbg(backfile_data,int(low_chan),int(high_chan))
 back_t_start  = inst.getini(backfile_packed)
 back_bin_size = inst.getbin(backfile_packed,None)
 
@@ -128,8 +127,6 @@ if not same_mission:                                                      # Abor
 
 shifted_data_x=data_x-(back_x[0]-data_t_start)                            # Created a 'data_x array' with its startpoint aligned with background
 back_x=pan.tnorm(back_x,back_bin_size)                                    # Force background x array to start at 0
-back_f=back_f*(data_bin_size/back_bin_size)                               # Rescale background counts to reflect the imminent rebinning
-back_fe=back_fe*(data_bin_size/back_bin_size)                             # Rescale background errors to reflect the imminent rebinning
 
 if back_x[0]>shifted_data_x[-1] or shifted_data_x[0]>back_x[-1]:          # Abort if the timescales don't overlap
    print 'WARNING! Files times do not overlap!'
@@ -147,7 +144,7 @@ if back_x[0]>shifted_data_x[-1] or shifted_data_x[0]>back_x[-1]:          # Abor
 def backgr(i):                                                            # Function that returns the appropriate background counts at each point in the datafile
    if shifted_data_x[i]<back_x[0]:
       return back_f[0],back_fe[0]                                         # Return startpoint background if sampling before bg range
-   elif shifted_data_x[i]>=back_x[-1]:
+   elif shifted_data_x[i]>back_x[-2]:
       return back_f[-1],back_fe[0]                                        # Return endpoint background if sampling after bg range
    else:
       timestamp=shifted_data_x[i]                                         # Collect the timestamp of the ith data element
@@ -168,6 +165,10 @@ for i in pan.eqrange(data_x):
    data_f[i]-=back
    data_fe[i]=(data_fe[i]**2+back_e**2)**0.5
 
+pl.figure()
+pl.plot(back_x,back_f)
+pl.plot(data_x,data_f)
+pl.show(block=True)
 
 #-----Re-save Data-----------------------------------------------------------------------------------------------------
 

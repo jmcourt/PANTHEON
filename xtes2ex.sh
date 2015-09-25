@@ -57,7 +57,7 @@ do
       echo $f 'is Standard 2 data'                                        # Increasing Standard2 counter
       cp $f ./s20/$f
       rm *.bg >/dev/null                                                  # Kill it if its a bg file
-      if [[ -a backhydra_log.txt ]];
+      if [[ -a $f ]];
       then
          mv ./s20/$f ./s20/EVENT_s2$s2.fits                               # If DATAMODE is Standard2, move this file to /s2
          s2=$((s2+1)) 

@@ -119,7 +119,7 @@ print ''
 try:
    event=fits.open(filename)                                              # Unleash the beast! [open the file]
 except:
-   print 'Could not open file!'
+   print 'Could not open file '+filename+'!'
    print 'Aborting!'
    pan.signoff()
    exit()
