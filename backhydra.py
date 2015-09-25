@@ -75,12 +75,11 @@ data_t_start  = datafile_packed[3]
 data_bin_size = datafile_packed[4]
 data_gti      = datafile_packed[5]
 data_maxpcus  = datafile_packed[6]
-data_bg_est   = datafile_packed[7]
-data_flavour  = datafile_packed[9]
-data_channels = datafile_packed[10]
-data_mission  = datafile_packed[11]
-data_obs_data = datafile_packed[12]
-data_fitsg_v  = datafile_packed[13]
+data_flavour  = datafile_packed[10]
+data_channels = datafile_packed[11]
+data_mission  = datafile_packed[12]
+data_obs_data = datafile_packed[13]
+data_fitsg_v  = datafile_packed[14]
 
 data_obsid=data_obs_data[1]
 
@@ -128,7 +127,8 @@ if not same_mission:                                                      # Abor
  
 #-----Shift Arrays-----------------------------------------------------------------------------------------------------
 
-shifted_data_x=data_x-(back_x[0]-data_t_start)                            # Created a 'data_x array' with its startpoint aligned with background
+shifted_data_x=data_x-(back_x[0]-data_t_start)
+shifted_back_x=back_x+(back_x[0]-data_t_start)
 back_x=pan.tnorm(back_x,back_bin_size)                                    # Force background x array to start at 0
 
 if back_x[0]>shifted_data_x[-1] or shifted_data_x[0]>back_x[-1]:          # Abort if the timescales don't overlap
@@ -174,10 +174,11 @@ for i in pan.eqrange(data_x):
 print 'Saving...'
 
 new_bg_est=np.mean(back_f)/data_maxpcus
+bg_data=(shifted_back_x[(shifted_back_x>=data_x[0]) | (shifted_back_x<=data_x[-1])],back_f[(shifted_back_x>=data_x[0]) | (shifted_back_x<=data_x[-1])])
 
 pan.plotdsv(save_filename,data_x,data_f,data_fe,data_t_start,data_bin_size,
-            data_gti,data_maxpcus,new_bg_est,b_sub,data_flavour,data_channels,
-            data_mission,data_obs_data,data_fitsg_v)
+            data_gti,data_maxpcus,new_bg_est,b_sub,bg_data,data_flavour,
+            data_channels,data_mission,data_obs_data,data_fitsg_v)
 
 print ''
 print 'Background Subtracted file saved as "'+save_filename+'.plotd"!'

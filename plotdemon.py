@@ -83,8 +83,12 @@ pan.filenamecheck(file1,'plotd')
 
 ch={}                                                                     # Save channel info in a library
 
+bg1=0
+bg2=0
+bg3=0
+
 print 'Opening',file1                                                     # Opening file 1
-x1r,y1r,ye1r,tst1,bsz1,gti,pcus1,bg,bsub1,flv1,ch[1],mis1,obsd1,v1=pan.plotdld(file1)
+x1r,y1r,ye1r,tst1,bsz1,gti,pcus1,bg1,bsub1,bdata1,flv1,ch[1],mis1,obsd1,v1=pan.plotdld(file1)
 y1r=y1r/float(pcus1)                                                      # Normalising flux by dividing by the number of active PCUs and the binsize
 ye1r=ye1r/float(pcus1)
 
@@ -98,7 +102,7 @@ if nfiles>1:
    file2=args[2]
    if pan.filenamecheck(file2,'plotd'):
       print 'Opening',file2                                               # Opening file 2
-      x2r,y2r,ye2r,tst2,bsz2,null,pcus2,null,bsub2,flv2,ch[2],mis2,obsd2,v2=pan.plotdld(file2)
+      x2r,y2r,ye2r,tst2,bsz2,null,pcus2,bg2,bsub2,bdata2,flv2,ch[2],mis2,obsd2,v2=pan.plotdld(file2)
       del null
       y2r=y2r/float(pcus2)                                                # Normalising flux by dividing by the number of active PCUs and the binsize
       ye2r=ye2r/float(pcus2)
@@ -112,7 +116,7 @@ if nfiles>2:
    file3=args[3]
    if pan.filenamecheck(file2,'plotd'):
       print 'Opening',file3                                               # Opening file 3
-      x3r,y3r,ye3r,tst3,bsz3,null,pcus3,null,bsub3,flv3,ch[3],mis3,obsd3,v3=pan.plotdld(file3)
+      x3r,y3r,ye3r,tst3,bsz3,null,pcus3,bg3,bsub3,bdata3,flv3,ch[3],mis3,obsd3,v3=pan.plotdld(file3)
       del null
       y3r=y3r/float(pcus3)                                                # Normalising flux by dividing by the number of active PCUs and the binsize
       ye3r=ye3r/float(pcus3)
@@ -121,6 +125,8 @@ if nfiles>2:
       print 'Warning: File 3 of incorrect file type!'
       print 'Only loading Files 1 & 2.'
 else: x3r=y3r=ye3r=tst3=bsz3=None
+
+bg=(bg1+bg2+bg3)/float(pcus1)
 
 xit1=x1r[-1]
 if nfiles>1:
@@ -383,6 +389,7 @@ def give_inst():                                                          # Defi
    print ''
    print '1+ DATASET PLOTS:'
    print '* "lc" to plot a simple graph of flux over time.'
+   print '* "bg" to plot background over time, if background has been estimated for these files.'
    print '* "animate" to create an animation of the lightcurve as the binning is increased.'
    print '* "circanim" to create an animation of the lightcurve circularly folded as the period is increased.'
    print '* "lombscargle" to create a Lomb-Scargle periodogram of the lightcurve.'
@@ -396,6 +403,7 @@ def give_inst():                                                          # Defi
       print '* "band" to plot the lightcurve of a single energy band.'
       print '* "bands" to plot lightcurves of all bands on adjacent axes.'
       print '* "xbands" to plot lightcurves of all bands on the same axes.'
+      print '* "xbg" to plot background of all bands on the same axes.'
       print '* "all" to plot all available data products.'
    if nfiles==3:                                                           # Only display 3-data-set instructions if 3 datasets given
       print ''
@@ -653,6 +661,41 @@ while plotopt not in ['quit','exit']:                                     # If t
       pl.title(fldtxt+'Lightcurve'+qflav)
       pl.show(block=False)
       print 'Lightcurve plotted!'
+
+
+   #-----'bg' Option---------------------------------------------------------------------------------------------------
+
+   elif plotopt=='bg':                                                    # Plot background lightcurve
+
+      is_bdata=(bdata1!=None)
+      if nfiles>=2:
+         is_bdata=is_bdata and (bdata2!=None)
+      if nfiles==3:
+         is_bdata=is_bdata and (bdata3!=None)
+
+      if is_bdata:                                                        # Only proceed if all infiles have background data
+
+         try:
+            bdata_x=bdata1[0]
+            bdata_y=bdata1[1]
+            if nfiles>=2:
+               bdata_y+=bdata2[1]
+            if nfiles==3:
+               bdata_y+=bdata3[1]                                         # Sum counts of all <=3 backgrounds
+            
+            pl.figure()
+            pl.plot(bdata_x,bdata_y)
+            pl.xlabel('Time (s)')
+            pl.ylabel('Flux (counts/s/PCU)')
+            pl.ylim(ymin=0)
+            pl.title(fldtxt+'Lightcurve'+qflav)
+            pl.show(block=False)
+            print 'Background plotted!'
+         except:
+            print 'Backgrounds inconsistenly formatted!'                  # Abort if backgrounds are somehow of different lengths'
+
+      else:
+         print 'Not all files have background data!'
 
 
    #-----'export' Option-----------------------------------------------------------------------------------------------

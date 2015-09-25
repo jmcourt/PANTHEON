@@ -1051,7 +1051,7 @@ def plotdld(filename):
       readfile=open(filename,'rb')                                        # Open the .plotd file
    except:
       print ''
-      print 'File not found!  Aborting!'
+      print 'File '+filename+' not found!  Aborting!'
       signoff()
       exit()
    data=pickle.load(readfile)                                            # Unpickle the .plotd file
@@ -1065,6 +1065,7 @@ def plotdld(filename):
    mxpcus=data['pcus']
    bgest=data['bkgr']
    bgsub=data['bsub']
+   bgdata=data['bdat']
    flavour=data['flav']
    chanstr=data['chan']
    mission=data['miss']
@@ -1075,13 +1076,13 @@ def plotdld(filename):
 
    readfile.close()
 
-   return times,rates,errors,tstart,binsize,gti,mxpcus,bgpcu,bgsub,flavour,chanstr,mission,obsdata,version
+   return times,rates,errors,tstart,binsize,gti,mxpcus,bgpcu,bgsub,bgdata,flavour,chanstr,mission,obsdata,version
 
 
 #-----PlotdSv----------------------------------------------------------------------------------------------------------
 
 @jit
-def plotdsv(filename,times,counts,errors,tstart,binsize,gti,mxpcus,bgest,bgsub,flavour,chanstr,mission,obsdata,version):
+def plotdsv(filename,times,counts,errors,tstart,binsize,gti,mxpcus,bgest,bgsub,bgdata,flavour,chanstr,mission,obsdata,version):
 
    '''.Plotd Save
 
@@ -1129,6 +1130,7 @@ def plotdsv(filename,times,counts,errors,tstart,binsize,gti,mxpcus,bgest,bgsub,f
    savedata['chan']=chanstr
    savedata['miss']=mission
    savedata['bsub']=bgsub
+   savedata['bdat']=bgdata
    savedata['obsd']=obsdata
    savedata['vers']=version
 

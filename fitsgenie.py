@@ -55,7 +55,7 @@ ptdbinfac=1                                                               # To s
                                                                           # bins for the not-saved specangel data by this factor.  Must be power of 2.
 spcbinfac=4096                                                            # The binning factor for SpecAngel data to use when searching for data peaks and troughs
 usrmin=-13                                                                # The smallest time resolution to consider is 2^usrmin seconds
-version=5.0
+version=6.0
 
 #-----Welcoming Header-------------------------------------------------------------------------------------------------
 
@@ -519,7 +519,7 @@ if filext!=filename:
 filename=filename+'_'+cs
 
 if plot_on:
-   pfilename=pan.plotdsv(filename,ta,fullhist,fullerrs,tstart,bsz*ptdbinfac,gti,max(npcus),bgest,'False',flavour,cs,mission,obsdata,version)
+   pfilename=pan.plotdsv(filename,ta,fullhist,fullerrs,tstart,bsz*ptdbinfac,gti,max(npcus),bgest,'False',None,flavour,cs,mission,obsdata,version)
    print "PlotDemon file saved to "+pfilename
 else:
    print "PlotDemon file not saved."
