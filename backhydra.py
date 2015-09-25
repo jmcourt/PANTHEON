@@ -108,7 +108,10 @@ elif back_mission == 'SUZAKU':
 low_chan,high_chan=data_channels.split('-')
 
 back_x,back_f,back_fe = inst.getbg(backfile_data,int(low_chan),int(high_chan))
-back_t_start  = inst.getini(backfile_packed)
+back_x=back_x[back_f>0]
+back_fe=back_fe[back_f>0]
+back_f=back_f[back_f>0]
+back_t_start  = back_x[0]
 back_bin_size = inst.getbin(backfile_packed,None)
 
 
@@ -165,17 +168,15 @@ for i in pan.eqrange(data_x):
    data_f[i]-=back
    data_fe[i]=(data_fe[i]**2+back_e**2)**0.5
 
-pl.figure()
-pl.plot(back_x,back_f)
-pl.plot(data_x,data_f)
-pl.show(block=True)
 
 #-----Re-save Data-----------------------------------------------------------------------------------------------------
 
 print 'Saving...'
 
+new_bg_est=np.mean(back_f)/data_maxpcus
+
 pan.plotdsv(save_filename,data_x,data_f,data_fe,data_t_start,data_bin_size,
-            data_gti,data_maxpcus,data_bg_est,b_sub,data_flavour,data_channels,
+            data_gti,data_maxpcus,new_bg_est,b_sub,data_flavour,data_channels,
             data_mission,data_obs_data,data_fitsg_v)
 
 print ''
