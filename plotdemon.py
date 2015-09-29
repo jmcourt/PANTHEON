@@ -374,6 +374,8 @@ def burstplot(key,text,units):
 fldtxt=''
 bursts=None
 
+flux_axis=r'Flux (cts s$^{-1}$ PCU$^{-1}$)'
+
 
 #-----User Menu--------------------------------------------------------------------------------------------------------
 
@@ -656,7 +658,7 @@ while plotopt not in ['quit','exit']:                                     # If t
       pl.figure()
       doplot(times,timese,flux,fluxe,ovr=True)                            # Plot flux/time using doplot from pan_lib
       pl.xlabel(taxis)
-      pl.ylabel('Flux (counts/s/PCU)')
+      pl.ylabel(flux_axis)
       pl.ylim(ymin=0)
       pl.title(fldtxt+'Lightcurve'+qflav)
       pl.show(block=False)
@@ -686,7 +688,7 @@ while plotopt not in ['quit','exit']:                                     # If t
             pl.figure()
             pl.plot(bdata_x,bdata_y)
             pl.xlabel('Time (s)')
-            pl.ylabel('Flux (counts/s/PCU)')
+            pl.ylabel(flux_axis)
             pl.ylim(ymin=0)
             pl.title(fldtxt+'Lightcurve'+qflav)
             pl.show(block=False)
@@ -831,7 +833,7 @@ while plotopt not in ['quit','exit']:                                     # If t
          pl.figure()
          doplot(times,timese,flux,fluxe,ovr=True)                         # Plot the graph using doplot from pan_lib
          pl.xlabel(taxis)
-         pl.ylabel('Flux (counts/s/PCU)')
+         pl.ylabel(flux_axis)
          pl.title('Lightcurve ('+str(animbin)+'s binning)')
          pl.xlim(dst,det)
          pl.ylim(max(minany,0),maxany)
@@ -1045,7 +1047,7 @@ while plotopt not in ['quit','exit']:                                     # If t
             ht=int(ht)
             pl.figure()
             doplot(col[ht],cole[ht],flux,fluxe)                           # Collect colours from col library and plot
-            pl.ylabel('Flux (counts/s/PCU)')
+            pl.ylabel(flux_axis)
             pl.xlabel('('+ch[h1]+'/'+ch[h2]+') colour')
             pl.xlim(0,2)
             pl.ylim(0,300)
@@ -1137,7 +1139,7 @@ while plotopt not in ['quit','exit']:                                     # If t
       pl.subplot(rowexp,colexp,1)                                         # Create subplot in the first slot
       doplot(times,timese,flux,fluxe,ovr=True)                            # Always plot the lightcurve
       pl.xlabel(taxis)
-      pl.ylabel('Flux (counts/s/PCU)')
+      pl.ylabel(flux_axis)
       pl.ylim(ymin=0)
       pl.title(fldtxt+'Lightcurve'+qflav)
 
@@ -1149,7 +1151,7 @@ while plotopt not in ['quit','exit']:                                     # If t
          doplot(col[21],cole[21],flux,fluxe)                              # Plot Soft HID
          pl.xlim(0,2)
          pl.ylim(0,300)
-         pl.ylabel('Flux (counts/s/PCU)')
+         pl.ylabel(flux_axis)
          pl.xlabel('('+ch[2]+'/'+ch[1]+') colour')
          pl.title(fldtxt+'Soft HID'+qflav)
 
@@ -1162,7 +1164,7 @@ while plotopt not in ['quit','exit']:                                     # If t
          doplot(col[31],cole[31],flux,fluxe)                              # Plot Hard HID
          pl.xlim(0,2)
          pl.ylim(0,300)
-         pl.ylabel('Flux (counts/s/PCU)')
+         pl.ylabel(flux_axis)
          pl.xlabel('('+ch[3]+'/'+ch[1]+') colour')
          pl.title(fldtxt+'Hard HID'+qflav)
 
@@ -1212,7 +1214,7 @@ while plotopt not in ['quit','exit']:                                     # If t
             doplot(times,timese,y3[gmask],ye3[gmask],ovr=True)
 
          pl.xlabel(taxis)                                                 # Format plot
-         pl.ylabel('Flux (counts/s/PCU)')
+         pl.ylabel(flux_axis)
          pl.ylim(ymin=0)
          pl.title(fldtxt+b_band_name+'Lightcurve'+qflav)
          pl.show(block=False)
@@ -1229,21 +1231,21 @@ while plotopt not in ['quit','exit']:                                     # If t
       pl.subplot(nfiles,1,1) 
       doplot(times,timese,y1[gmask],ye1[gmask],ovr=True)                  # Plot the lowest band
       pl.xlabel(taxis)
-      pl.ylabel('Flux (counts/s/PCU)')
+      pl.ylabel(flux_axis)
       pl.title(fldtxt+ch[1]+' Lightcurve'+qflav)
 
       if nfiles>1:
          pl.subplot(nfiles,1,2)
          doplot(times,timese,y2[gmask],ye2[gmask],ovr=True)               # Plot the second band
          pl.xlabel(taxis)
-         pl.ylabel('Flux (counts/s/PCU)')
+         pl.ylabel(flux_axis)
          pl.title(fldtxt+ch[2]+' Lightcurve'+flv2)
 
       if nfiles>2:
          pl.subplot(nfiles,1,3)
          doplot(times,timese,y3[gmask],ye3[gmask],ovr=True)               # Plot the third band
          pl.xlabel(taxis)
-         pl.ylabel('Flux (counts/s/PCU)')
+         pl.ylabel(flux_axis)
          pl.title(fldtxt+ch[3]+' Lightcurve'+flv3)
 
       pl.show(block=False)
@@ -1269,7 +1271,7 @@ while plotopt not in ['quit','exit']:                                     # If t
          leg.append(ch[3])                                                # Append name of third channel to key
       pl.legend(leg)                                                      # Create key on plot
       pl.xlabel(taxis)
-      pl.ylabel('Flux (counts/s/PCU)')
+      pl.ylabel(flux_axis)
       pl.title(fldtxt+'Lightcurve'+qflav)
       pl.show(block=False)
       print 'Banded lightcurves plotted!'
@@ -1295,7 +1297,7 @@ while plotopt not in ['quit','exit']:                                     # If t
             print 'Invalid Entry!  Valid entry is of the form High>Low.'
 
       bursts={}
-      bursts['endpoints']=pan.get_bursts(flux,q_lo=iq_lo,q_hi=iq_hi)
+      bursts['endpoints']=pan.get_bursts(flux,q_lo=iq_lo,q_hi=iq_hi,just_peaks=False)
 
       pl.figure()
       doplot(times,timese,flux,fluxe,ovr=True)                            # Plot flux/time using doplot from pan_lib
@@ -1318,7 +1320,7 @@ while plotopt not in ['quit','exit']:                                     # If t
       pl.plot([times[0],times[-1]],[t_hi,t_hi],'b')
       pl.legend(['Flux','Low Pass Threshold','High Pass Threshold'])
       pl.xlabel('Time (s)')
-      pl.ylabel('Flux (counts/s/PCU)')
+      pl.ylabel(flux_axis)
       pl.ylim(ymin=0)
       pl.title(fldtxt+'Lightcurve with Bursts Highlighted'+qflav)
       pl.show(block=False)
