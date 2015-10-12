@@ -151,11 +151,12 @@ def backgr(i):                                                            # Func
       return back_f[-1],back_fe[0]                                        # Return endpoint background if sampling after bg range
    else:
       timestamp=shifted_data_x[i]                                         # Collect the timestamp of the ith data element
-      st_i=int(timestamp/back_bin_size)                                   # Collect the start and endpoints of the bg bin in which the timestamp falls
+      st_i=int((timestamp-shifted_data_x[0])/back_bin_size)               # Collect the start and endpoints of the bg bin in which the timestamp falls
       ed_i=st_i+1
       posit_in_bin=(timestamp % back_bin_size)/back_bin_size              # Work out where in the bin the timestamp falls
       f_est  = back_f[st_i]+posit_in_bin*(back_f[ed_i]-back_f[st_i])      # Linearly interpolate between two background points to return background estimate
       fe_est = back_fe[st_i]+posit_in_bin*(back_fe[ed_i]-back_fe[st_i])   # Collect error too
+
       return f_est,fe_est
 
 
