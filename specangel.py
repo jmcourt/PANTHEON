@@ -115,7 +115,7 @@ lspec=npsum(loadmatrix,axis=0)/nleahy                                     # Crea
 const=pan.lhconst(lspec)                                                  # Calculate the normalisation of noise
 
 def constmi(k):                                                           # Define nuP(nu) noise average as a function of  Leahy constant.
-   nlspec=pan.lh2rms(lspec,mean(rates),mean(bg),k)
+   nlspec=pan.lh2rms(lspec,mean(rates),bg,k)
    nlrang=arange(len(nlspec))
    nlrang=nlrang[int(4*len(nlspec)/5.0):]
    nlspec=nlspec[int(4*len(nlspec)/5.0):]
@@ -152,14 +152,14 @@ def lbin(logfreqres,pow_norm='nupnu',prt=False):                          # Defi
    fourgr=[]
    for i in range(numstep):
       tsfdata=loadmatrix[i]                                               # Load a row of data
-      errs=pan.lh2rms(tsfdata,rates[i],bg[i],0)                           # Errors of a Leahy spectrum = the Leahy spectrum
+      errs=pan.lh2rms(tsfdata,rates[i],bg,0)                              # Errors of a Leahy spectrum = the Leahy spectrum
 
       if norm in ['rms','nupnu']:
          if pow_norm=='nupnu':
             sconst=const                                                  # For nuP(nu) normalisation, the Leahy constant will need subtracting
          else:
             sconst=0                                                      # In RMS norm, it can stay
-         tsfdata=pan.lh2rms(tsfdata,rates[i],bg[i],sconst)                # Convert to RMS-normalised data using the LH2RMS function from pan_lib
+         tsfdata=pan.lh2rms(tsfdata,rates[i],bg,sconst)                   # Convert to RMS-normalised data using the LH2RMS function from pan_lib
          if pow_norm=='nupnu':
             tsfdata=tsfdata*tfl                                           # Multiply by frequency if nupnu normalisation requested
             errs=errs*tfl
