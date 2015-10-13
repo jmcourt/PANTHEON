@@ -117,6 +117,7 @@ print ''
 #-----Opening FITS file, identifying mission---------------------------------------------------------------------------
 
 try:
+   assert filename[-6:] not in ('.speca','.plotd')                        # Don't try to open plotd/speca files please...
    event=fits.open(filename)                                              # Unleash the beast! [open the file]
 except:
    print 'Could not open file '+filename+'!'
