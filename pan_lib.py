@@ -543,9 +543,11 @@ def get_bursts(data,q_lo=50,q_hi=90,just_peaks=False):
          n_peak=len(data)-1
       else:
          n_peak=peak_locs[i+1]
-      end_col=get_dip(data,peak_locs[i],n_peak)
-      burst_locs.append((start_col,end_col))
-      start_col=end_col
+      if peak_locs[i]!=n_peak:                                            # Prevent failure if final point in lightcurve is a peak
+         print peak_locs[i],n_peak
+         end_col=get_dip(data,peak_locs[i],n_peak)
+         burst_locs.append((start_col,end_col))
+         start_col=end_col
 
    return burst_locs
 
@@ -1057,7 +1059,7 @@ def plotdld(filename):
    data=pickle.load(readfile)                                            # Unpickle the .plotd file
 
    times=array(data['time'])                                              # Unleash the beast! [extract the file]
-   rates=array(data['flux'])
+   rates=array(data['rate'])
    errors=array(data['errs'])
    tstart=data['tstr']
    binsize=data['bsiz']
@@ -1082,7 +1084,7 @@ def plotdld(filename):
 #-----PlotdSv----------------------------------------------------------------------------------------------------------
 
 @jit
-def plotdsv(filename,times,counts,errors,tstart,binsize,gti,mxpcus,bgest,bgsub,bgdata,flavour,chanstr,mission,obsdata,version):
+def plotdsv(filename,times,rates,errors,tstart,binsize,gti,mxpcus,bgest,bgsub,bgdata,flavour,chanstr,mission,obsdata,version):
 
    '''.Plotd Save
 
@@ -1119,8 +1121,8 @@ def plotdsv(filename,times,counts,errors,tstart,binsize,gti,mxpcus,bgest,bgsub,b
    savedata={}                                                            # Open library object to save in file
 
    savedata['time']=times                                                 # Dump each piece of data into an appropriate library element
-   savedata['flux']=array(counts)/float(binsize)
-   savedata['errs']=array(errors)/float(binsize)
+   savedata['rate']=array(rates)
+   savedata['errs']=array(errors)
    savedata['tstr']=tstart
    savedata['bsiz']=binsize
    savedata['gtis']=gti

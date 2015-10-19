@@ -71,11 +71,7 @@ try:
    import sys
    import pan_lib as pan
    from astropy.io import fits
-   from math import log
-   from numpy import arange, array, histogram, zeros
-   from numpy import sum as npsum
-   from scipy.fftpack import fft
-   import pylab as pl
+
 
 except ImportError:
 
@@ -124,6 +120,14 @@ except:
    print 'Aborting!'
    pan.signoff()
    exit()
+
+from math import log                                                      # Import remaining modules.  This is a slight speedup when running
+                                                                          # a script to attempt to FITSgenie some valid files and some invalid
+                                                                          # files
+from numpy import arange, array, histogram, zeros
+from numpy import sum as npsum
+from scipy.fftpack import fft
+import pylab as pl
 
 try:
    mission=event[1].header['TELESCOP']                                    # Fetch the name of the telescope
@@ -190,8 +194,6 @@ else:
    bin_dat=False
 
 #-----Checking validity of remaining inputs----------------------------------------------------------------------------
-
-print len(args)
 
 print 'Object =',obsdata[0]
 print 'Obs_ID =',obsdata[1]
@@ -520,7 +522,7 @@ if filext!=filename:
 filename=filename+'_'+cs
 
 if plot_on:
-   pfilename=pan.plotdsv(filename,ta,fullhist,fullerrs,tstart,bsz*ptdbinfac,gti,max(npcus),bgest,'False',None,flavour,cs,mission,obsdata,version)
+   pfilename=pan.plotdsv(filename,ta,array(fullhist)/bsz,array(fullerrs)/bsz,tstart,bsz*ptdbinfac,gti,max(npcus),bgest,'False',None,flavour,cs,mission,obsdata,version)
    print "PlotDemon file saved to "+pfilename
 else:
    print "PlotDemon file not saved."

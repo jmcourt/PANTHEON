@@ -127,9 +127,10 @@ if not same_mission:                                                      # Abor
  
 #-----Shift Arrays-----------------------------------------------------------------------------------------------------
 
-shifted_data_x=data_x-(back_x[0]-data_t_start)
-shifted_back_x=back_x-(back_x[0]+data_t_start)
 back_x=pan.tnorm(back_x,back_bin_size)                                    # Force background x array to start at 0
+
+shifted_data_x=data_x+data_t_start-back_t_start                           # Create shifted data axis to align with a background starting at 0s
+shifted_back_x=back_x+back_t_start-data_t_start                           # Create shifted background axis to align with data starting at 0s
 
 if back_x[0]>shifted_data_x[-1] or shifted_data_x[0]>back_x[-1]:          # Abort if the timescales don't overlap
    print 'WARNING! Files times do not overlap!'
@@ -145,14 +146,17 @@ if back_x[0]>shifted_data_x[-1] or shifted_data_x[0]>back_x[-1]:          # Abor
 #-----Define Background Subtraction------------------------------------------------------------------------------------
 
 def backgr(i):                                                            # Function that returns the appropriate background counts at each point in the datafile
-   if shifted_data_x[i]<back_x[0]:
+
+   timestamp=shifted_data_x[i]                                            # Collect the timestamp of the ith data element
+   st_i=int(timestamp/back_bin_size)                                      # Collect the start and endpoints of the bg bin in which the timestamp falls
+   ed_i=st_i+1
+
+   if st_i<0:
       return back_f[0],back_fe[0]                                         # Return startpoint background if sampling before bg range
-   elif shifted_data_x[i]>back_x[-2]:
-      return back_f[-1],back_fe[0]                                        # Return endpoint background if sampling after bg range
+   elif ed_i>=len(back_x):
+      return back_f[-1],back_fe[-1]                                       # Return endpoint background if sampling after bg range
    else:
-      timestamp=shifted_data_x[i]                                         # Collect the timestamp of the ith data element
-      st_i=int((timestamp-shifted_data_x[0])/back_bin_size)               # Collect the start and endpoints of the bg bin in which the timestamp falls
-      ed_i=st_i+1
+
       posit_in_bin=(timestamp % back_bin_size)/back_bin_size              # Work out where in the bin the timestamp falls
       f_est  = back_f[st_i]+posit_in_bin*(back_f[ed_i]-back_f[st_i])      # Linearly interpolate between two background points to return background estimate
       fe_est = back_fe[st_i]+posit_in_bin*(back_fe[ed_i]-back_fe[st_i])   # Collect error too
