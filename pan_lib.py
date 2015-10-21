@@ -465,7 +465,7 @@ def foldify(t,y,ye,period,binsize,phres=None,name='',compr=False,verb=True):
 
 #-----Get_Bursts-------------------------------------------------------------------------------------------------------
 
-@jit
+#@jit
 def get_bursts(data,q_lo=50,q_hi=90,just_peaks=False):
 
    '''Return Bursts
@@ -543,9 +543,8 @@ def get_bursts(data,q_lo=50,q_hi=90,just_peaks=False):
          n_peak=len(data)-1
       else:
          n_peak=peak_locs[i+1]
-      if peak_locs[i]!=n_peak:                                            # Prevent failure if final point in lightcurve is a peak
-         print peak_locs[i],n_peak
-         end_col=get_dip(data,peak_locs[i],n_peak)
+      end_col=get_dip(data,peak_locs[i],n_peak)
+      if end_col>start_col:                                               # Force any null-length 'bursts' to be removed
          burst_locs.append((start_col,end_col))
          start_col=end_col
 
