@@ -329,11 +329,13 @@ def eval_burst(t,y):
    '''
 
    peak=max(y)
+   trough=min(y)
    p_ind=array(y).tolist().index(peak)
+   t_ind=array(y).tolist().index(trough)
    rise_time=t[p_ind]-t[0]
    fall_time=t[-1]-t[p_ind]
    peak_time=t[p_ind]
-   return peak,peak_time,rise_time,fall_time
+   return peak,trough,peak_time,rise_time,fall_time
 
 
 #-----FlnCheck---------------------------------------------------------------------------------------------------------
@@ -811,6 +813,7 @@ def lomb_scargle(x,y,ye,freqs):
    assert len(x)==len(y)
    x=array(x)
    y=array(y)
+   y[y<0]=0                                                              # Weed out any negative values here before they break things
    ye=array(ye)
    w=safe_div(ones(len(ye)),ye**2)
    y=y-(sum(y*w)/sum(w))

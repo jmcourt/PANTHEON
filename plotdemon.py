@@ -387,6 +387,7 @@ def give_inst():                                                          # Defi
    print '* "clip" to clip the data.'
    print '* "mask" to remove a range of data.'
    print '* "fold" to fold data over a period of your choosing'+(' (requires PyAstronomy module)' if not module_pyastro else '')+'.'
+   print '* "autofold" to automatically seek a period over which to fold data'+(' (requires PyAstronomy module)' if not module_pyastro else '')+'.'
    print '* "circfold" to circularly fold data over a period of your choosing.'
    print ''
    print '1+ DATASET PLOTS:'
@@ -561,6 +562,58 @@ while plotopt not in ['quit','exit']:                                     # If t
             break
          except:
             print "Invalid phase resolution!"                             # Keep trying until they give a sensible input
+
+      x1=x1[gmask];y1=y1[gmask];ye1=ye1[gmask]                            # Zeroing all data points outside of GTI
+      x1,y1,ye1=pan.foldify(x1,y1,ye1,period,binning,phres=phres,name='ch. '+ch[1])    # Fold using foldify function from pan_lib
+
+      fldtxt='Folded '
+
+      if nfiles>1:
+         x2=x2[gmask];y2=y2[gmask];ye2=ye2[gmask]                         # Zeroing all data points outside of GTI
+         x2,y2,ye2=pan.foldify(x2,y2,ye2,period,binning,phres=phres,name='ch. '+ch[2]) # Fold data of file 2 if present
+
+      if nfiles==3:
+         x3=x3[gmask];y3=y3[gmask];ye3=ye3[gmask]                         # Zeroing all data points outside of GTI
+         x3,y3,ye3=pan.foldify(x3,y3,ye3,period,binning,phres=phres,name='ch. '+ch[3]) # Fold data of file 3 if present
+
+      gmask=ones(len(x1),dtype=bool)                                      # Re-establish gmask
+      times,timese,flux,fluxe,col,cole=colorget()                         # Re-get colours
+      folded=True
+
+      print 'Folding Complete!'
+      print ''
+
+
+   #-----'autofold' Option-------------------------------------------------------------------------------------------------
+
+   elif plotopt=='autofold':                                              # Autofold data lightcurve
+
+      bursts=None                                                         # Remove burst data
+      if folded:
+         print 'Data already folded!  Rebin before re-folding.'
+         continue
+
+      if not module_pyastro:                                              # Only attempt to fold if pyastro is present
+         print 'PyAstronomy Module not found!  Cannot perform fold!'      # Warn user they cannot fold as module is missing
+         continue
+
+      ls_st=max(4.0/(times[-1]-times[0]),0.005)
+      ls_end=0.5/binning
+
+      lsx=arange(ls_st,ls_end,(ls_end-ls_st)/2500.0)                      # Perform Lomb-Scargle Analysis on the data to seek best period
+      lsy=pan.lomb_scargle(times,flux,fluxe,lsx)
+      period=1.0/(lsx[lsy.tolist().index(max(lsy))])
+
+      while True:                                                         # Keep asking user until they give a sensible phase resolution
+         try:
+            phres=float(raw_input('Input phase resolution (0-1): '))      # Fetch phase resolution from user
+            assert phres<=1.0
+            break
+         except:
+            print "Invalid phase resolution!"                             # Keep trying until they give a sensible input
+
+      print ''
+      print 'Using period of '+str(period)+'!'
 
       x1=x1[gmask];y1=y1[gmask];ye1=ye1[gmask]                            # Zeroing all data points outside of GTI
       x1,y1,ye1=pan.foldify(x1,y1,ye1,period,binning,phres=phres,name='ch. '+ch[1])    # Fold using foldify function from pan_lib
@@ -1332,6 +1385,7 @@ while plotopt not in ['quit','exit']:                                     # If t
       print 'Analysing Bursts...'
 
       bursts['peaks']=[]
+      bursts['trghs']
       bursts['rises']=[]
       bursts['falls']=[]
       bursts['duras']=[]
@@ -1339,8 +1393,9 @@ while plotopt not in ['quit','exit']:                                     # If t
       for endpoints in bursts['endpoints']:
          burst=flux[endpoints[0]:endpoints[1]]
          btime=times[endpoints[0]:endpoints[1]]
-         peak,pk_time,rise_time,fall_time=pan.eval_burst(btime,burst)
+         peak,trough,pk_time,rise_time,fall_time=pan.eval_burst(btime,burst)
          bursts['peaks'].append(peak)
+         bursts['trghs'].append(troughs)
          bursts['rises'].append(rise_time)
          bursts['falls'].append(fall_time)
          bursts['duras'].append(btime[-1]-btime[0])

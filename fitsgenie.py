@@ -492,7 +492,7 @@ if not bin_dat:
    pcg=str(int(100*tcounts/float(phcts)))+'%'
 
    print ''
-   print str(tcounts)+'/'+str(phcts)+' photons in GTI ('+pcg+')!'
+   print str(tcounts)+'/'+str(phcts)+' ('+pcg+') photons in GTI '+str((gti[0][0],gti[-1][1]))+'!'
 
    if tcounts==0:
       print 'Aborting!'
