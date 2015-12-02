@@ -1448,7 +1448,7 @@ while plotopt not in ['quit','exit']:                                     # If t
          continue
 
       if nfiles==1:
-         user_scargle_bands='1'                                           # Select energy bands to LombScargle
+         user_scargl_bands='1'                                           # Select energy bands to LombScargle
       else:
          if nfiles==3:
             is_band_3=', 3'

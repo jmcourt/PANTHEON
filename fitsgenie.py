@@ -137,7 +137,7 @@ except:
    pan.signoff()
    exit()
 
-if mission in ['XTE','SUZAKU']:
+if mission in ['XTE','SUZAKU','SWIFT']:
    print mission,'data detected!'
 else:
    print mission,'data not yet supported!'
@@ -165,6 +165,18 @@ elif mission == 'SUZAKU':
       import szkpan_lib as inst                                           # Import SUZAKU extraction functions
    except:
       print 'Suzaku PANTHEON Library not found!  Aborting!'
+      pan.signoff()
+      exit()
+
+elif mission == 'SWIFT':
+   etype='energy'                                                         # SUZAKU requires an input of raw energies
+   escale='eV'
+   escaleb=' (eV)'
+
+   try:
+      import swfpan_lib as inst                                           # Import SUZAKU extraction functions
+   except:
+      print 'Swift PANTHEON Library not found!  Aborting!'
       pan.signoff()
       exit()
 
