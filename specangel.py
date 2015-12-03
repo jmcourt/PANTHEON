@@ -528,7 +528,7 @@ while specopt not in ['quit','exit']:                                     # If t
       spec=npsum(fourgrm, axis=1)/sum(good)                               # Sum all spectra in the matrix and divide by the number of good columns
       err=sqrt(npsum( array(errgrm)**2, axis=1))/sum(good)
       ttl='Average power density spectrum'+q_flav
-      pan.slplot(tflm,spec,err,sxlab,sylab,ttl,'spc',typ='log',errors=es) # SLPlot from the pan_lib plots data on standard and log-log axes
+      pan.slplot(tflm,spec,err,sxlab,sylab,ttl,'spc',errors=es) # SLPlot from the pan_lib plots data on standard and log-log axes
       scerr=spec-(err**0.5)
 
       print 'Maximum power found at '+str(tflm[scerr.argmax()])+'Hz!'     # Suggest a peak location
