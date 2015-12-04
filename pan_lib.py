@@ -1181,6 +1181,32 @@ def rms_n(data,counts,datres,rate,bg,const):
    return rms
 
 
+#-----RMS--------------------------------------------------------------------------------------------------------------
+
+@jit
+def rms(data):
+
+   '''RMS
+
+   Description:
+
+    Returns the normalised RMS of a 1-dimensional data set
+
+   Inputs:
+
+    data -  LIST: The data to find the RMS of.
+
+   Outputs:
+
+    rms  - FLOAT: The rms of the data
+
+   -J.M.Court, 2015'''
+
+   data=array(data)
+   rms=((sum((data-mean(data))**2)/len(data))**0.5)/abs(mean(data))
+   return rms
+
+
 #-----Safe_Div---------------------------------------------------------------------------------------------------------
 
 @jit

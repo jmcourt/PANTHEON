@@ -386,6 +386,7 @@ def give_inst():                                                          # Defi
    print '* "rebin" to reset the data and load it with a different binning.'
    print '* "clip" to clip the data.'
    print '* "mask" to remove a range of data.'
+   print '* "rms" to return the numerical rms of the data.'
    print '* "fold" to fold data over a period of your choosing'+(' (requires PyAstronomy module)' if not module_pyastro else '')+'.'
    print '* "autofold" to automatically seek a period over which to fold data'+(' (requires PyAstronomy module)' if not module_pyastro else '')+'.'
    print '* "circfold" to circularly fold data over a period of your choosing.'
@@ -700,6 +701,34 @@ while plotopt not in ['quit','exit']:                                     # If t
             times,timese,flux,fluxe,col,cole=colorget()                   # Re-get colours
 
             print 'Data masked!'
+
+
+   #-----'rms' Option--------------------------------------------------------------------------------------------------
+
+   elif plotopt=='rms':
+
+      if nfiles>1:
+         if nfiles==3:
+            is_band_3=', 3'
+         else:
+            is_band_3=''
+         selected_band=raw_input('Select Energy Band [1, 2'+is_band_3+', All]: ').lower()
+         if selected_band not in ['1','2','3','all']:
+            print 'Invalid band!'
+            continue
+      else:
+         selected_band='all'
+
+      if selected_band=='1':
+         rms=pan.rms(y1)
+      elif selected_band=='2':
+         rms=pan.rms(y2)
+      elif selected_band=='3':
+         rms=pan.rms(y3)
+      else:
+         rms=pan.rms(flux)
+
+      print 'rms =',rms
 
 
    #-----'lc' Option---------------------------------------------------------------------------------------------------
