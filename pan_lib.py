@@ -1202,6 +1202,8 @@ def rms(data):
 
    -J.M.Court, 2015'''
 
+   if mean(data)==0:
+      return 'div0'
    data=array(data)
    rms=((sum((data-mean(data))**2)/len(data))**0.5)/abs(mean(data))
    return rms

@@ -386,7 +386,7 @@ def give_inst():                                                          # Defi
    print '* "rebin" to reset the data and load it with a different binning.'
    print '* "clip" to clip the data.'
    print '* "mask" to remove a range of data.'
-   print '* "rms" to return the numerical rms of the data.'
+   print '* "rms" to return the fractional rms of the data.'
    print '* "fold" to fold data over a period of your choosing'+(' (requires PyAstronomy module)' if not module_pyastro else '')+'.'
    print '* "autofold" to automatically seek a period over which to fold data'+(' (requires PyAstronomy module)' if not module_pyastro else '')+'.'
    print '* "circfold" to circularly fold data over a period of your choosing.'
@@ -707,7 +707,7 @@ while plotopt not in ['quit','exit']:                                     # If t
 
    elif plotopt=='rms':
 
-      if nfiles>1:
+      if nfiles>1:                                                        # If more than one file loaded, prompt user to select one
          if nfiles==3:
             is_band_3=', 3'
          else:
@@ -719,7 +719,7 @@ while plotopt not in ['quit','exit']:                                     # If t
       else:
          selected_band='all'
 
-      if selected_band=='1':
+      if selected_band=='1':                                              # Fetch the rms
          rms=pan.rms(y1)
       elif selected_band=='2':
          rms=pan.rms(y2)
@@ -728,7 +728,10 @@ while plotopt not in ['quit','exit']:                                     # If t
       else:
          rms=pan.rms(flux)
 
-      print 'rms =',rms
+      if rms='div0':                                                      # If the mean of the data is 0, fail safely
+         return 'Error!  Div 0 Encountered!  Aborting!'
+      else:
+         print 'rms =',str(rms*100)+'%'                                   # Otherwise, print RMS
 
 
    #-----'lc' Option---------------------------------------------------------------------------------------------------
