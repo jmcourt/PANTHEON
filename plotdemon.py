@@ -1146,8 +1146,6 @@ while plotopt not in ['quit','exit']:                                     # If t
             doplot(col[ht],cole[ht],flux,fluxe)                           # Collect colours from col library and plot
             pl.ylabel(flux_axis)
             pl.xlabel('('+ch[h1]+'/'+ch[h2]+') colour')
-            pl.xlim(0,2)
-            pl.ylim(0,300)
             pl.title(fldtxt+'Hardness Intensity Diagram'+qflav)
             pl.show(block=show_block)
             print 'File'+str(h1)+'/File'+str(h2)+' HID plotted!'

@@ -813,8 +813,10 @@ def lomb_scargle(x,y,ye,freqs):
    assert len(x)==len(y)
    x=array(x)
    y=array(y)
-   y[y<0]=0                                                              # Weed out any negative values here before they break things
    ye=array(ye)
+   x=x[y>0]                                                               # Weed out any negative values here before they break things
+   ye=ye[y>0]
+   y=y[y>0]
    w=safe_div(ones(len(ye)),ye**2)
    y=y-(sum(y*w)/sum(w))
 
