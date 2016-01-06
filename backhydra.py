@@ -36,7 +36,7 @@ try:
    import sys
    import pan_lib as pan
    from astropy.io import fits
-   import numpy   as np
+   import numpy as np
    import pylab as pl
 
 except ImportError:

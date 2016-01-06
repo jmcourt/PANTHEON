@@ -105,12 +105,10 @@ except:
 import pylab as pl
 import warnings
 import scipy.optimize as optm
+import numpy as np
 from matplotlib.ticker import ScalarFormatter
 from numba import jit
-from numpy import (absolute, arctan, array, arange, ceil, cos, exp, floor, hstack, log10, mean, multiply, ones, percentile,    
-                   pi, sign, sin, sqrt, vstack, zeros)
-from numpy import append as npappend
-from numpy import sum as npsum
+from math import pi
 
 
 #-----ArgCheck---------------------------------------------------------------------------------------------------------
@@ -173,7 +171,7 @@ def binify(x,y,ye,binsize):                                               # Defi
 
    -J.M.Court, 2014'''
 
-   binlx=binsize*floor(x[0]/binsize)                                      # Initialising 'bin lowest x', or the lowest x value of the current bin
+   binlx=binsize*np.floor(x[0]/binsize)                                   # Initialising 'bin lowest x', or the lowest x value of the current bin
    binct=0.0                                                              # Initialising 'bin count', or number of values sorted into the current bin
 
    xb=[x[0]]                                                              # Setting up arrays to append binned values into
@@ -192,15 +190,15 @@ def binify(x,y,ye,binsize):                                               # Defi
          binlx+=binsize                                                        #  Create new bin with minimum x equal to current x
          xb.append(binlx)                                                      #  Append next x value into new array element
          yb[-1]=yb[-1]/binct                                                   #  Divide y in previous bin by bincount to get the average
-         yeb[-1]=(sqrt(yeb[-1]))/binct                                         #  Sqrt error and divide by bincount
+         yeb[-1]=(np.sqrt(yeb[-1]))/binct                                      #  Sqrt error and divide by bincount
          yb.append(y[xid])                                                     #  Append current y value into new array element
          yeb.append((ye[xid])**2)
 
          binct=1                                                               #  Reset bin count to 1
 
    yb[-1]=yb[-1]/binct                                                    ## Clean up final bin
-   yeb[-1]=(sqrt(yeb[-1]))/binct
-   return array(xb),array(yb),array(yeb)
+   yeb[-1]=(np.sqrt(yeb[-1]))/binct
+   return np.array(xb),np.array(yb),np.array(yeb)
 
 
 #-----BoolVal----------------------------------------------------------------------------------------------------------
@@ -232,8 +230,8 @@ def boolval(data,reverse=True):
       keyr=keyr[::-1]                                                     # Reverse the key range
 
    mult=[1<<i for i in keyr]                                              # Mult is a list of all the powers of 2 from 2^0 to 2^(length of data)
-   data=array(data)*mult
-   data=npsum(data,axis=1)                                                # Multiply Boolean list by mult, sum per row
+   data=np.array(data)*mult
+   data=np.sum(data,axis=1)                                               # Multiply Boolean list by mult, sum per row
 
    return data
  
@@ -271,8 +269,8 @@ def circfold(x,y,t,pcoords=True):
    if pcoords:
       return a%(2.0*pi),y
    else:
-      s=y*sin(a)
-      c=y*cos(a)
+      s=y*np.sin(a)
+      c=y*np.cos(a)
       return s,c
 
 
@@ -330,8 +328,8 @@ def eval_burst(t,y):
 
    peak=max(y)
    trough=min(y)
-   p_ind=array(y).tolist().index(peak)
-   t_ind=array(y).tolist().index(trough)
+   p_ind=np.array(y).tolist().index(peak)
+   t_ind=np.array(y).tolist().index(trough)
    rise_time=t[p_ind]-t[0]
    fall_time=t[-1]-t[p_ind]
    peak_time=t[p_ind]
@@ -437,10 +435,10 @@ def foldify(t,y,ye,period,binsize,phres=None,name='',compr=False,verb=True):
          return t,y,ye
 
    npbins=int(1.0/phres)
-   phasx =arange(0,1,phres)
-   phasy =zeros(npbins)
-   phasye=zeros(npbins)
-   ny=zeros(npbins)
+   phasx =np.arange(0,1,phres)
+   phasy =np.zeros(npbins)
+   phasye=np.zeros(npbins)
+   ny=np.zeros(npbins)
 
    a=[];ax=[]
    b=[];bx=[]
@@ -452,7 +450,7 @@ def foldify(t,y,ye,period,binsize,phres=None,name='',compr=False,verb=True):
       ny[k]+=1
 
    phasy=phasy/ny
-   phasye=sqrt(phasye)/ny
+   phasye=np.sqrt(phasye)/ny
 
    afdiff=max(phasy)-min(phasy)                                            # Flux range after folding
    if verb:
@@ -467,7 +465,8 @@ def foldify(t,y,ye,period,binsize,phres=None,name='',compr=False,verb=True):
 
 #-----Fold_Bursts------------------------------------------------------------------------------------------------------
 
-#@jit
+@jit
+def fold_bursts(times,data,q_lo=50,q_hi=90):
 
    '''Return Phases Using Bursts as Reference Points
 
@@ -498,17 +497,15 @@ def foldify(t,y,ye,period,binsize,phres=None,name='',compr=False,verb=True):
 
    -J.M.Court, 2015'''
 
-def fold_bursts(times,data,q_lo=50,q_hi=90):
-
    assert len(times)==len(data)
-   phases=zeros(len(times))
+   phases=np.zeros(len(times))
    peaks=get_bursts(data,q_lo,q_hi,just_peaks=True)
    peaks.sort()
    peak_placemark=0
    if peaks[0]!=0:
-      peaks=hstack([0,peaks])
+      peaks=np.hstack([0,peaks])
    if peaks[-1]!=len(times)-1:
-      peaks=hstack([peaks,len(times)-1])
+      peaks=np.hstack([peaks,len(times)-1])
 
    for i in range(len(data)):
       while i>peaks[peak_placemark+1] and peak_placemark+2<len(peaks):
@@ -559,8 +556,8 @@ def get_bursts(data,q_lo=50,q_hi=90,just_peaks=False):
 
    #assert q_hi>=q_lo
 
-   high_thresh=percentile(data,q_hi)
-   low_thresh=percentile(data,q_lo)
+   high_thresh=np.percentile(data,q_hi)
+   low_thresh=np.percentile(data,q_lo)
    over_thresh=data>low_thresh                                            # Create a Boolean array by testing whether the input array is above the mid
                                                                           #  threshold.  Each region of consecutive 'True' objects is considered a burst-
                                                                           #  -candidate region.
@@ -568,7 +565,7 @@ def get_bursts(data,q_lo=50,q_hi=90,just_peaks=False):
    burst_locs=[]
    while True:                                                            
                                                                           
-      masked=array(data)*over_thresh                                      # Reduce all data outside of burst-candidate regions to zero
+      masked=np.array(data)*over_thresh                                   # Reduce all data outside of burst-candidate regions to zero
       #pl.figure()
       #pl.plot(masked,'k')
       #pl.plot([low_thresh]*len(masked),'r')
@@ -631,8 +628,8 @@ def get_dip(data,start,finish):
 
    -J.M.Court, 2015'''
 
-   data=array(data)
-   data_l=arange(len(data))
+   data=np.array(data)
+   data_l=np.arange(len(data))
    data=data*(data_l>=start)*(data_l<finish)
    data[data==0]=max(data)
    for i in range(start+1,finish-1):
@@ -665,8 +662,8 @@ def gtimask(times,gtis):
 
    -J.M.Court, 2015'''
 
-   times=array(times)
-   mask=zeros(len(times),dtype=bool)                                      # Set up initial blank list of 'False'
+   times=np.array(times)
+   mask=np.zeros(len(times),dtype=bool)                                   # Set up initial blank list of 'False'
 
    for gti in gtis:                                                       # For every GTI index:
       smask=(times>gti[0]) & (times<gti[1])                               # Create a submask which is the 'and'ed product of times>gti_start and times<gti_end
@@ -710,25 +707,25 @@ def lbinify(x,y,ye,logres):
    hinge=((x[1]-x[0])*10**logres)/((10**logres)-1)                        # Find the 'hinge' point at which to switch between linear and logarithmic binning
    hingep=int((hinge-x[0])/(x[1]-x[0]))
 
-   lbin=log10(x[0])
-   xb =10**(arange(lbin,log10(x[-1]),logres))                             # Setting up arrays to append binned values into
-   yb =zeros(len(xb))
-   yeb=zeros(len(xb))
-   ct =zeros(len(xb))
+   lbin=np.log10(x[0])
+   xb =10**(np.arange(lbin,np.log10(x[-1]),logres))                       # Setting up arrays to append binned values into
+   yb =np.zeros(len(xb))
+   yeb=np.zeros(len(xb))
+   ct =np.zeros(len(xb))
 
    hingel=sum((xb)<=hinge)                                                # Getting the ID of the hinge-point in the log
 
    xbl=len(xb)
 
-   lx=(log10(x)-lbin)/logres
+   lx=(np.log10(x)-lbin)/logres
 
    for i in range(hingel,xbl):
 
       lowid=int(((10**((i*logres)+lbin))-x[0])/(x[1]-x[0]))               # Calculate the ID of the lowest linear bin that corresponds to this log bin
       uppid=int(((10**(((i+1)*logres)+lbin))-x[0])/(x[1]-x[0]))           # Calculate the ID of the highest linear bin that corresponds to this log bin
       if uppid>lowid:
-         yb[i]=mean(y[lowid:uppid])
-         yeb[i]=(sqrt(sum(array(ye[lowid:uppid])**2)))/int(uppid-lowid)
+         yb[i]=np.mean(y[lowid:uppid])
+         yeb[i]=(np.sqrt(sum(np.array(ye[lowid:uppid])**2)))/int(uppid-lowid)
       else:
          yb[i]=0                                                          # If no data found, error=power=0
          yeb[i]=0
@@ -736,9 +733,9 @@ def lbinify(x,y,ye,logres):
    mask=x<hinge
    lmask=xb>hinge
 
-   xf=npappend(x[mask],xb[lmask])
-   yf=npappend(y[mask],yb[lmask])
-   yef=npappend(ye[mask],yeb[lmask])
+   xf=np.append(x[mask],xb[lmask])
+   yf=np.append(y[mask],yb[lmask])
+   yef=np.append(ye[mask],yeb[lmask])
 
    return xf,yf,yef
 
@@ -866,38 +863,38 @@ def lomb_scargle(x,y,ye,freqs):
    -J.M.Court, 2015'''
 
    assert len(x)==len(y)
-   x=array(x)
-   y=array(y)
-   ye=array(ye)
+   x=np.array(x)
+   y=np.array(y)
+   ye=np.array(ye)
    x=x[y>0]                                                               # Weed out any negative values here before they break things
    ye=ye[y>0]
    y=y[y>0]
-   w=safe_div(ones(len(ye)),ye**2)
+   w=safe_div(np.ones(len(ye)),ye**2)
    y=y-(sum(y*w)/sum(w))
 
-   freqs=array(freqs)*2*pi
+   freqs=np.array(freqs)*2*pi
 
-   wt=multiply.outer(x,freqs)
+   wt=np.multiply.outer(x,freqs)
 
-   sin2wt=sin(2*wt)
+   sin2wt=np.sin(2*wt)
    cos2wt=cosfromsin(2*wt,sin2wt)
 
-   tau=(arctan(npsum(sin2wt,axis=0)/npsum(cos2wt,axis=0)))/(2*freqs)
+   tau=(np.arctan(np.sum(sin2wt,axis=0)/np.sum(cos2wt,axis=0)))/(2*freqs)
 
    wttau=wt-(freqs*tau)
 
-   sinw=sin(wttau)
+   sinw=np.sin(wttau)
    cosw=cosfromsin(wttau,sinw)
 
-   yT=vstack(y)
+   yT=np.vstack(y)
 
    ysin=yT*sinw
    ycos=yT*cosw
 
-   norm=2*npsum(w*(y**2)/(len(y)-2))
+   norm=2*np.sum(w*(y**2)/(len(y)-2))
 
-   w=vstack(w)
-   pgram=((npsum(w*ycos,axis=0)**2)/npsum((w*cosw)**2,axis=0)+(npsum(w*ysin,axis=0)**2)/npsum((w*sinw)**2,axis=0)) / norm
+   w=np.vstack(w)
+   pgram=((np.sum(w*ycos,axis=0)**2)/np.sum((w*cosw)**2,axis=0)+(np.sum(w*ysin,axis=0)**2)/np.sum((w*sinw)**2,axis=0)) / norm
 
    return pgram
 
@@ -938,9 +935,9 @@ def mxrebin(spcdata,spcerrs,xaxis,good,bfac):
 
    spx=len(spcdata[:,0])                                                  # x-dimension of new matrix matches old matrix
    spy=int(len(spcdata[0,:])/bfac)                                        # y-dimension of new matrix equals the y dimension of the old matrix divided by the binning factor
-   b_good=zeros(spy,dtype=bool)                                           # array to label good columns
-   b_spcdata=zeros([spx,spy])                                             # Create the new matrix
-   b_spcerrs=zeros([spx,spy])                                             # Create the new error matrix
+   b_good=np.zeros(spy,dtype=bool)                                        # array to label good columns
+   b_spcdata=np.zeros([spx,spy])                                          # Create the new matrix
+   b_spcerrs=np.zeros([spx,spy])                                          # Create the new error matrix
 
    for i in range(spx):                                                   # For each freq row of fourgr:
       for j in range(spy):                                                # For each time col of fourgr:
@@ -962,7 +959,7 @@ def mxrebin(spcdata,spcerrs,xaxis,good,bfac):
             errtot+=((spcerrs[i,j*bfac+k])**2)
 
          b_spcdata[i,j]=celltot/bfac                                         # Divide the cell total by the bin multiplier to convert to a mean
-         b_spcerrs[i,j]=sqrt(errtot)/bfac
+         b_spcerrs[i,j]=np.sqrt(errtot)/bfac
 
    b_xaxis=[]                                                             # Calculate new x-axis
 
@@ -1026,14 +1023,14 @@ def pdcolex2(y1,y2,ye1,ye2,gmask):
    ye[2]=ye2[gmask]
 
    flux=y[1]+y[2]                                                         # Get total flux
-   fluxe=sqrt(ye[1]**2+ye[2]**2)                                          # Get flux error
+   fluxe=np.sqrt(ye[1]**2+ye[2]**2)                                       # Get flux error
 
    for i in range(1,3):                                                   # For the ith possible numerator band
       for j in range(1,3):                                                # For the jth possible denominator band
          if j!=i:                                                         # Prevents taking x/x colour
             ld=int(str(i)+str(j))
             col[ld]=(y[i]/y[j])                                           # Fetch colour
-            cole[ld]=col[ld]*sqrt(((ye[i]/y[i])**2)+((ye[j]/y[j])**2))    # Fetch colour error
+            cole[ld]=col[ld]*np.sqrt(((ye[i]/y[i])**2)+((ye[j]/y[j])**2)) # Fetch colour error
 
    return flux,fluxe,col,cole
 
@@ -1061,14 +1058,14 @@ def pdcolex3(y1,y2,y3,ye1,ye2,ye3,gmask):
    ye[3]=ye3[gmask]
 
    flux=y[1]+y[2]+y[3]                                                    # Get total flux
-   fluxe=sqrt(ye[1]**2+ye[2]**2+ye[3]**2)                                 # Get flux error
+   fluxe=np.sqrt(ye[1]**2+ye[2]**2+ye[3]**2)                              # Get flux error
 
    for i in range(1,4):                                                   # For the ith possible numerator band
       for j in range(1,4):                                                # For the jth possible denominator band
          if j!=i:                                                         # Prevents taking x/x colour
             ld=int(str(i)+str(j))
             col[ld]=(y[i]/y[j])                                           # Fetch colour
-            cole[ld]=col[ld]*sqrt(((ye[i]/y[i])**2)+((ye[j]/y[j])**2))    # Fetch colour error
+            cole[ld]=col[ld]*np.sqrt(((ye[i]/y[i])**2)+((ye[j]/y[j])**2)) # Fetch colour error
 
    return flux,fluxe,col,cole
 
@@ -1117,9 +1114,9 @@ def plotdld(filename):
       exit()
    data=pickle.load(readfile)                                            # Unpickle the .plotd file
 
-   times=array(data['time'])                                              # Unleash the beast! [extract the file]
-   rates=array(data['rate'])
-   errors=array(data['errs'])
+   times=np.array(data['time'])                                          # Unleash the beast! [extract the file]
+   rates=np.array(data['rate'])
+   errors=np.array(data['errs'])
    tstart=data['tstr']
    binsize=data['bsiz']
    gti=data['gtis']
@@ -1180,8 +1177,8 @@ def plotdsv(filename,times,rates,errors,tstart,binsize,gti,mxpcus,bgest,bgsub,bg
    savedata={}                                                            # Open library object to save in file
 
    savedata['time']=times                                                 # Dump each piece of data into an appropriate library element
-   savedata['rate']=array(rates)
-   savedata['errs']=array(errors)
+   savedata['rate']=np.array(rates)
+   savedata['errs']=np.array(errors)
    savedata['tstr']=tstart
    savedata['bsiz']=binsize
    savedata['gtis']=gti
@@ -1259,10 +1256,10 @@ def rms(data):
 
    -J.M.Court, 2015'''
 
-   if mean(data)==0:
+   if np.mean(data)==0:
       return 'div0'
-   data=array(data)
-   rms=((sum((data-mean(data))**2)/len(data))**0.5)/abs(mean(data))
+   data=np.array(data)
+   rms=((sum((data-np.mean(data))**2)/len(data))**0.5)/abs(np.mean(data))
    return rms
 
 
@@ -1289,7 +1286,7 @@ def safe_div(x,y):
 
    -J.M.Court, 2015'''
 
-   r=zeros(len(y))
+   r=np.zeros(len(y))
    r[y!=0]=x[y!=0]/y[y!=0]
    return r
 
@@ -1334,8 +1331,8 @@ def sinfromcos(x,cosx):
 
    -J.M.Court, 2015'''
 
-   sinx=absolute((1-cosx**2)**0.5)
-   signx=sign(((x+pi)%(2*pi))-pi)
+   sinx=np.absolute((1-cosx**2)**0.5)
+   signx=np.sign(((x+pi)%(2*pi))-pi)
    return sinx*signx
 
 @jit
@@ -1359,8 +1356,8 @@ def cosfromsin(x,sinx):
 
    -J.M.Court, 2015'''
 
-   cosx=absolute((1-sinx**2)**0.5)
-   signx=sign(((x-pi/2)%(2*pi))-pi)
+   cosx=np.absolute((1-sinx**2)**0.5)
+   signx=np.sign(((x-pi/2)%(2*pi))-pi)
    return cosx*signx
 
 
@@ -1495,12 +1492,12 @@ def specald(filename):
    data=pickle.load(readfile)                                             # Unpickle the .speca file
 
    spcdata=data['data']                                                   # Unleash the beast! [extract the file]
-   good=array(data['good'])
-   rates=array(data['rate'])
-   prates=array(data['prts'])
-   trates=array(data['trts'])
+   good=np.array(data['good'])
+   rates=np.array(data['rate'])
+   prates=np.array(data['prts'])
+   trates=np.array(data['trts'])
    phcts=data['phct']
-   n_pcus=array(data['npcu'])
+   n_pcus=np.array(data['npcu'])
    binsize=data['bsiz']
    bgest=data['bkgr']
    foures=data['fres']
@@ -1695,10 +1692,10 @@ def tnorm(t,res):
 
    -J.M.Court, 2014'''
 
-   t=array(t)
+   t=np.array(t)
    sttime=t[0]
    for i in range(len(t)):
-      t[i]=res*floor((t[i]-sttime)/float(res))                            # Rescaling time to start at 0, rounding to deal with errors incurred 
+      t[i]=res*np.floor((t[i]-sttime)/float(res))                         # Rescaling time to start at 0, rounding to deal with errors incurred 
                                                                           # by subtraction of large numbers
    return t
 
@@ -1765,7 +1762,7 @@ def vcrebin(vecdata,bfac):
    bfac=int(bfac)
 
    spx=len(vecdata)                                                       # x-dimension of new vector
-   b_vecdata=zeros(spx)                                                   # Create the new vector
+   b_vecdata=np.zeros(spx)                                                # Create the new vector
 
    for i in range(spx):                                                   # For each freq row of fourgr:
 

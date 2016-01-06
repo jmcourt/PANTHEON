@@ -46,7 +46,7 @@ try:
    import pan_lib as pan
    import numpy as np
 
-   from math import floor, isnan, log10, sqrt, pi
+   from math import pi
 
 
 except ImportError:
@@ -1085,7 +1085,7 @@ while plotopt not in ['quit','exit']:                                     # If t
             averad.append(np.mean(rad))
             avetheta.append(2*pi*((2*i+1)/2.0)/cbin)
 
-      inhom=sqrt(np.mean(((np.array(binrad)-np.mean(rad))/np.mean(rad))**2)) # Inhomogeneity is a measure of standard deviation from the average circle
+      inhom=np.sqrt(np.mean(((np.array(binrad)-np.mean(rad))/np.mean(rad))**2)) # Inhomogeneity is a measure of standard deviation from the average circle
 
       print 'Inhomogeneity =',inhom
 
@@ -1166,7 +1166,7 @@ while plotopt not in ['quit','exit']:                                     # If t
                averad.append(np.mean(rad))
                avetheta.append(2*pi*((2*i+1)/2.0)/cbin)
 
-         inhom=sqrt(np.mean(((np.array(binrad)-np.mean(rad))/np.mean(rad))**2)) # Inhomogeneity is a measure of standard deviation from the average circle
+         inhom=np.sqrt(np.mean(((np.array(binrad)-np.mean(rad))/np.mean(rad))**2)) # Inhomogeneity is a measure of standard deviation from the average circle
          inhlist.append(inhom)
 
          if max(inhlist)>maxinh:
