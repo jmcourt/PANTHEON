@@ -343,10 +343,22 @@ def doplot(x,xe,y,ye,ovr=False,ft='-k'):                                  # Defi
    elif ls: formst='-ok'                                                  # If deLineate mode on, connect points with lines and mark points
    else: formst='ok'                                                      # If neither deLineate nor override on, just plot points.  No lines here, buddy
 
-   if es:
-      pl.errorbar(x,y,xerr=xe,yerr=ye,fmt=formst)                         # Plot errorbar plot if errors turned on
+   if ls and not ovr:
+      plotx=np.append(x,x[0])
+      ploty=np.append(y,y[0])
+      plotxe=np.append(xe,xe[0])
+      plotye=np.append(ye,ye[0])
+
    else:
-      pl.plot(x,y,formst)                                                 # Else plot regular graph
+      plotx=x
+      ploty=y
+      plotxe=xe
+      plotye=ye
+
+   if es:
+      pl.errorbar(plotx,ploty,xerr=plotxe,yerr=plotye,fmt=formst)         # Plot errorbar plot if errors turned on
+   else:
+      pl.plot(plotx,ploty,formst)                                         # Else plot regular graph
    if cs and not ovr:                                                     # If coloured mode on, colour first 5 data points unless override given
       if len(x)<5:                                                        # Abort if less than 5 data points present
          print 'Not enough data to colour!'
