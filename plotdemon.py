@@ -44,10 +44,10 @@ try:
    import sys,os,imp
    import pylab as pl
    import pan_lib as pan
+   import numpy as np
 
-   from math import floor, isnan, log10, sqrt
-   from numpy import arange, array, delete, mean, ones, percentile, pi, zeros
-   from numpy import append as npappend                                   # Importing numpy append as npappend to avoid confusion with in-built append function
+   from math import floor, isnan, log10, sqrt, pi
+
 
 except ImportError:
 
@@ -150,9 +150,9 @@ if nfiles>1:                                                              # Chec
                print 'Times domains for files 1 & 2 do not overlap!  Aborting!'
                pan.signoff()
                exit()
-            x2r=delete(x2r,0)
-            y2r=delete(y2r,0)
-            ye2r=delete(ye2r,0)
+            x2r=np.delete(x2r,0)
+            y2r=np.delete(y2r,0)
+            ye2r=np.delete(ye2r,0)
          if tst1+x1r[0]!=tst2+x2r[0]:
             print 'Starting times for files 1 & 2 do not match!  Aborting!'# If this butchering overshoots, give up
             pan.signoff()
@@ -166,9 +166,9 @@ if nfiles>1:                                                              # Chec
                print 'Times domains for files 1 & 2 do not overlap!  Aborting!'
                pan.signoff()
                exit()
-            x1r=delete(x1r,0)
-            y1r=delete(y1r,0)
-            ye1r=delete(ye1r,0)
+            x1r=np.delete(x1r,0)
+            y1r=np.delete(y1r,0)
+            ye1r=np.delete(ye1r,0)
          if tst1+x1r[0]!=tst2+x2r[0]:
             print 'Starting times for files 1 & 2 do not match!  Aborting!'
             pan.signoff()
@@ -186,9 +186,9 @@ if nfiles>2:                                                              # Chec
                print 'Times domains for files 1 & 3 do not overlap!  Aborting!'
                pan.signoff()
                exit()
-            x3r=delete(x3r,0)
-            y3r=delete(y3r,0)
-            ye3r=delete(ye3r,0)
+            x3r=np.delete(x3r,0)
+            y3r=np.delete(y3r,0)
+            ye3r=np.delete(ye3r,0)
          if tst1+x1r[0]!=tst3+x3r[0]:
             print 'Starting times for files 1 & 3 do not match!  Aborting!'# If this butchering overshoots, give up
             pan.signoff()
@@ -202,12 +202,12 @@ if nfiles>2:                                                              # Chec
                print 'Times domains for files 1 & 3 do not overlap!  Aborting!'
                pan.signoff()
                exit()
-            x1r=delete(x1r,0)
-            y1r=delete(y1r,0)
-            ye1r=delete(ye1r,0)
-            x2r=delete(x2r,0)
-            y2r=delete(y2r,0)
-            ye2r=delete(ye2r,0)
+            x1r=np.delete(x1r,0)
+            y1r=np.delete(y1r,0)
+            ye1r=np.delete(ye1r,0)
+            x2r=np.delete(x2r,0)
+            y2r=np.delete(y2r,0)
+            ye2r=np.delete(ye2r,0)
          if tst1+x1r[0]!=tst3+x3r[0]:
             print 'Starting times for files 1 & 3 do not match!  Aborting!'
             pan.signoff()
@@ -305,7 +305,7 @@ def colorget(verbose=True):                                               # Defi
    if verbose:
       print 'Analysing Data...'
    times=x1[gmask]
-   timese=zeros(len(times))
+   timese=np.zeros(len(times))
    col={}
    cole={}
    if nfiles==1:                                                          # If only one file given, flux and flux_error are just the flux and error of this one file
@@ -366,7 +366,7 @@ def burstplot(key,text,units):
    print 'Plotting Histogram of Burst '+text+'...'
 
    pl.figure()
-   pl.hist(bursts[key],bins=arange(min(bursts[key]),max(bursts[key]),(max(bursts[key])-min(bursts[key]))/21.0))
+   pl.hist(bursts[key],bins=np.arange(min(bursts[key]),max(bursts[key]),(max(bursts[key])-min(bursts[key]))/21.0))
    pl.xlabel(text,'('+units+')')
    pl.ylabel('Frequency')
    pl.title('Histogram of Burst '+text)
@@ -571,7 +571,8 @@ while plotopt not in ['quit','exit']:                                     # If t
       while True:                                                         # Keep asking user until they give a sensible phase resolution
          try:
             phres=float(raw_input('Input phase resolution (0-1): '))      # Fetch phase resolution from user
-            assert phres<=1.0
+            assert phres<1.0
+            assert phres>0.0
             break
          except:
             print "Invalid phase resolution!"                             # Keep trying until they give a sensible input
@@ -589,7 +590,7 @@ while plotopt not in ['quit','exit']:                                     # If t
          x3=x3[gmask];y3=y3[gmask];ye3=ye3[gmask]                         # Zeroing all data points outside of GTI
          x3,y3,ye3=pan.foldify(x3,y3,ye3,period,binning,phres=phres,name='ch. '+ch[3]) # Fold data of file 3 if present
 
-      gmask=ones(len(x1),dtype=bool)                                      # Re-establish gmask
+      gmask=np.ones(len(x1),dtype=bool)                                   # Re-establish gmask
       times,timese,flux,fluxe,col,cole=colorget()                         # Re-get colours
       folded=True
 
@@ -613,14 +614,15 @@ while plotopt not in ['quit','exit']:                                     # If t
       ls_st=max(4.0/(times[-1]-times[0]),0.005)
       ls_end=0.5/binning
 
-      lsx=arange(ls_st,ls_end,(ls_end-ls_st)/2500.0)                      # Perform Lomb-Scargle Analysis on the data to seek best period
+      lsx=np.arange(ls_st,ls_end,(ls_end-ls_st)/2500.0)                   # Perform Lomb-Scargle Analysis on the data to seek best period
       lsy=pan.lomb_scargle(times,flux,fluxe,lsx)
       period=1.0/(lsx[lsy.tolist().index(max(lsy))])
 
       while True:                                                         # Keep asking user until they give a sensible phase resolution
          try:
             phres=float(raw_input('Input phase resolution (0-1): '))      # Fetch phase resolution from user
-            assert phres<=1.0
+            assert phres<1.0
+            assert phres>0.0
             break
          except:
             print "Invalid phase resolution!"                             # Keep trying until they give a sensible input
@@ -641,8 +643,98 @@ while plotopt not in ['quit','exit']:                                     # If t
          x3=x3[gmask];y3=y3[gmask];ye3=ye3[gmask]                         # Zeroing all data points outside of GTI
          x3,y3,ye3=pan.foldify(x3,y3,ye3,period,binning,phres=phres,name='ch. '+ch[3]) # Fold data of file 3 if present
 
-      gmask=ones(len(x1),dtype=bool)                                      # Re-establish gmask
+      gmask=np.ones(len(x1),dtype=bool)                                   # Re-establish gmask
       times,timese,flux,fluxe,col,cole=colorget()                         # Re-get colours
+      folded=True
+
+      print 'Folding Complete!'
+      print ''
+
+
+   #-----'varifold' Option---------------------------------------------------------------------------------------------
+
+   elif plotopt=='varifold':
+
+      if folded:
+         print 'Cannot perform burst analsysis on folded data!'
+         continue
+
+      while True:
+         try:
+            iq_lo=float(raw_input('Low Threshold:  '))
+            iq_hi=float(raw_input('High Threshold: '))
+            assert iq_hi>iq_lo
+            assert iq_hi<=100
+            assert iq_lo>=0
+            break
+         except AssertionError:
+            print 'Invalid Entry!  Valid entry is of the form High>Low.'
+
+      while True:
+         try:
+            phase_res=float(raw_input('Input phase resolution (0-1): '))
+            assert phase_res<1.0
+            assert phase_res>0.0
+            break
+         except AssertionError:
+            print 'Invalid Phase Resolution!'
+
+      phases=pan.fold_bursts(times,flux,iq_hi,iq_lo)
+      nbins=int(1.0/phase_res)
+      phases=(nbins*phases).astype(int)
+
+      x1=x1[gmask];y1=y1[gmask];ye1=ye1[gmask]                            # Removing all data points outside of GTI
+
+      newx1=[]
+      newy1=[]
+      newye1=[]
+
+      for i in range(nbins):
+         newx1.append(float(i)/float(nbins))
+         newy1.append(np.mean(y1[phases==i]))
+         newye1.append((np.sum(ye1[phases==i]**2))**0.5/len(ye1[phases==i]))
+
+      x1=np.array(newx1)
+      y1=np.array(newy1)
+      ye1=np.array(newye1)
+
+      if nfiles>1:
+
+         x2=x2[gmask];y2=y2[gmask];ye2=ye2[gmask]                         # Removing all data points outside of GTI
+
+         newx2=[]
+         newy2=[]
+         newye2=[]
+
+         for i in range(nbins):
+            newx2.append(float(i)/float(nbins))
+            newy2.append(np.mean(y2[phases==i]))
+            newye2.append((np.sum(ye2[phases==i]**2))**0.5/len(ye2[phases==i]))
+
+         x2=np.array(newx2)
+         y2=np.array(newy2)
+         ye2=np.array(newye2)
+
+      if nfiles==3:
+ 
+         x3=x3[gmask];y3=y3[gmask];ye3=ye3[gmask]                         # Removing all data points outside of GTI
+
+         newx3=[]
+         newy3=[]
+         newye3=[]
+
+         for i in range(nbins):
+            newx3.append(float(i)/float(nbins))
+            newy3.append(np.mean(y3[phases==i]))
+            newye3.append((np.sum(ye3[phases==i]**2))**0.5/len(ye3[phases==i]))
+
+         x3=np.array(newx3)
+         y3=np.array(newy3)
+         ye3=np.array(newye3)
+
+      gmask=np.ones(len(x1),dtype=bool)                                   # Re-establish gmask
+      times,timese,flux,fluxe,col,cole=colorget()                         # Re-get colours
+
       folded=True
 
       print 'Folding Complete!'
@@ -988,12 +1080,12 @@ while plotopt not in ['quit','exit']:                                     # If t
       for i in range(0,int(cbin)):                                        # For each angular segment...
          mask=((theta>=(2*pi*i/cbin)) & (theta<(2*pi*(i+1)/cbin)))        # Filter all points outside the segment
          if sum(mask)>0:                                                  # Check that points actually fall within the angular segment
-            binrad.append(mean(rad[mask]))                                # Average all points within that phase segment
+            binrad.append(np.mean(rad[mask]))                             # Average all points within that phase segment
             bintheta.append(2*pi*((2*i+1)/2.0)/cbin)
-            averad.append(mean(rad))
+            averad.append(np.mean(rad))
             avetheta.append(2*pi*((2*i+1)/2.0)/cbin)
 
-      inhom=sqrt(mean(((array(binrad)-mean(rad))/mean(rad))**2))          # Inhomogeneity is a measure of standard deviation from the average circle
+      inhom=sqrt(np.mean(((np.array(binrad)-np.mean(rad))/np.mean(rad))**2)) # Inhomogeneity is a measure of standard deviation from the average circle
 
       print 'Inhomogeneity =',inhom
 
@@ -1069,12 +1161,12 @@ while plotopt not in ['quit','exit']:                                     # If t
          for i in range(0,int(cbin)):                                     # For each angular segment...
             mask=((theta>=(2*pi*i/cbin)) & (theta<(2*pi*(i+1)/cbin)))     # Filter all points outside the segment
             if sum(mask)>0:                                               # Check that points actually fall within the angular segment
-               binrad.append(mean(rad[mask]))                             # Average all points within that phase segment
+               binrad.append(np.mean(rad[mask]))                          # Average all points within that phase segment
                bintheta.append(2*pi*((2*i+1)/2.0)/cbin)
-               averad.append(mean(rad))
+               averad.append(np.mean(rad))
                avetheta.append(2*pi*((2*i+1)/2.0)/cbin)
 
-         inhom=sqrt(mean(((array(binrad)-mean(rad))/mean(rad))**2))       # Inhomogeneity is a measure of standard deviation from the average circle
+         inhom=sqrt(np.mean(((np.array(binrad)-np.mean(rad))/np.mean(rad))**2)) # Inhomogeneity is a measure of standard deviation from the average circle
          inhlist.append(inhom)
 
          if max(inhlist)>maxinh:
@@ -1397,8 +1489,8 @@ while plotopt not in ['quit','exit']:                                     # If t
       pl.figure()
       doplot(times,timese,flux,fluxe,ovr=True)                            # Plot flux/time using doplot from pan_lib
 
-      t_lo=percentile(flux,iq_lo)                                         # Fetch thresholds used in get_bursts
-      t_hi=percentile(flux,iq_hi)
+      t_lo=np.percentile(flux,iq_lo)                                      # Fetch thresholds used in get_bursts
+      t_hi=np.percentile(flux,iq_hi)
 
       col_toggle=True
 
@@ -1500,7 +1592,7 @@ while plotopt not in ['quit','exit']:                                     # If t
 
       ls_st=max(4.0/(times[-1]-times[0]),0.005)
       ls_end=0.5/binning
-      lsx=arange(ls_st,ls_end,(ls_end-ls_st)/2500.0)
+      lsx=np.arange(ls_st,ls_end,(ls_end-ls_st)/2500.0)
 
       avail_scargl_bands=['1','2','all']                                  # Define valid user inputs
       if nfiles==3:

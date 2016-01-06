@@ -107,7 +107,7 @@ import warnings
 import scipy.optimize as optm
 from matplotlib.ticker import ScalarFormatter
 from numba import jit
-from numpy import (absolute, arctan, array, arange, ceil, cos, exp, floor, log10, mean, multiply, ones, percentile,    
+from numpy import (absolute, arctan, array, arange, ceil, cos, exp, floor, hstack, log10, mean, multiply, ones, percentile,    
                    pi, sign, sin, sqrt, vstack, zeros)
 from numpy import append as npappend
 from numpy import sum as npsum
@@ -465,6 +465,61 @@ def foldify(t,y,ye,period,binsize,phres=None,name='',compr=False,verb=True):
       return phasx,phasy,phasye
 
 
+#-----Fold_Bursts------------------------------------------------------------------------------------------------------
+
+#@jit
+
+   '''Return Phases Using Bursts as Reference Points
+
+   Description:
+
+    Takes a lightcurve and identifies 'bursts' in the data.  The peak of each burst is considered
+    to be at zero phase, and all other points are assigned phases by linearly interpolating between them.
+
+   Inputs:
+
+    data       - ARRAY: The data in which bursts are sought.
+    q_low      - FLOAT: [Optional: Default=30] The percentile value of the data which will be used as
+                        the low-pass threshold.  This threshold determines the edges of already-located
+                        bursts, and thus changing it will change the quality of bursts but not the
+                        quantity.
+    q_mid      - FLOAT: [Optional: Default=50] The percentile value of the data which will be used as
+                        the med-pass threshold.  This threshold determines how deep an trough must be
+                        before the regions either side of it are considered separate bursts-candidate
+                        regions.  Must be larger than q_low.
+    q_hi       - FLOAT: [Optional: Default=70] The percentile value of the data which will be used as
+                        the hi-pass threshold.  This threshold determines how much peak flux a previously
+                        defined burst-candidate region must be before it is considered a true burst.
+                        larger than q_med.
+
+   Outputs:
+
+    burst_locs -  LIST: A list of tuples containing the start and end indices of each burst.
+
+   -J.M.Court, 2015'''
+
+def fold_bursts(times,data,q_lo=50,q_hi=90):
+
+   assert len(times)==len(data)
+   phases=zeros(len(times))
+   peaks=get_bursts(data,q_lo,q_hi,just_peaks=True)
+   peaks.sort()
+   peak_placemark=0
+   if peaks[0]!=0:
+      peaks=hstack([0,peaks])
+   if peaks[-1]!=len(times)-1:
+      peaks=hstack([peaks,len(times)-1])
+
+   for i in range(len(data)):
+      while i>peaks[peak_placemark+1] and peak_placemark+2<len(peaks):
+         peak_placemark+=1
+      phases[i]=float(times[i]-times[peaks[peak_placemark]])/float(times[peaks[peak_placemark+1]]-times[peaks[peak_placemark]])
+
+   return phases
+      
+      
+
+
 #-----Get_Bursts-------------------------------------------------------------------------------------------------------
 
 #@jit
@@ -493,8 +548,8 @@ def get_bursts(data,q_lo=50,q_hi=90,just_peaks=False):
                         the hi-pass threshold.  This threshold determines how much peak flux a previously
                         defined burst-candidate region must be before it is considered a true burst.
                         larger than q_med.
-    trigger    -   INT: [Optional: Default=2] The number of consecutive data points which must fall
-                        below the low threshold before the start or end of a burst is declared.
+    just_peaks -  BOOL: [Optional: Default=False] If set to true, the function will return a list of peak
+                        indices instead of a list of peak datasets.
 
    Outputs:
 
