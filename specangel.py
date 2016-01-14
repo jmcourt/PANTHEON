@@ -135,7 +135,7 @@ print ''
 def lbin(logfreqres,pow_norm='nupnu',prt=False):                          # Defining a log-binning function that just depends on bin resolution and normalisation
 
    if True:                                                               # Instructions with a list of possible normalisations
-      if norm not in ['rms','nupnu','leahy']:
+      if pow_norm not in ['rms','nupnu','leahy']:
          print 'Unknown normalisation selected!'
          print ''
          print 'Available normalisations are:'
@@ -154,7 +154,7 @@ def lbin(logfreqres,pow_norm='nupnu',prt=False):                          # Defi
       tsfdata=loadmatrix[i]                                               # Load a row of data
       errs=pan.lh2rms(tsfdata,rates[i],bg,0)                              # Errors of a Leahy spectrum = the Leahy spectrum
 
-      if norm in ['rms','nupnu']:
+      if pow_norm in ['rms','nupnu']:
          if pow_norm=='nupnu':
             sconst=const                                                  # For nuP(nu) normalisation, the Leahy constant will need subtracting
          else:
@@ -173,7 +173,7 @@ def lbin(logfreqres,pow_norm='nupnu',prt=False):                          # Defi
 
    fourgr=transpose(fourgr)                                               # Flip the matrices (makes them easier to plot the correct way round in spectrogram)
    errgr=transpose(errgr)
-   return fourgr,errgr,norm
+   return fourgr,errgr,pow_norm
 
 fourgr,errgr,norm=lbin(logfreqres,prt=True,pow_norm=norm)  
 
@@ -216,6 +216,8 @@ print ''
 #-----Setting up Spectrogram Environment-------------------------------------------------------------------------------
 
 es=True                                                                   # Start with errors on by default
+saveplots=False
+show_block=False
 
 def spectrogram(td,tfc,fourgr,zlabel=defzlabl,title=deftitle):            # Defining the creation of the spectrogram plot 's' as a function for clarity later
    pl.close('Spectrogram')                                                # Close any previous spectrograms that may be open
@@ -233,7 +235,7 @@ def spectrogram(td,tfc,fourgr,zlabel=defzlabl,title=deftitle):            # Defi
    ax.set_yscale('log')                                                   # Make the freq-axis logarithmic too
    pl.ylim(tfc[0,0],tfc[-1,-1])                                           # Resize axes to fit the spectrogram
    pl.xlim(td[0,0],td[-1,-1])
-   pl.show(block=False)
+   plot_save(saveplots,show_block)
 
 sxlab='Frequency (Hz)'
 sylab=defzlabl
@@ -263,6 +265,7 @@ def give_inst():                                                          # Defi
    print ''
    print 'TOGGLE OPTIONS:'
    print '* "errors" to toggle errorbars on power spectra plots.'
+   print '* "save" to save to disk any plots which would otherwise be shown.'
    print ''
    print 'OTHER COMMANDS:'
    print '* "info" to display a list of facts and figures about the current SpecAngel session.'
@@ -278,6 +281,13 @@ print ' --------------------'
 sgfloor=max(npmin(fourgrm),0)
 sgceil=npmax(fourgrm)
 
+def plot_save(saveplots,show_block):                                      # Add a function to redirect all show calls to savefigs if toggled
+   if saveplots:
+      pl.savefig(raw_input('Save plot as: '))
+      print 'Plot saved!'
+   else:
+      pl.show(block=show_block)
+
 
 #-----Entering Interactive Mode----------------------------------------------------------------------------------------
 
@@ -288,9 +298,30 @@ while specopt not in ['quit','exit']:                                     # If t
    print ''
 
 
+   #-----Hidden 'stick' option-----------------------------------------------------------------------------------------
+
+   if specopt=='stick':                                                   # For use when scripting with Specangel.  If turned on, this causes
+                                                                          #  all plots to block when shown.
+      show_block=not show_block
+      if show_block:
+         print 'Sticky Plots on!'
+      else:
+         print 'Sticky Plots off!'
+
+
+   #-----'save' option-------------------------------------------------------------------------------------------------
+
+   elif specopt=='save':                                                  # Causes a plot to be saved when it would otherwise have been shown
+      saveplots=not saveplots
+      if saveplots:
+         print 'Plot saving on!'
+      else:
+         print 'Plot saving off!'
+
+
    #-----'rebin' Option------------------------------------------------------------------------------------------------
 
-   if specopt=='rebin':                                                   # Rebinning data    
+   elif specopt=='rebin':                                                 # Rebinning data    
 
       print 'Data currently binned in '+str(tmdbin)+'s and 10^'+str(logfreqres)+'Hz bins.'
 
@@ -529,6 +560,8 @@ while specopt not in ['quit','exit']:                                     # If t
       err=sqrt(npsum( array(errgrm)**2, axis=1))/sum(good)
       ttl='Average power density spectrum'+q_flav
       pan.slplot(tflm,spec,err,sxlab,sylab,ttl,'spc',errors=es,typ='log') # SLPlot from the pan_lib plots data on standard and log-log axes
+      plot_save(saveplots,show_block)
+      
       scerr=spec-(err**0.5)
 
       print 'Maximum power found at '+str(tflm[scerr.argmax()])+'Hz!'     # Suggest a peak location
@@ -566,6 +599,7 @@ while specopt not in ['quit','exit']:                                     # If t
             ger=errgrm[:,specid]
             ttl='Power density spectrum "'+flavour+'" at +'+str(specid*tmdbin)+'s'
             pan.slplot(tflm,gsp,ger,sxlab,sylab,ttl,'spc',typ='log',errors=es)
+            plot_save(saveplots,show_block)
             scerr=spec-(err**0.5)
             
             print 'Maximum power found at '+str(tflm[scerr.argmax()])+'Hz!' # Suggest a peak location
@@ -592,7 +626,7 @@ while specopt not in ['quit','exit']:                                     # If t
       pl.xlabel('Time (s)')
       pl.ylabel('Frequency (Hz)')
       pl.title('Peak Frequency/Time Plot'+q_flav)
-      pl.show(block=False)
+      plot_save(saveplots,show_block)
 
 
    #-----'rates' Option------------------------------------------------------------------------------------------------
@@ -626,7 +660,7 @@ while specopt not in ['quit','exit']:                                     # If t
       pl.xlabel('Time (s)')
       pl.ylabel('Flux (photons/s/PCU)')
       pl.title('Lightcurve'+q_flav)
-      pl.show(block=False)
+      plot_save(saveplots,show_block)
 
 
    #-----'fqflux' Option-----------------------------------------------------------------------------------------------
@@ -663,7 +697,7 @@ while specopt not in ['quit','exit']:                                     # If t
       pl.ylabel(titles[datasel])
       pl.xlabel('Frequency (Hz)')
       pl.title('Flux/Peak Frequency Plot'+q_flav)
-      pl.show(block=False)
+      plot_save(saveplots,show_block)
 
 
    #-----'errors' Option-----------------------------------------------------------------------------------------------

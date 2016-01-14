@@ -1426,8 +1426,8 @@ def slplot(x,y,ye,xlabel,ylabel,title,figid="",typ='both',errors=True):
       ax.set_yscale('log')
       pl.grid(True,which="both")
 
-   if typ in ('lin','log','both'):
-      pl.show(block=False)                                                # Show both plots together
+   #if typ in ('lin','log','both'):
+   #   pl.show(block=False)                                                # Show both plots together
    else:
       print 'Invalid typ!  No plot shown.'                                # Complain if none of 'lin', 'log' or 'both are given as typ word
 

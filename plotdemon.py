@@ -335,6 +335,7 @@ es=True                                                                   # Opti
 cs=False                                                                  # 'cs' with colour key
 ls=False                                                                  # 'ls' with delineation
 folded=False                                                              # 'folded' has been folded over some period
+saveplots=False
 
 def doplot(x,xe,y,ye,ovr=False,ft='-k'):                                  # Defining short function to determine whether errorbars are needed on the fly
                                                                           # 'ovr' allows to override colour and line options, so lightcurves can be made differently
@@ -369,6 +370,13 @@ def doplot(x,xe,y,ye,ovr=False,ft='-k'):                                  # Defi
          pl.plot(x[3],y[3],'oc')
          pl.plot(x[4],y[4],'ob')
 
+def plot_save(saveplots,show_block):                                      # Add a function to redirect all show calls to savefigs if toggled
+   if saveplots:
+      pl.savefig(raw_input('Save plot as: '))
+      print 'Plot saved!'
+   else:
+      pl.show(block=show_block)
+
 def burstplot(key,text,units):
 
    if bursts==None:
@@ -382,7 +390,7 @@ def burstplot(key,text,units):
    pl.xlabel(text,'('+units+')')
    pl.ylabel('Frequency')
    pl.title('Histogram of Burst '+text)
-   pl.show(block=show_block)
+   plot_save(saveplots,show_block)
 
 fldtxt=''
 bursts=None
@@ -451,6 +459,7 @@ def give_inst():                                                          # Defi
    print '* "errors" to toggle whether to display errors in plots.'
    print '* "lines" to toggle lines joining points in graphs.'
    print '* "ckey" to toggle colour key (red-blue) for the first five points in all plots.'
+   print '* "save" to save to disk any plots which would otherwise be shown.'
    print ''
    print 'OTHER COMMANDS:'
    print '* "info" to display a list of facts and figures about the current PlotDemon session.'
@@ -486,13 +495,23 @@ while plotopt not in ['quit','exit']:                                     # If t
 
    #-----Hidden 'stick' option-----------------------------------------------------------------------------------------
 
-   if plotopt=='stick':                                                   # For use when scripting with Plotdemon.  If turned on, this causes
+   elif plotopt=='stick':                                                 # For use when scripting with Plotdemon.  If turned on, this causes
                                                                           #  all plots to block when shown.
       show_block=not show_block
       if show_block:
          print 'Sticky Plots on!'
       else:
          print 'Sticky Plots off!'
+
+
+   #-----'save' option-------------------------------------------------------------------------------------------------
+
+   elif plotopt=='save':                                                  # Causes a plot to be saved when it would otherwise have been shown
+      saveplots=not saveplots
+      if saveplots:
+         print 'Plot saving on!'
+      else:
+         print 'Plot saving off!'
 
 
    #-----'rebin' option------------------------------------------------------------------------------------------------
@@ -863,7 +882,7 @@ while plotopt not in ['quit','exit']:                                     # If t
       pl.ylabel(flux_axis)
       pl.ylim(ymin=0)
       pl.title(fldtxt+'Lightcurve'+qflav)
-      pl.show(block=show_block)
+      plot_save(saveplots,show_block)
       print 'Lightcurve plotted!'
 
 
@@ -893,7 +912,7 @@ while plotopt not in ['quit','exit']:                                     # If t
             pl.ylabel(flux_axis)
             pl.ylim(ymin=0)
             pl.title(fldtxt+'Lightcurve'+qflav)
-            pl.show(block=show_block)
+            plot_save(saveplots,show_block)
             print 'Background plotted!'
          except:
             print 'Backgrounds inconsistenly formatted!'                  # Abort if backgrounds are somehow of different lengths'
@@ -1155,7 +1174,7 @@ while plotopt not in ['quit','exit']:                                     # If t
       ax.plot(bintheta,binrad,'b-')                                       # Print inhomogeneity line
       ax.set_title('Circle Diagram ('+str(cftime)+'s folding)')
       ax.set_rmax(1.05*limany)
-      pl.show(block=show_block)
+      plot_save(saveplots,show_block)
       pl.close()
 
 
@@ -1295,7 +1314,7 @@ while plotopt not in ['quit','exit']:                                     # If t
             pl.ylabel(flux_axis)
             pl.xlabel('('+ch[h1]+'/'+ch[h2]+') colour')
             pl.title(fldtxt+'Hardness Intensity Diagram'+qflav)
-            pl.show(block=show_block)
+            plot_save(saveplots,show_block)
             print 'File'+str(h1)+'/File'+str(h2)+' HID plotted!'
 
       else:
@@ -1341,7 +1360,7 @@ while plotopt not in ['quit','exit']:                                     # If t
             pl.ylabel('('+ch[h1]+'/'+ch[h2]+') colour')
             pl.ylim(ymin=0)
             pl.title(fldtxt+'Colour over Time Diagram'+qflav)
-            pl.show(block=show_block)
+            plot_save(saveplots,show_block)
             print 'File'+str(h1)+'/File'+str(h2)+' Colour over Time Diagram plotted!'
 
       else:
@@ -1360,7 +1379,7 @@ while plotopt not in ['quit','exit']:                                     # If t
          pl.xlim(0,2)
          pl.ylim(0,2)
          pl.title(fldtxt+'Colour-Colour Diagram'+qflav)
-         pl.show(block=show_block)
+         plot_save(saveplots,show_block)
          print 'CCD plotted!'
       else:
          print 'Not enough infiles for CCD!'
@@ -1420,7 +1439,7 @@ while plotopt not in ['quit','exit']:                                     # If t
          pl.title(fldtxt+'CCD'+qflav)
 
       print ''
-      pl.show(block=show_block)
+      plot_save(saveplots,show_block)
       print 'All products plotted!'
 
 
@@ -1460,7 +1479,7 @@ while plotopt not in ['quit','exit']:                                     # If t
          pl.ylabel(flux_axis)
          pl.ylim(ymin=0)
          pl.title(fldtxt+b_band_name+'Lightcurve'+qflav)
-         pl.show(block=show_block)
+         plot_save(saveplots,show_block)
          print b_band_name+' lightcurve plotted!'
 
 
@@ -1491,7 +1510,7 @@ while plotopt not in ['quit','exit']:                                     # If t
          pl.ylabel(flux_axis)
          pl.title(fldtxt+ch[3]+' Lightcurve'+flv3)
 
-      pl.show(block=show_block)
+      plot_save(saveplots,show_block)
       print 'Banded lightcurves plotted!'
 
 
@@ -1516,7 +1535,7 @@ while plotopt not in ['quit','exit']:                                     # If t
       pl.xlabel(taxis)
       pl.ylabel(flux_axis)
       pl.title(fldtxt+'Lightcurve'+qflav)
-      pl.show(block=show_block)
+      plot_save(saveplots,show_block)
       print 'Banded lightcurves plotted!'
 
 
@@ -1566,7 +1585,7 @@ while plotopt not in ['quit','exit']:                                     # If t
       pl.ylabel(flux_axis)
       pl.ylim(ymin=0)
       pl.title(fldtxt+'Lightcurve with Bursts Highlighted'+qflav)
-      pl.show(block=show_block)
+      plot_save(saveplots,show_block)
 
       print ''
       print 'Bursts plotted!'
@@ -1678,7 +1697,7 @@ while plotopt not in ['quit','exit']:                                     # If t
          pl.ylim(1,100000)
          pl.yscale('log')
          pl.title('Lomb-Scargle Periodogram of '+s_band_name+qflav)
-         pl.show(block=show_block)
+         plot_save(saveplots,show_block)
 
          print ''
          print 'Lomb-Scargle Diagram of '+s_band_name+' plotted!'
