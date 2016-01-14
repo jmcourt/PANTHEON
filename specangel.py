@@ -606,6 +606,9 @@ while specopt not in ['quit','exit']:                                     # If t
 
       datasel=raw_input('Select Rates to plot [ave/peak/trough]: ')
 
+      brates={}
+      titles={}
+
       titles['ave']='Flux (photons/s/PCU)'
       titles['peak']='Peak '+str(binfac*binsize)+'s Flux (photons/s/PCU)'
       titles['trough']='Trough '+str(binfac*binsize)+'s Flux (photons/s/PCU)'

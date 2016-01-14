@@ -407,6 +407,7 @@ def give_inst():                                                          # Defi
    print '1+ DATASET PLOTS:'
    print '* "lc" to plot a simple graph of flux over time.'
    print '* "bg" to plot background over time, if background has been estimated for these files.'
+   print '* "bgdump" to export background lightcurve to an ASCII file.'
    print '* "animate" to create an animation of the lightcurve as the binning is increased.'
    print '* "circanim" to create an animation of the lightcurve circularly folded as the period is increased.'
    print '* "lombscargle" to create a Lomb-Scargle periodogram of the lightcurve.'
@@ -896,6 +897,49 @@ while plotopt not in ['quit','exit']:                                     # If t
             print 'Background plotted!'
          except:
             print 'Backgrounds inconsistenly formatted!'                  # Abort if backgrounds are somehow of different lengths'
+
+      else:
+         print 'Not all files have background data!'
+
+
+   #-----'bgdump' Option-----------------------------------------------------------------------------------------------
+
+   elif plotopt=='bgdump':                                                # Export background lightcurve
+
+      is_bdata=(bdata1!=None)
+      if nfiles>=2:
+         is_bdata=is_bdata and (bdata2!=None)
+      if nfiles==3:
+         is_bdata=is_bdata and (bdata3!=None)
+
+      if is_bdata:                                                        # Only proceed if all infiles have background data
+
+         try:
+            bdata_x=bdata1[0]
+            bdata_y=bdata1[1]
+            if nfiles>=2:
+               bdata_y+=bdata2[1]
+            if nfiles==3:
+               bdata_y+=bdata3[1]                                         # Sum counts of all <=3 backgrounds
+
+         except:
+            print 'Backgrounds inconsistenly formatted!'                  # Abort if backgrounds are somehow of different lengths'
+            continue
+
+         ofilename=raw_input('Save textfile as: ')                     # Fetch filename from user
+
+         ofil = open(ofilename, 'w')                                   # Open file
+
+         for i in range(len(bdata_x)):
+
+            row=['0.0']*3                                              # Create a row of strings reading 0.0, append data into it
+            row[0]=str(bdata_x[i])+' '                                 # Column 01: Time
+            row[1]=str(bdata_y[i])+' '                                 # Column 02: Rate
+            row[2]='\n'
+            ofil.writelines(row) 
+
+         print 'Background saved as '+ofilename+'!'
+
 
       else:
          print 'Not all files have background data!'
