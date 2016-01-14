@@ -143,8 +143,8 @@ def lbin(logfreqres,pow_norm='nupnu',prt=False):                          # Defi
          print '* "rms" for RMS-normalised power'
          print '* "nupnu" for RMS-normalised power multiplied by frequency'
          print ''
-         print 'Using "leahy" normalisation:'
-         pow_norm='leahy'
+         print 'Using "nupnu" normalisation:'
+         pow_norm='nupnu'
       else:
          print 'Using "'+pow_norm+'" normalisation:'
 
