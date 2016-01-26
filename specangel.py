@@ -782,7 +782,7 @@ while specopt not in ['quit','exit']:                                     # If t
 
    elif specopt=='export':
 
-      aflname=raw_input('Filename:')
+      aflname=raw_input('Filename: ')
       try:
 
          assert len(aflname)>0
@@ -790,7 +790,7 @@ while specopt not in ['quit','exit']:                                     # If t
          spec=npsum(fourgrm, axis=1)/sum(good)                            # Sum all spectra in the matrix and divide by the number of good columns
          err=sqrt(npsum( array(errgrm)**2, axis=1))/sum(good)
          for i in range(len(tflm)):
-            a=[str(tflm[i]),' ',str(spec[i]),' ',str(err[i]),'\n']
+            a=[str(tflm[i]),' ',str(spec[i]),' ',str(err[i]),'\n']        # Frequency, Power, Error
             fle.writelines(a)
          fle.close()
 
