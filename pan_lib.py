@@ -1244,7 +1244,7 @@ def rms(data):
 
    Description:
 
-    Returns the normalised RMS of a 1-dimensional data set
+    Returns the fractional RMS of a 1-dimensional data set
 
    Inputs:
 

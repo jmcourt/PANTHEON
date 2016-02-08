@@ -495,7 +495,7 @@ while plotopt not in ['quit','exit']:                                     # If t
 
    #-----Hidden 'stick' option-----------------------------------------------------------------------------------------
 
-   elif plotopt=='stick':                                                 # For use when scripting with Plotdemon.  If turned on, this causes
+   if plotopt=='stick':                                                   # For use when scripting with Plotdemon.  If turned on, this causes
                                                                           #  all plots to block when shown.
       show_block=not show_block
       if show_block:
