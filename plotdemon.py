@@ -993,27 +993,27 @@ while plotopt not in ['quit','exit']:                                     # If t
          for i in range(len(times)):
 
             row=['0.0 ']*15                                               # Create a row of strings reading 0.0, append data into it
-            row[0]=str(times[i]*exfac)+' '                                # Column 01: Time
-            row[1]=str(timese[i]*exfac)+' '                               # Column 02: Time Error
-            row[2]=str(flux[i])+' '                                       # Column 03: Total Flux
-            row[3]=str(fluxe[i])+' '                                      # Column 04: Total Flux Error
-            row[4]=str(y1[gmask][i])+' '                                  # Column 05: Band 1 Flux
-            row[5]=str(ye1[gmask][i])+' '                                 # Column 06: Band 1 Flux Error
-            row[14]='\n'                                                  # Column 15: Return (so further data will be appended to a new line)
+            row[0]=str(times[i]*exfac)+' '                                # Column 00: Time
+            row[1]=str(timese[i]*exfac)+' '                               # Column 01: Time Error
+            row[2]=str(flux[i])+' '                                       # Column 02: Total Flux
+            row[3]=str(fluxe[i])+' '                                      # Column 03: Total Flux Error
+            row[4]=str(y1[gmask][i])+' '                                  # Column 04: Band 1 Flux
+            row[5]=str(ye1[gmask][i])+' '                                 # Column 05: Band 1 Flux Error
+            row[14]='\n'                                                  # Column 14: Return (so further data will be appended to a new line)
 
             if nfiles>1:                                                  # If 2+ bands are given:
 
-               row[6]=str(y2[gmask][i])+' '                               # Column 07: Band 2 Flux
-               row[7]=str(ye2[gmask][i])+' '                              # Column 08: Band 2 Flux Error
-               row[10]=str(col[21][i])+' '                                # Column 11: [2/1] Colour
-               row[11]=str(cole[21][i])+' '                               # Column 12: [2/1] Colour Error
+               row[6]=str(y2[gmask][i])+' '                               # Column 06: Band 2 Flux
+               row[7]=str(ye2[gmask][i])+' '                              # Column 07: Band 2 Flux Error
+               row[10]=str(col[21][i])+' '                                # Column 10: [2/1] Colour
+               row[11]=str(cole[21][i])+' '                               # Column 11: [2/1] Colour Error
 
             if nfiles==3:                                                 # If 3 bands are given:
 
-               row[8]=str(y3[gmask][i])+' '                               # Column 09: Band 3 Flux
-               row[9]=str(ye3[gmask][i])+' '                              # Column 10: Band 3 Flux Error
-               row[12]=str(col[31][i])+' '                                # Column 13: [3/1] Colour
-               row[13]=str(cole[31][i])+' '                               # Column 14: [3/1] Colour Error
+               row[8]=str(y3[gmask][i])+' '                               # Column 08: Band 3 Flux
+               row[9]=str(ye3[gmask][i])+' '                              # Column 09: Band 3 Flux Error
+               row[12]=str(col[31][i])+' '                                # Column 12: [3/1] Colour
+               row[13]=str(cole[31][i])+' '                               # Column 13: [3/1] Colour Error
 
             ofil.writelines(row)                                          # Append row of data into open file
 

@@ -105,6 +105,7 @@ except:
 import pylab as pl
 import warnings
 import scipy.optimize as optm
+import scipy.interpolate as intp
 import numpy as np
 from matplotlib.ticker import ScalarFormatter
 from numba import jit
@@ -491,6 +492,7 @@ def fold_bursts(times,data,q_lo=50,q_hi=90):
                         defined burst-candidate region must be before it is considered a true burst.
                         larger than q_med.
 
+
    Outputs:
 
     burst_locs -  LIST: A list of tuples containing the start and end indices of each burst.
@@ -520,7 +522,7 @@ def fold_bursts(times,data,q_lo=50,q_hi=90):
 #-----Get_Bursts-------------------------------------------------------------------------------------------------------
 
 #@jit
-def get_bursts(data,q_lo=50,q_hi=90,just_peaks=False):
+def get_bursts(data,q_lo=50,q_hi=90,just_peaks=False,errors=None,smooth=False):
 
    '''Return Bursts
 
@@ -533,20 +535,20 @@ def get_bursts(data,q_lo=50,q_hi=90,just_peaks=False):
    Inputs:
 
     data       - ARRAY: The data in which bursts are sought.
-    q_low      - FLOAT: [Optional: Default=30] The percentile value of the data which will be used as
+    q_low      - FLOAT: [Optional: Default=50] The percentile value of the data which will be used as
                         the low-pass threshold.  This threshold determines the edges of already-located
                         bursts, and thus changing it will change the quality of bursts but not the
                         quantity.
-    q_mid      - FLOAT: [Optional: Default=50] The percentile value of the data which will be used as
-                        the med-pass threshold.  This threshold determines how deep an trough must be
-                        before the regions either side of it are considered separate bursts-candidate
-                        regions.  Must be larger than q_low.
-    q_hi       - FLOAT: [Optional: Default=70] The percentile value of the data which will be used as
+    q_hi       - FLOAT: [Optional: Default=90] The percentile value of the data which will be used as
                         the hi-pass threshold.  This threshold determines how much peak flux a previously
                         defined burst-candidate region must be before it is considered a true burst.
                         larger than q_med.
     just_peaks -  BOOL: [Optional: Default=False] If set to true, the function will return a list of peak
                         indices instead of a list of peak datasets.
+    errors     - ARRAY: [Optional: Default=None] The errors associated with each data point.  These are used
+                        as weighting for the spline; if spline is not used, data is not required.
+    smooth     -  BOOL: [Optional: Default=False] If set to true, applies a univariate spline to the data
+                        to smooth it.
 
    Outputs:
 
@@ -554,23 +556,20 @@ def get_bursts(data,q_lo=50,q_hi=90,just_peaks=False):
 
    -J.M.Court, 2015'''
 
-   #assert q_hi>=q_lo
-
    high_thresh=np.percentile(data,q_hi)
    low_thresh=np.percentile(data,q_lo)
    over_thresh=data>low_thresh                                            # Create a Boolean array by testing whether the input array is above the mid
                                                                           #  threshold.  Each region of consecutive 'True' objects is considered a burst-
                                                                           #  -candidate region.
+
+   if smooth:                                                             # If user has requested smoothing...
+      data=spliner(data,errors)                                           #  Smooth it!
+
    peak_locs=[]
    burst_locs=[]
    while True:                                                            
                                                                           
       masked=np.array(data)*over_thresh                                   # Reduce all data outside of burst-candidate regions to zero
-      #pl.figure()
-      #pl.plot(masked,'k')
-      #pl.plot([low_thresh]*len(masked),'r')
-      #pl.plot([high_thresh]*len(masked),'g')
-      #pl.show(block=True)
       if max(masked)<high_thresh:                                         # If highest peak in all remaining burst-candidate regions is below the high threshold,
                                                                           #  assume there are no more bursts to be found.
          break
@@ -607,8 +606,7 @@ def get_bursts(data,q_lo=50,q_hi=90,just_peaks=False):
 
 #-----Get Dip----------------------------------------------------------------------------------------------------------
 
-@jit
-def get_dip(data,start,finish):
+def get_dip(data,start,finish,errors=None,smooth=False):
 
    '''Return Dip
 
@@ -618,9 +616,13 @@ def get_dip(data,start,finish):
 
    Inputs:
 
-    data    - LIST: The dataset in which a trough is to be found
-    start   -  INT: The index of the startpoint of the user-defined sub-range
-    finish  -  INT: The index of the endpoint of the user-defined sub-range
+    data    - LIST:  The dataset in which a trough is to be found
+    start   -  INT:  The index of the startpoint of the user-defined sub-range
+    finish  -  INT:  The index of the endpoint of the user-defined sub-range
+    errors  - ARRAY: [Optional: Default=None] The errors associated with each data point.  These are used
+                     as weighting for the spline; if spline is not used, data is not required.
+    smooth  -  BOOL: [Optional: Default=False] If set to true, applies a univariate spline to the data
+                     to smooth it.
 
    Outputs:
 
@@ -630,12 +632,108 @@ def get_dip(data,start,finish):
 
    data=np.array(data)
    data_l=np.arange(len(data))
+   if smooth:
+      data=spliner(data,errors)
    data=data*(data_l>=start)*(data_l<finish)
-   data[data==0]=max(data)
-   for i in range(start+1,finish-1):
-      data[i]=(data[i]+data[i+1]+data[i-1])/3.0
+   data[data==0]=max(data)      
    keycol_loc=data.tolist().index(min(data))
    return keycol_loc 
+
+#-----Get Phase--------------------------------------------------------------------------------------------------------
+
+#@jit
+def get_phases(data,errors=None,q_lo=20,q_hi=90):
+
+   '''Return Phases
+
+   Description:
+
+    Given a set of data points evenly spaced in time, returns the phase coordinate of each point.
+
+   Inputs:
+
+    data   - ARRAY: The data in which bursts are sought.
+    errors - ARRAY: [Optional: Default=None] The errors associated with each data point.  These are used
+                    as weighting for the spline; if spline is not used, data will not be weighted.
+    q_low  - FLOAT: [Optional: Default=20] The percentile value of the data which will be used as
+                    the low-pass threshold.  This threshold determines the edges of already-located
+                    bursts, and thus changing it will change the quality of bursts but not the
+                    quantity.
+    q_hi   - FLOAT: [Optional: Default=90] The percentile value of the data which will be used as
+                    the hi-pass threshold.  This threshold determines how much peak flux a previously
+                    defined burst-candidate region must be before it is considered a true burst.
+                    larger than q_med.
+
+   Outputs:
+
+    phases - ARRAY: The phase coordinates of the input data
+
+   -J.M.C.Court, 2016'''
+
+   data_keys=range(len(data))                                             # Generate the data indices
+   data=np.array(data)                                                    # Format the input data
+   if errors!=None:
+      errors=np.array(errors)
+
+   data_phas=np.zeros(len(data),dtype=float)                              # Create the phase array
+   peak_keys=get_bursts(data,q_lo=q_lo,q_hi=q_hi,just_peaks=True,smooth=True,errors=errors)
+   peak_keys.sort()                                                       # Fetch and sort the indices corresponding to peaks
+   dip_keys=[]                                                            # Create empty array for indices of dips
+   if peak_keys[0]!=0:
+      dip_keys.append(get_dip(data,0,peak_keys[0]))                       # If there is no peak in the first slot, prepend a false dip at element 0
+   for i in range(len(peak_keys)-1):
+      dip_keys.append(get_dip(data,peak_keys[i],peak_keys[i+1]))          # For every pair of peaks, fetch the index of the dip between them
+   if peak_keys[-1]!=data_keys[-1]:
+      dip_keys.append(get_dip(data,peak_keys[-1],data_keys[-1]))          # If there is no peak in the last slot, append a false dip at element -1
+   data_keys=np.array(data_keys)
+   peak_keys=np.array(peak_keys)
+   dip_keys=np.array(dip_keys)
+
+   if peak_keys[0]==0:                                                    # Prepend false dips/peaks at 0 or at a negative index to force all comparisons
+                                                                          # to be valid.  This has the effect of making the fit messy near the beginning and
+                                                                          # end of the time series, but this is not aviodable.
+      dip_keys=np.hstack((-1,dip_keys))                                   #
+   elif dip_keys[0]==0:                                                   #
+      peak_keys=np.hstack((-1,peak_keys))                                 #                                       ^
+   elif peak_keys[0]<dip_keys[0]:                                         #                                       |
+      dip_keys=np.hstack((0,dip_keys))                                    #                                       |
+      peak_keys=np.hstack((-1,peak_keys))                                 #                                       |
+   else:                                                                  #                                       |
+      peak_keys=np.hstack((0,peak_keys))                                  #                                       |
+      dip_keys=np.hstack((-1,dip_keys))                                   #                                       |
+                                                                          #                                       |
+   if peak_keys[-1]==data_keys[-1]:                                       # Appending false dips/peaks, see above |
+      dip_keys=np.hstack((dip_keys,data_keys[-1]+1))
+   elif dip_keys[-1]==data_keys[-1]:
+      peak_keys=np.hstack((peak_keys,data_keys[-1]+1))
+   elif peak_keys[-1]>dip_keys[-1]:
+      dip_keys =np.hstack((dip_keys ,data_keys[-1]))
+      peak_keys=np.hstack((peak_keys,data_keys[-1]+1)) 
+   else:
+      peak_keys=np.hstack((peak_keys,data_keys[-1]))
+      dip_keys =np.hstack((dip_keys ,data_keys[-1]+1)) 
+   
+   for key in data_keys:                                                  # For each key, extract phase
+      if key in peak_keys:                                                # If key is a peak, set phase to 0.5
+         data_phas[key]=0.5
+         continue
+      elif key in dip_keys:                                               # If key is a dip, set phase to 0.0
+         continue
+      prev_peak=peak_keys[peak_keys<key][-1]                              # Otherwise, collect the keys of the previous/next peaks and dips
+      prev_dip =dip_keys[ dip_keys<key][-1]
+      next_peak=peak_keys[peak_keys>key][0]
+      next_dip =dip_keys[ dip_keys>key][0]
+      is_in_fall=(prev_peak>prev_dip)                                     # If the considered element's most recent peak was more recent than
+                                                                          #  the most recent dip, then it is in the 'fall' regime (phase>0.5)
+      prev_marker=float(max(prev_peak,prev_dip))                          # Collect the indices of the previous/next significant points of either type
+      next_marker=float(min(next_peak,next_dip))
+      phase=0.5*(float(key)-prev_marker)/(next_marker-prev_marker)        # Define phase as half the considered point's fractional distance between them
+      if is_in_fall:
+         phase+=0.5                                                       # Add 0.5 in the fall regime
+      data_phas[key]=phase
+
+   return data_phas
+
 
 #-----GTIMask----------------------------------------------------------------------------------------------------------
 
@@ -1431,6 +1529,41 @@ def slplot(x,y,ye,xlabel,ylabel,title,figid="",typ='both',errors=True):
    else:
       print 'Invalid typ!  No plot shown.'                                # Complain if none of 'lin', 'log' or 'both are given as typ word
 
+
+#-----Spliner----------------------------------------------------------------------------------------------------------
+
+@jit
+def spliner(data,errors=None):
+
+   '''Spliner
+
+   Description:
+
+    Smooths evenly-sampled data using a first-order Univariate spline algorithm
+
+   Inputs:
+
+    data        - ARRAY: The data to be smoothed
+    errors      - ARRAY: [Optional] The errors associated with the errors
+
+   Outputs:
+
+    smooth_data - ARRAY: The smoothed data values
+
+   - J.M.C.Court,2016'''
+
+   if type(errors)=='NoneType':
+      errors=np.ones(len(data))                                        #  If no errors given, do not weight points
+   else:
+      assert len(errors)==len(data)
+   spline=intp.UnivariateSpline(range(len(data)),data,w=errors**-1,k=2)#  Construct a univariate spline function from the data
+   #pl.figure()                                                        #  Uncomment these 4 lines to allow for display of smoothed and pre-smoothed data
+   #pl.plot(data_keys,data,'0.5')
+   #smooth_data=[spline(i) for i in range(len(data))]                   #  Reconstruct the data using the spline
+   smooth_data=spline(range(len(data)))
+   #pl.plot(data_keys,data,'k')
+   #pl.show(block=True)
+   return smooth_data
 
 #-----SpecaLd----------------------------------------------------------------------------------------------------------
 
