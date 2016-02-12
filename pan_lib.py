@@ -520,10 +520,10 @@ def fold_bursts(times,data,q_lo=50,q_hi=90):
 #-----Gauss------------------------------------------------------------------------------------------------------------
 
 @jit
+def gauss(mean,standev,x):
 
    '''Gauss.  Returns a Gaussian'''
 
-def gauss(mean,standev,x):
    return (1.0/(standev*(2*np.pi)**0.5))*np.exp(-(x-mean)**2/(2*(standev**2)))
 
 #-----Get_Bursts-------------------------------------------------------------------------------------------------------
@@ -611,6 +611,60 @@ def get_bursts(data,q_lo=50,q_hi=90,just_peaks=False,errors=None,smooth=False):
    return burst_locs
 
 
+#-----Get_Bursts_Windowed----------------------------------------------------------------------------------------------
+
+#@jit
+def get_bursts_windowed(data,windows,q_lo=50,q_hi=90,errors=None,smooth=False):
+
+   '''Get Bursts
+
+   Description:
+
+    Takes a lightcurve and identifies 'bursts' in the data; short, discrete regions of increased flux.
+    Returns the locations of all peaks identified as a list of tuples, each of which consist of two
+    integers which correspond to the indices of the start and end of a peak in the original data.
+    Currently can only return the location of all burst peaks.
+
+   Inputs:
+
+    data       - ARRAY: The data in which bursts are sought.
+    windows    -   INT: The number of windows into which to divide the data
+    q_low      - FLOAT: [Optional: Default=50] The percentile value of the data which will be used as
+                        the low-pass threshold.  This threshold determines the edges of already-located
+                        bursts, and thus changing it will change the quality of bursts but not the
+                        quantity.
+    q_hi       - FLOAT: [Optional: Default=90] The percentile value of the data which will be used as
+                        the hi-pass threshold.  This threshold determines how much peak flux a previously
+                        defined burst-candidate region must be before it is considered a true burst.
+                        larger than q_med.
+    errors     - ARRAY: [Optional: Default=None] The errors associated with each data point.  These are used
+                        as weighting for the spline; if spline is not used, data is not required.
+    smooth     -  BOOL: [Optional: Default=False] If set to true, applies a univariate spline to the data
+                        to smooth it.
+
+   Outputs:
+
+    burst_locs -  LIST: A list of tuples containing the peak of each burst.
+
+   -J.M.C.Court, 2016'''
+
+   windows=int(windows)
+   windowlength=len(data)/windows
+   windowexcess=len(data)%windows
+   win_starts=[windowlength*i for i in range(windows)]
+   win_ends=[windowlength*(i+1) for i in range(windows-1)]
+   win_ends.append(len(data)+1)
+   print win_starts
+   peak_locs=[]
+
+   for i in range(windows):
+
+      new_bursts=np.array(get_bursts(data[win_starts[i]:win_ends[i]],q_lo=q_lo,q_hi=q_hi,just_peaks=True,errors=errors,smooth=smooth))
+      new_bursts+=win_starts[i]
+      peak_locs+=new_bursts.tolist()
+
+   return peak_locs
+
 #-----Get Dip----------------------------------------------------------------------------------------------------------
 
 def get_dip(data,start,finish,errors=None,smooth=False):
@@ -650,7 +704,7 @@ def get_dip(data,start,finish,errors=None,smooth=False):
 #-----Get Phase--------------------------------------------------------------------------------------------------------
 
 #@jit
-def get_phases(data,errors=None,q_lo=20,q_hi=90):
+def get_phases(data,errors=None,windows=1,q_lo=20,q_hi=90):
 
    '''Get Phases
 
@@ -660,17 +714,18 @@ def get_phases(data,errors=None,q_lo=20,q_hi=90):
 
    Inputs:
 
-    data   - ARRAY: The data in which bursts are sought.
-    errors - ARRAY: [Optional: Default=None] The errors associated with each data point.  These are used
-                    as weighting for the spline; if spline is not used, data will not be weighted.
-    q_low  - FLOAT: [Optional: Default=20] The percentile value of the data which will be used as
-                    the low-pass threshold.  This threshold determines the edges of already-located
-                    bursts, and thus changing it will change the quality of bursts but not the
-                    quantity.
-    q_hi   - FLOAT: [Optional: Default=90] The percentile value of the data which will be used as
-                    the hi-pass threshold.  This threshold determines how much peak flux a previously
-                    defined burst-candidate region must be before it is considered a true burst.
-                    larger than q_med.
+    data   -  ARRAY: The data in which bursts are sought.
+    errors  - ARRAY: [Optional: Default=None] The errors associated with each data point.  These are used
+                     as weighting for the spline; if spline is not used, data will not be weighted.
+    windows -   INT: [Optional: Default=1] The number of windows into which to divide the data for analysis
+    q_low   - FLOAT: [Optional: Default=20] The percentile value of the data which will be used as
+                     the low-pass threshold.  This threshold determines the edges of already-located
+                     bursts, and thus changing it will change the quality of bursts but not the
+                     quantity.
+    q_hi    - FLOAT: [Optional: Default=90] The percentile value of the data which will be used as
+                     the hi-pass threshold.  This threshold determines how much peak flux a previously
+                     defined burst-candidate region must be before it is considered a true burst.
+                     larger than q_med.
 
    Outputs:
 
@@ -684,7 +739,7 @@ def get_phases(data,errors=None,q_lo=20,q_hi=90):
       errors=np.array(errors)
 
    data_phas=np.zeros(len(data),dtype=float)                              # Create the phase array
-   peak_keys=get_bursts(data,q_lo=q_lo,q_hi=q_hi,just_peaks=True,smooth=True,errors=errors)
+   peak_keys=get_bursts_windowed(data,windows,q_lo=50,q_hi=90,errors=None,smooth=False)
    peak_keys.sort()                                                       # Fetch and sort the indices corresponding to peaks
    dip_keys=[]                                                            # Create empty array for indices of dips
    if peak_keys[0]!=0:
@@ -740,7 +795,7 @@ def get_phases(data,errors=None,q_lo=20,q_hi=90):
          phase+=0.5                                                       # Add 0.5 in the fall regime
       data_phas[key]=phase
 
-   return data_phas
+   return data_phas  
 
 
 #-----GTIMask----------------------------------------------------------------------------------------------------------
@@ -1560,7 +1615,7 @@ def spliner(data,errors=None):
 
    - J.M.C.Court,2016'''
 
-   if type(errors)=='NoneType':
+   if type(errors)==type(None):
       errors=np.ones(len(data))                                        #  If no errors given, do not weight points
    else:
       assert len(errors)==len(data)
