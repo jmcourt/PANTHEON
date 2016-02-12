@@ -514,17 +514,24 @@ def fold_bursts(times,data,q_lo=50,q_hi=90):
          peak_placemark+=1
       phases[i]=float(times[i]-times[peaks[peak_placemark]])/float(times[peaks[peak_placemark+1]]-times[peaks[peak_placemark]])
 
-   return phases
-      
-      
+   return phases   
 
+
+#-----Gauss------------------------------------------------------------------------------------------------------------
+
+@jit
+
+   '''Gauss.  Returns a Gaussian'''
+
+def gauss(mean,standev,x):
+   return (1.0/(standev*(2*np.pi)**0.5))*np.exp(-(x-mean)**2/(2*(standev**2)))
 
 #-----Get_Bursts-------------------------------------------------------------------------------------------------------
 
 #@jit
 def get_bursts(data,q_lo=50,q_hi=90,just_peaks=False,errors=None,smooth=False):
 
-   '''Return Bursts
+   '''Get Bursts
 
    Description:
 
@@ -608,7 +615,7 @@ def get_bursts(data,q_lo=50,q_hi=90,just_peaks=False,errors=None,smooth=False):
 
 def get_dip(data,start,finish,errors=None,smooth=False):
 
-   '''Return Dip
+   '''Get Dips
 
    Description:
 
@@ -639,12 +646,13 @@ def get_dip(data,start,finish,errors=None,smooth=False):
    keycol_loc=data.tolist().index(min(data))
    return keycol_loc 
 
+
 #-----Get Phase--------------------------------------------------------------------------------------------------------
 
 #@jit
 def get_phases(data,errors=None,q_lo=20,q_hi=90):
 
-   '''Return Phases
+   '''Get Phases
 
    Description:
 
