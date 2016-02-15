@@ -1616,14 +1616,13 @@ def spliner(data,errors=None):
    - J.M.C.Court,2016'''
 
    if type(errors)==type(None):
-      errors=np.ones(len(data))                                        #  If no errors given, do not weight points
+      errors=np.ones(len(data))                                           #  If no errors given, do not weight points
    else:
       assert len(errors)==len(data)
-   spline=intp.UnivariateSpline(range(len(data)),data,w=errors**-1,k=2)#  Construct a univariate spline function from the data
-   #pl.figure()                                                        #  Uncomment these 4 lines to allow for display of smoothed and pre-smoothed data
+   spline=intp.(range(len(data)),data,w=errors**-1,k=2)                   #  Construct a univariate spline function from the data
+   #pl.figure()                                                           #  Uncomment these 4 lines to allow for display of smoothed and pre-smoothed data
    #pl.plot(data_keys,data,'0.5')
-   #smooth_data=[spline(i) for i in range(len(data))]                   #  Reconstruct the data using the spline
-   smooth_data=spline(range(len(data)))
+   smooth_data=spline(range(len(data)))                                   #  Reconstruct the data using the spline
    #pl.plot(data_keys,data,'k')
    #pl.show(block=True)
    return smooth_data
