@@ -665,6 +665,7 @@ def get_bursts_windowed(data,windows,q_lo=50,q_hi=90,errors=None,smooth=False):
 
    return peak_locs
 
+
 #-----Get Dip----------------------------------------------------------------------------------------------------------
 
 def get_dip(data,start,finish,errors=None,smooth=False):
@@ -797,6 +798,17 @@ def get_phases(data,errors=None,windows=1,q_lo=20,q_hi=90):
 
    return data_phas  
 
+#-----Get Phase INTP---------------------------------------------------------------------------------------------------
+
+   def get_phase_intp(data,errors=None,windows=1,q_lo=20,q_hi=90):
+
+      peaks=get_bursts_windowed(data,windows,q_lo=50,q_hi=90,errors=None,smooth=False)
+      data=np.array(data)
+      t_phases=np.arange(len(peaks))+0.5
+      spline=intp.UnivariateSpline(peaks, t_phases, k=2, s=0)
+      phases=spline(range(len(data)))
+      phases=np.remainder(phases,1)
+      return phases 
 
 #-----GTIMask----------------------------------------------------------------------------------------------------------
 
@@ -1619,7 +1631,7 @@ def spliner(data,errors=None):
       errors=np.ones(len(data))                                           #  If no errors given, do not weight points
    else:
       assert len(errors)==len(data)
-   spline=intp.(range(len(data)),data,w=errors**-1,k=2)                   #  Construct a univariate spline function from the data
+   spline=intp.UnivariatrSpline(range(len(data)),data,w=errors**-1,k=2)   #  Construct a univariate spline function from the data
    #pl.figure()                                                           #  Uncomment these 4 lines to allow for display of smoothed and pre-smoothed data
    #pl.plot(data_keys,data,'0.5')
    smooth_data=spline(range(len(data)))                                   #  Reconstruct the data using the spline
