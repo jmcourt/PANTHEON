@@ -106,6 +106,7 @@ import pylab as pl
 import warnings
 import scipy.optimize as optm
 import scipy.interpolate as intp
+import scipy.signal as sgnl
 import numpy as np
 from matplotlib.ticker import ScalarFormatter
 from numba import jit
@@ -529,7 +530,7 @@ def gauss(mean,standev,x):
 #-----Get_Bursts-------------------------------------------------------------------------------------------------------
 
 #@jit
-def get_bursts(data,q_lo=50,q_hi=90,just_peaks=False,errors=None,smooth=False):
+def get_bursts(data,q_lo=50,q_hi=90,just_peaks=False,smooth=False,savgol=1):
 
    '''Get Bursts
 
@@ -552,10 +553,9 @@ def get_bursts(data,q_lo=50,q_hi=90,just_peaks=False,errors=None,smooth=False):
                         larger than q_med.
     just_peaks -  BOOL: [Optional: Default=False] If set to true, the function will return a list of peak
                         indices instead of a list of peak datasets.
-    errors     - ARRAY: [Optional: Default=None] The errors associated with each data point.  These are used
-                        as weighting for the spline; if spline is not used, data is not required.
     smooth     -  BOOL: [Optional: Default=False] If set to true, applies a univariate spline to the data
                         to smooth it.
+    savgol     -   INT: [Optional: Default=1] The window size for the Savitsky-Golay filter
 
    Outputs:
 
@@ -570,7 +570,10 @@ def get_bursts(data,q_lo=50,q_hi=90,just_peaks=False,errors=None,smooth=False):
                                                                           #  -candidate region.
 
    if smooth:                                                             # If user has requested smoothing...
-      data=spliner(data,errors)                                           #  Smooth it!
+      savgol=int(savgol)
+      if savgol%2==0:
+         savgol+=1
+      data=sgnl.savgol_filter(data,savgol,3)                              #  Smooth it!
 
    peak_locs=[]
    burst_locs=[]
@@ -614,7 +617,7 @@ def get_bursts(data,q_lo=50,q_hi=90,just_peaks=False,errors=None,smooth=False):
 #-----Get_Bursts_Windowed----------------------------------------------------------------------------------------------
 
 #@jit
-def get_bursts_windowed(data,windows,q_lo=50,q_hi=90,errors=None,smooth=False):
+def get_bursts_windowed(data,windows,q_lo=50,q_hi=90,smooth=False):
 
    '''Get Bursts
 
@@ -637,10 +640,9 @@ def get_bursts_windowed(data,windows,q_lo=50,q_hi=90,errors=None,smooth=False):
                         the hi-pass threshold.  This threshold determines how much peak flux a previously
                         defined burst-candidate region must be before it is considered a true burst.
                         larger than q_med.
-    errors     - ARRAY: [Optional: Default=None] The errors associated with each data point.  These are used
-                        as weighting for the spline; if spline is not used, data is not required.
     smooth     -  BOOL: [Optional: Default=False] If set to true, applies a univariate spline to the data
                         to smooth it.
+    savgol     -   INT: [Optional: Default=1] The window size for the Savitsky-Golay filter
 
    Outputs:
 
@@ -659,7 +661,7 @@ def get_bursts_windowed(data,windows,q_lo=50,q_hi=90,errors=None,smooth=False):
 
    for i in range(windows):
 
-      new_bursts=np.array(get_bursts(data[win_starts[i]:win_ends[i]],q_lo=q_lo,q_hi=q_hi,just_peaks=True,errors=errors,smooth=smooth))
+      new_bursts=np.array(get_bursts(data[win_starts[i]:win_ends[i]],q_lo=q_lo,q_hi=q_hi,just_peaks=True,smooth=smooth,savgol=(win_ends[i]-win_starts[i])/4.0))
       new_bursts+=win_starts[i]
       peak_locs+=new_bursts.tolist()
 
@@ -668,7 +670,7 @@ def get_bursts_windowed(data,windows,q_lo=50,q_hi=90,errors=None,smooth=False):
 
 #-----Get Dip----------------------------------------------------------------------------------------------------------
 
-def get_dip(data,start,finish,errors=None,smooth=False):
+def get_dip(data,start,finish,smooth=False,savgol=1):
 
    '''Get Dips
 
@@ -681,8 +683,6 @@ def get_dip(data,start,finish,errors=None,smooth=False):
     data    - LIST:  The dataset in which a trough is to be found
     start   -  INT:  The index of the startpoint of the user-defined sub-range
     finish  -  INT:  The index of the endpoint of the user-defined sub-range
-    errors  - ARRAY: [Optional: Default=None] The errors associated with each data point.  These are used
-                     as weighting for the spline; if spline is not used, data is not required.
     smooth  -  BOOL: [Optional: Default=False] If set to true, applies a univariate spline to the data
                      to smooth it.
 
@@ -695,7 +695,10 @@ def get_dip(data,start,finish,errors=None,smooth=False):
    data=np.array(data)
    data_l=np.arange(len(data))
    if smooth:
-      data=spliner(data,errors)
+      savgol=int(savgol)
+      if savgol%2==0:
+         savgol+=1
+      data=sgnl.savgol_filter(data,savgol,3)
    data=data*(data_l>=start)*(data_l<finish)
    data[data==0]=max(data)      
    keycol_loc=data.tolist().index(min(data))
@@ -705,7 +708,7 @@ def get_dip(data,start,finish,errors=None,smooth=False):
 #-----Get Phase--------------------------------------------------------------------------------------------------------
 
 #@jit
-def get_phases(data,errors=None,windows=1,q_lo=20,q_hi=90):
+def get_phases(data,windows=1,q_lo=20,q_hi=90):
 
    '''Get Phases
 
@@ -716,8 +719,6 @@ def get_phases(data,errors=None,windows=1,q_lo=20,q_hi=90):
    Inputs:
 
     data   -  ARRAY: The data in which bursts are sought.
-    errors  - ARRAY: [Optional: Default=None] The errors associated with each data point.  These are used
-                     as weighting for the spline; if spline is not used, data will not be weighted.
     windows -   INT: [Optional: Default=1] The number of windows into which to divide the data for analysis
     q_low   - FLOAT: [Optional: Default=20] The percentile value of the data which will be used as
                      the low-pass threshold.  This threshold determines the edges of already-located
@@ -736,11 +737,9 @@ def get_phases(data,errors=None,windows=1,q_lo=20,q_hi=90):
 
    data_keys=range(len(data))                                             # Generate the data indices
    data=np.array(data)                                                    # Format the input data
-   if errors!=None:
-      errors=np.array(errors)
 
    data_phas=np.zeros(len(data),dtype=float)                              # Create the phase array
-   peak_keys=get_bursts_windowed(data,windows,q_lo=50,q_hi=90,errors=None,smooth=False)
+   peak_keys=get_bursts_windowed(data,windows,q_lo=50,q_hi=90,smooth=False)
    peak_keys.sort()                                                       # Fetch and sort the indices corresponding to peaks
    dip_keys=[]                                                            # Create empty array for indices of dips
    if peak_keys[0]!=0:
@@ -800,15 +799,26 @@ def get_phases(data,errors=None,windows=1,q_lo=20,q_hi=90):
 
 #-----Get Phase INTP---------------------------------------------------------------------------------------------------
 
-   def get_phase_intp(data,errors=None,windows=1,q_lo=20,q_hi=90):
+def get_phases_intp(data,windows=1,q_lo=20,q_hi=90,peaks=None):
 
-      peaks=get_bursts_windowed(data,windows,q_lo=50,q_hi=90,errors=None,smooth=False)
-      data=np.array(data)
-      t_phases=np.arange(len(peaks))+0.5
-      spline=intp.UnivariateSpline(peaks, t_phases, k=2, s=0)
-      phases=spline(range(len(data)))
-      phases=np.remainder(phases,1)
-      return phases 
+   if peaks==None:
+      peak_keys=get_bursts_windowed(data,windows,q_lo=50,q_hi=90,smooth=False)
+   else:
+      peak_keys=peaks
+   peak_keys.sort()
+   data_keys=np.array(range(len(data)))
+   peak_keys=np.array(peak_keys)
+
+   data=np.array(data)
+   p_phases=np.arange(0,len(peak_keys))+0.5
+
+   spline=intp.PchipInterpolator(peak_keys, p_phases, extrapolate=False)
+   phases=spline(range(len(data)))
+   pl.plot(peak_keys,p_phases)
+   pl.plot(data_keys,phases)
+   pl.show(block=True)
+   phases=np.remainder(phases,1)
+   return phases 
 
 #-----GTIMask----------------------------------------------------------------------------------------------------------
 
