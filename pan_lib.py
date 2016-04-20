@@ -276,6 +276,38 @@ def circfold(x,y,t,pcoords=True):
       return s,c
 
 
+#-----CCor-------------------------------------------------------------------------------------------------------------
+
+# Cross-Correlate
+
+def ccor(data1,data2,binning):
+   assert len(data1)==len(data2)
+   data1=np.array(data1)
+   data2=np.array(data2)
+   crosscor=[]
+   for i in range(len(data1)):
+      r1=data1[(-i-1):]
+      r2=data2[:i+1]
+      raw_coeff=np.sum(r1*r2)
+      raw_norm=((np.sum(r1**2)*np.sum(r2**2))**0.5)/(np.sum(r1)*np.mean(r2))-1
+      norm_coeff=(raw_coeff/(np.sum(r1)*np.mean(r2)))-1
+      norm_coeff=norm_coeff/raw_norm
+      crosscor.append(norm_coeff)
+   for i in range(len(data1)-1):
+      r1=data1[:(-i-1)]
+      r2=data2[i+1:]
+      raw_coeff=np.sum(r1*r2)
+      raw_norm=((np.sum(r1**2)*np.sum(r2**2))**0.5)/(np.sum(r1)*np.mean(r2))-1
+      norm_coeff=(raw_coeff/(np.sum(r1)*np.mean(r2)))-1
+      norm_coeff=norm_coeff/raw_norm
+      crosscor.append(norm_coeff)
+
+   times=np.array(range(len(crosscor)))
+   times=times+0.5-(len(crosscor)/2.0)
+   times=times*binning
+   return times,crosscor
+   
+
 #-----EqRange----------------------------------------------------------------------------------------------------------
 
 # Equal Length Range
@@ -1215,7 +1247,7 @@ def pdcolex2(y1,y2,ye1,ye2,gmask):
             col[ld]=(y[i]/y[j])                                           # Fetch colour
             cole[ld]=col[ld]*np.sqrt(((ye[i]/y[i])**2)+((ye[j]/y[j])**2)) # Fetch colour error
 
-   return flux,fluxe,col,cole
+   return flux,fluxe,y,col,cole
 
 @jit
 def pdcolex3(y1,y2,y3,ye1,ye2,ye3,gmask):
@@ -1250,7 +1282,7 @@ def pdcolex3(y1,y2,y3,ye1,ye2,ye3,gmask):
             col[ld]=(y[i]/y[j])                                           # Fetch colour
             cole[ld]=col[ld]*np.sqrt(((ye[i]/y[i])**2)+((ye[j]/y[j])**2)) # Fetch colour error
 
-   return flux,fluxe,col,cole
+   return flux,fluxe,y,col,cole
 
 
 #-----PlotdLd----------------------------------------------------------------------------------------------------------
@@ -1600,7 +1632,7 @@ def slplot(x,y,ye,xlabel,ylabel,title,figid="",typ='both',errors=True):
          ax=pl.subplot(212)                                               # If 'both' passed as typ word, make 2nd of 2 subplots
       pl.xlabel(xlabel)
       pl.ylabel(ylabel)
-      pl.title('Log '+str(title))
+      pl.title(title)
       if errors:
          pl.errorbar(x,abs(y),ye,fmt='k')                                 # Plot data
       else:
@@ -1610,7 +1642,7 @@ def slplot(x,y,ye,xlabel,ylabel,title,figid="",typ='both',errors=True):
       pl.grid(True,which="both")
 
    #if typ in ('lin','log','both'):
-   #   pl.show(block=False)                                                # Show both plots together
+   #   pl.show(block=False)                                               # Show both plots together
    else:
       print 'Invalid typ!  No plot shown.'                                # Complain if none of 'lin', 'log' or 'both are given as typ word
 

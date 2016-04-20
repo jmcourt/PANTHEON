@@ -306,22 +306,23 @@ def colorget(verbose=True):                                               # Defi
       print 'Analysing Data...'
    times=x1[gmask]
    timese=np.zeros(len(times))
+   ys={}
    col={}
    cole={}
    if nfiles==1:                                                          # If only one file given, flux and flux_error are just the flux and error of this one file
       flux=y1[gmask]                                                      # Use gmask to clip out the areas outside of GTI
       fluxe=ye1[gmask]
    elif nfiles==2:
-      flux,fluxe,col,cole=pan.pdcolex2(y1,y2,ye1,ye2,gmask)               # Get 2/1 and 1/2 colour information using PDColEx in pan_lib
+      flux,fluxe,ys,col,cole=pan.pdcolex2(y1,y2,ye1,ye2,gmask)            # Get 2/1 and 1/2 colour information using PDColEx in pan_lib
    elif nfiles==3:
-      flux,fluxe,col,cole=pan.pdcolex3(y1,y2,y3,ye1,ye2,ye3,gmask)        # Get ALL colour values with 3D PDColEx
+      flux,fluxe,ys,col,cole=pan.pdcolex3(y1,y2,y3,ye1,ye2,ye3,gmask)     # Get ALL colour values with 3D PDColEx
    else:
       print 'Error!  Too much data somehow.'                              # This warning should never come up...
       pan.signoff()
       exit()
-   return times,timese,flux,fluxe,col,cole
+   return times,timese,flux,fluxe,ys,col,cole
 
-times,timese,flux,fluxe,col,cole=colorget()                               # Use colorget
+times,timese,flux,fluxe,ys,col,cole=colorget()                            # Use colorget
 
 print 'Done!'
 print ''
@@ -337,7 +338,7 @@ ls=False                                                                  # 'ls'
 folded=False                                                              # 'folded' has been folded over some period
 saveplots=False
 
-def doplot(x,xe,y,ye,ovr=False,ft='-k'):                                  # Defining short function to determine whether errorbars are needed on the fly
+def doplot(x,xe,y,ye,ovr=False,ft='-k',per2=False):                       # Defining short function to determine whether errorbars are needed on the fly
                                                                           # 'ovr' allows to override colour and line options, so lightcurves can be made differently
 
    if ovr: formst=ft                                                      # If override given, accept input format; if none given, just plot lines
@@ -349,6 +350,12 @@ def doplot(x,xe,y,ye,ovr=False,ft='-k'):                                  # Defi
       ploty=np.append(y,y[0])
       plotxe=np.append(xe,xe[0])
       plotye=np.append(ye,ye[0])
+
+   elif per2 and ovr:
+      plotx=np.append(x,x+1.0)
+      ploty=np.append(y,y)
+      plotxe=np.append(xe,xe)
+      plotye=np.append(ye,ye)      
 
    else:
       plotx=x
@@ -408,9 +415,10 @@ def give_inst():                                                          # Defi
    print '* "clip" to clip the data.'
    print '* "mask" to remove a range of data.'
    print '* "rms" to return the fractional rms of the data.'
-   print '* "fold" to fold data over a period of your choosing'+(' (requires PyAstronomy module)' if not module_pyastro else '')+'.'
-   print '* "autofold" to automatically seek a period over which to fold data'+(' (requires PyAstronomy module)' if not module_pyastro else '')+'.'
+   print '* "fold" to fold data over a period of your choosing'+(' (requires PyAstronomy module!)' if not module_pyastro else '')+'.'
+   print '* "autofold" to automatically seek a period over which to fold data'+(' (requires PyAstronomy module!)' if not module_pyastro else '')+'.'
    print '* "circfold" to circularly fold data over a period of your choosing.'
+   print '* "varifold" to fold over a non-constant period using an algorithm optimised for high-amplitude quasi-periodic flares.'
    print ''
    print '1+ DATASET PLOTS:'
    print '* "lc" to plot a simple graph of flux over time.'
@@ -574,7 +582,7 @@ while plotopt not in ['quit','exit']:                                     # If t
       print 'Binning complete!'
       print ''
 
-      times,timese,flux,fluxe,col,cole=colorget()                         # Re-get colours
+      times,timese,flux,fluxe,ys,col,cole=colorget()                      # Re-get colours
       folded=False                                                        # Re-allow clipping
       print 'Done!'
       print ''
@@ -623,7 +631,7 @@ while plotopt not in ['quit','exit']:                                     # If t
          x3,y3,ye3=pan.foldify(x3,y3,ye3,period,binning,phres=phres,name='ch. '+ch[3]) # Fold data of file 3 if present
 
       gmask=np.ones(len(x1),dtype=bool)                                   # Re-establish gmask
-      times,timese,flux,fluxe,col,cole=colorget()                         # Re-get colours
+      times,timese,flux,fluxe,ys,col,cole=colorget()                      # Re-get colours
       folded=True
 
       print 'Folding Complete!'
@@ -676,7 +684,7 @@ while plotopt not in ['quit','exit']:                                     # If t
          x3,y3,ye3=pan.foldify(x3,y3,ye3,period,binning,phres=phres,name='ch. '+ch[3]) # Fold data of file 3 if present
 
       gmask=np.ones(len(x1),dtype=bool)                                   # Re-establish gmask
-      times,timese,flux,fluxe,col,cole=colorget()                         # Re-get colours
+      times,timese,flux,fluxe,ys,col,cole=colorget()                      # Re-get colours
       folded=True
 
       print 'Folding Complete!'
@@ -765,12 +773,13 @@ while plotopt not in ['quit','exit']:                                     # If t
          ye3=np.array(newye3)
 
       gmask=np.ones(len(x1),dtype=bool)                                   # Re-establish gmask
-      times,timese,flux,fluxe,col,cole=colorget()                         # Re-get colours
+      times,timese,flux,fluxe,ys,col,cole=colorget()                      # Re-get colours
 
       folded=True
 
       print 'Folding Complete!'
       print ''
+      period='N/A'
 
 
    #-----'clip' Option-------------------------------------------------------------------------------------------------
@@ -809,7 +818,7 @@ while plotopt not in ['quit','exit']:                                     # If t
                ye3=ye3[mint:maxt]
 
             gmask=pan.gtimask(x1,gti)                                     # Re-establish gmask
-            times,timese,flux,fluxe,col,cole=colorget()                   # Re-get colours
+            times,timese,flux,fluxe,ys,col,cole=colorget()                # Re-get colours
 
             print 'Data clipped!'
 
@@ -834,7 +843,7 @@ while plotopt not in ['quit','exit']:                                     # If t
 
             gmask[mint:maxt]=False                                        # Force all values inside the bad window to appear as outside of GTIs
 
-            times,timese,flux,fluxe,col,cole=colorget()                   # Re-get colours
+            times,timese,flux,fluxe,ys,col,cole=colorget()                # Re-get colours
 
             print 'Data masked!'
 
@@ -877,7 +886,7 @@ while plotopt not in ['quit','exit']:                                     # If t
       taxis='Phase' if folded else 'Time (s)'
 
       pl.figure()
-      doplot(times,timese,flux,fluxe,ovr=True)                            # Plot flux/time using doplot from pan_lib
+      doplot(times,timese,flux,fluxe,ovr=True,per2=folded)                # Plot flux/time using doplot from pan_lib
       pl.xlabel(taxis)
       pl.ylabel(flux_axis)
       pl.ylim(ymin=0)
@@ -1081,7 +1090,7 @@ while plotopt not in ['quit','exit']:                                     # If t
 
          gmask=pan.gtimask(x1,gti)                                        # Re-establish gmask
 
-         times,timese,flux,fluxe,col,cole=colorget(verbose=False)         # Re-get colours
+         times,timese,flux,fluxe,ys,col,cole=colorget(verbose=False)      # Re-get colours
 
          if anstep==1:
             if es:
@@ -1118,7 +1127,7 @@ while plotopt not in ['quit','exit']:                                     # If t
             x3,y3,ye3=pan.binify(x3r,y3r,ye3r,binning)                    # Reset binning File 3 using 'binify' in pan_lib
 
       gmask=pan.gtimask(x1,gti)                                           # Re-establish gmask
-      times,timese,flux,fluxe,col,cole=colorget(verbose=False)            # Re-get colours
+      times,timese,flux,fluxe,ys,col,cole=colorget(verbose=False)         # Re-get colours
 
       print ''
       print "Animation saved to",animsloc+'/animation.gif!'
@@ -1314,6 +1323,43 @@ while plotopt not in ['quit','exit']:                                     # If t
             pl.ylabel(flux_axis)
             pl.xlabel('('+ch[h1]+'/'+ch[h2]+') colour')
             pl.title(fldtxt+'Hardness Intensity Diagram'+qflav)
+            plot_save(saveplots,show_block)
+            print 'File'+str(h1)+'/File'+str(h2)+' HID plotted!'
+
+      else:
+         print 'Not enough infiles for HID!'
+
+
+   #-----'crosscor' Option------------------------------------------------------------------------------------------------
+
+   elif plotopt[:8]=='crosscor':                                           # Plot x/y HID
+
+      ht=plotopt[8:]                                                       # Collect the xy token from the user
+
+      if nfiles>1:
+         if not (ht in ['12','13','21','23','31','32','11','22','33']):    # Check that the token is 2 long and contains two different characters of the set [1,2,3]
+
+            print 'Invalid command!'
+            print ''
+            print 'Did you mean...'
+            print ''
+            print 'HID options:'
+            print '* "crosscor21" for 2 against 1 cross-correlation'
+            if nfiles==3:
+               print '* "crosscor32" for 3 against 2 cross-correlation'
+               print '* "crosscor31" for 3 against 1 cross-correlation'
+
+         elif ('3' in ht) and (nfiles<3):
+
+            print 'Not enough infiles for advanced cross-correlation!'    # If token contains a 3 but only 2 infiles are used, abort!
+
+         else:
+
+            h1=int(ht[0])                                                 # Extract file 1 number
+            h2=int(ht[1])                                                 # Extract file 2 number
+            cct,ccor=pan.ccor(ys[h1],ys[h2],binning)
+            pl.figure()
+            pl.plot(cct,ccor)
             plot_save(saveplots,show_block)
             print 'File'+str(h1)+'/File'+str(h2)+' HID plotted!'
 

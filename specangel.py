@@ -485,7 +485,7 @@ while specopt not in ['quit','exit']:                                     # If t
 
    #-----'sg' Catch-All Help Message-----------------------------------------------------------------------------------
 
-   elif specopt=='sg':
+   elif specopt[:2]=='sg':
 
       print 'SPECTROGRAM COMMANDS:'
       print '* "sg plot" to plot the spectrogram currently being worked on.'
