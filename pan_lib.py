@@ -30,6 +30,9 @@
 #  FOLDIFY   - takes a time series with its associated y-axis data and y-axis errors.  Folds this data
 #              over a time period of the user's choosing, and returns them as the tuple x,y,y_error.
 #
+#  FOLD_BURSTS - uses GET_BURSTS to obtain burst locations then interpolates to populate phase information
+#              for all other points
+#
 #  GET_BURSTS- takes an array of data, looks for bursts and returns an array of tuples containing
 #              the start and end points of these bursts.
 #

@@ -531,7 +531,7 @@ if filext!=filename:
    if tfilename[-1]!='.':                                                 # Saving extensionless files with .. in the path name breaks without this
       filename=tfilename
 
-filename=filename+'_'+cs
+filename=str(bsz)+'s_'+filename+'_'+cs
 
 if plot_on:
    pfilename=pan.plotdsv(filename,ta,array(fullhist)/bsz,array(fullerrs)/bsz,tstart,bsz*ptdbinfac,gti,max(npcus),bgest,'False',None,flavour,cs,mission,obsdata,version)
