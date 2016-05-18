@@ -436,6 +436,7 @@ def give_inst():                                                          # Defi
       print '* "band" to plot the lightcurve of a single energy band.'
       print '* "bands" to plot lightcurves of all bands on adjacent axes.'
       print '* "xbands" to plot lightcurves of all bands on the same axes.'
+      print '* "crosscor21" to plot the cross-correlation function of band 1 with band 2.'
       print '* "xbg" to plot background of all bands on the same axes.'
       print '* "all" to plot all available data products.'
    if nfiles==3:                                                           # Only display 3-data-set instructions if 3 datasets given
@@ -450,6 +451,8 @@ def give_inst():                                                          # Defi
       print '* "col31" to plot file3/file1 colour against time.'
       print '* "col13" to plot file1/file3 colour against time.'
       print '* "ccd" to plot a colour-colour diagram (3/1 colour against 2/1 colour).'
+      print '* "crosscor31" to plot the cross-correlation function of band 3 with band 1.'
+      print '* "crosscor32" to plot the cross-correlation function of band 3 with band 2.'
    print ''
    print 'BURST ANALYSIS:'
    print '* "burst get" to interactively extract burst data for analysis.'
@@ -1360,14 +1363,21 @@ while plotopt not in ['quit','exit']:                                     # If t
 
             h1=int(ht[0])                                                 # Extract file 1 number
             h2=int(ht[1])                                                 # Extract file 2 number
-            cct,ccor=pan.ccor(ys[h1],ys[h2],binning)
+            cct,ccor,ccore=pan.ccor(ys[h1],ys[h2])
+            ccorclipval=int(3*len(cct)/8.0)
+            cct=cct[ccorclipval:-ccorclipval]
+            cct=cct*binning
+            ccor=ccor[ccorclipval:-ccorclipval]
+            ccore=ccore[ccorclipval:-ccorclipval]
             pl.figure()
             pl.plot(cct,ccor)
+            pl.xlabel(str(ht[1])+'-'+str(ht[0])+' lag (s)')
+            pl.ylabel('Cross-Correlation')
             plot_save(saveplots,show_block)
             print 'File'+str(h1)+'/File'+str(h2)+' HID plotted!'
 
       else:
-         print 'Not enough infiles for HID!'
+         print 'Not enough infiles for cross-correlation!'
 
 
    #-----'colxy' Option------------------------------------------------------------------------------------------------
