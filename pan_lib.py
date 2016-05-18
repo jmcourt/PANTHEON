@@ -503,7 +503,7 @@ def foldify(t,y,ye,period,binsize,phres=None,name='',compr=False,verb=True):
 #-----Fold_Bursts------------------------------------------------------------------------------------------------------
 
 @jit
-def fold_bursts(times,data,q_lo=50,q_hi=90):
+def fold_bursts(times,data,q_lo=50,q_hi=90,do_smooth=False):
 
    '''Return Phases Using Bursts as Reference Points
 
@@ -527,6 +527,8 @@ def fold_bursts(times,data,q_lo=50,q_hi=90):
                         the hi-pass threshold.  This threshold determines how much peak flux a previously
                         defined burst-candidate region must be before it is considered a true burst.
                         larger than q_med.
+    smooth     -  BOOL: [Optional: Default=False] Apply a Savitsky-Golay Filter to smooth the lightcurve
+                        before fetching peaks.
 
 
    Outputs:
@@ -537,8 +539,10 @@ def fold_bursts(times,data,q_lo=50,q_hi=90):
 
    assert len(times)==len(data)
    phases=np.zeros(len(times))
-   peaks=get_bursts(data,q_lo,q_hi,just_peaks=True)
+   peaks=get_bursts(data,q_lo,q_hi,just_peaks=True,smooth=do_smooth)
+   #peaks=(np.array([33.5,60,82,106.5,131,154,180,208.5,235.5,257.5,281,296,313.5,342,372.5,403,432,460,486,509,534.5,561,586,608.5,628.5,648.5,674.5,705,730,752,779,807,834,863,891,915,932,950.5,971.5,997.5,1028.5,1053,1081,1108,1131.5,1152,1175.5,1203,1230,1256,1281,1303.5,1327,1353.5,1385,1414,1440.5,1465.5,1490.5,1512,1534,1556.5,1578.5,1599,1625.5,1656.5,1685.5,1712.5,1738,1761.5,1783,1808,1837,1862,1882,1902,1925.5,1955.5,1986,2012,2036.5,2062.5,2089.5,2118,2143.5,2163.5,2184.5,2202.5,2222.5,2280.5,2309,2342,2370,2399.5,2427.5,2453.5,2477,2501.5,2527.5,2553.5,2580,2607,2634.5,2663.5,2693,2720.5,2749.5,2777.5,2799.5,2819.5,2840,2859.5,2881.5,2906.5,2934.5,2961.5,2982,3000,3016,3042.5,3074.5,3102,3126,3151.5,3181.5,3210.5,3238,3262,3287,3316.5,3347,3374.5])-10.0)*2
    peaks.sort()
+   print peaks[-1]
    peak_placemark=0
    if peaks[0]!=0:
       peaks=np.hstack([0,peaks])
@@ -565,7 +569,7 @@ def gauss(mean,standev,x):
 #-----Get_Bursts-------------------------------------------------------------------------------------------------------
 
 #@jit
-def get_bursts(data,q_lo=50,q_hi=90,just_peaks=False,smooth=False,savgol=1):
+def get_bursts(data,q_lo=50,q_hi=90,just_peaks=False,smooth=False,savgol=5):
 
    '''Get Bursts
 
@@ -590,7 +594,7 @@ def get_bursts(data,q_lo=50,q_hi=90,just_peaks=False,smooth=False,savgol=1):
                         indices instead of a list of peak datasets.
     smooth     -  BOOL: [Optional: Default=False] If set to true, applies a univariate spline to the data
                         to smooth it.
-    savgol     -   INT: [Optional: Default=1] The window size for the Savitsky-Golay filter
+    savgol     -   INT: [Optional: Default=5] The window size for the Savitsky-Golay filter
 
    Outputs:
 

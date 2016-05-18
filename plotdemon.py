@@ -696,7 +696,7 @@ while plotopt not in ['quit','exit']:                                     # If t
    elif plotopt=='varifold':
 
       if folded:
-         print 'Cannot perform burst analsysis on folded data!'
+         print 'Cannot perform burst analysis on folded data!'
          continue
 
       while True:
@@ -719,7 +719,7 @@ while plotopt not in ['quit','exit']:                                     # If t
          except AssertionError:
             print 'Invalid Phase Resolution!'
 
-      phases=pan.fold_bursts(times,flux,iq_hi,iq_lo)
+      phases=pan.fold_bursts(times,flux,iq_hi,iq_lo,do_smooth=False)
       nbins=int(1.0/phase_res)
       phases=(nbins*phases).astype(int)
 
@@ -732,6 +732,7 @@ while plotopt not in ['quit','exit']:                                     # If t
       for i in range(nbins):
          newx1.append(float(i)/float(nbins))
          newy1.append(np.mean(y1[phases==i]))
+         #newye1.append(np.std(y1[phases==i]))
          newye1.append((np.sum(ye1[phases==i]**2))**0.5/len(ye1[phases==i]))
 
       x1=np.array(newx1)
@@ -749,6 +750,7 @@ while plotopt not in ['quit','exit']:                                     # If t
          for i in range(nbins):
             newx2.append(float(i)/float(nbins))
             newy2.append(np.mean(y2[phases==i]))
+            #newye2.append(np.std(y2[phases==i]))
             newye2.append((np.sum(ye2[phases==i]**2))**0.5/len(ye2[phases==i]))
 
          x2=np.array(newx2)
@@ -766,6 +768,7 @@ while plotopt not in ['quit','exit']:                                     # If t
          for i in range(nbins):
             newx3.append(float(i)/float(nbins))
             newy3.append(np.mean(y3[phases==i]))
+            #newye3.append(np.std(y3[phases==i]))
             newye3.append((np.sum(ye3[phases==i]**2))**0.5/len(ye3[phases==i]))
 
          x3=np.array(newx3)
@@ -1512,14 +1515,14 @@ while plotopt not in ['quit','exit']:                                     # If t
          pl.figure()
 
          if user_b_band=='1':
-            doplot(times,timese,y1[gmask],ye1[gmask],ovr=True)            # Plot flux/time using doplot from pan_lib
+            doplot(times,timese,y1[gmask],ye1[gmask],ovr=True,per2=folded) # Plot flux/time using doplot from pan_lib
             b_band_name='Band 1'
          elif user_b_band=='2':
-            doplot(times,timese,y2[gmask],ye2[gmask],ovr=True)
+            doplot(times,timese,y2[gmask],ye2[gmask],ovr=True,per2=folded)
             b_band_name='Band 2'
          else:
             b_band_name='Band 3'
-            doplot(times,timese,y3[gmask],ye3[gmask],ovr=True)
+            doplot(times,timese,y3[gmask],ye3[gmask],ovr=True,per2=folded)
 
          pl.xlabel(taxis)                                                 # Format plot
          pl.ylabel(flux_axis)
@@ -1537,21 +1540,21 @@ while plotopt not in ['quit','exit']:                                     # If t
 
       pl.figure()
       pl.subplot(nfiles,1,1) 
-      doplot(times,timese,y1[gmask],ye1[gmask],ovr=True)                  # Plot the lowest band
+      doplot(times,timese,y1[gmask],ye1[gmask],ovr=True,per2=folded)      # Plot the lowest band
       pl.xlabel(taxis)
       pl.ylabel(flux_axis)
       pl.title(fldtxt+ch[1]+' Lightcurve'+qflav)
 
       if nfiles>1:
          pl.subplot(nfiles,1,2)
-         doplot(times,timese,y2[gmask],ye2[gmask],ovr=True)               # Plot the second band
+         doplot(times,timese,y2[gmask],ye2[gmask],ovr=True,per2=folded)   # Plot the second band
          pl.xlabel(taxis)
          pl.ylabel(flux_axis)
          pl.title(fldtxt+ch[2]+' Lightcurve'+flv2)
 
       if nfiles>2:
          pl.subplot(nfiles,1,3)
-         doplot(times,timese,y3[gmask],ye3[gmask],ovr=True)               # Plot the third band
+         doplot(times,timese,y3[gmask],ye3[gmask],ovr=True,per2=folded)   # Plot the third band
          pl.xlabel(taxis)
          pl.ylabel(flux_axis)
          pl.title(fldtxt+ch[3]+' Lightcurve'+flv3)
@@ -1570,12 +1573,12 @@ while plotopt not in ['quit','exit']:                                     # If t
 
       pl.figure()
       leg=[ch[1]]                                                         # Create a legend array to populate with channel names
-      doplot(times,timese,y1[gmask],ye1[gmask],ovr=True,ft='-b')          # Plot the lowest band
+      doplot(times,timese,y1[gmask],ye1[gmask],ovr=True,ft='-b',per2=folded)    # Plot the lowest band
       if nfiles>1:
-         doplot(times,timese,y2[gmask],ye2[gmask],ovr=True,ft='-g')       # Plot the second band
+         doplot(times,timese,y2[gmask],ye2[gmask],ovr=True,ft='-g',per2=folded) # Plot the second band
          leg.append(ch[2])                                                # Append name of second channel to key
       if nfiles>2:
-         doplot(times,timese,y3[gmask],ye3[gmask],ovr=True,ft='-r')       # Plot the third band
+         doplot(times,timese,y3[gmask],ye3[gmask],ovr=True,ft='-r',per2=folded) # Plot the third band
          leg.append(ch[3])                                                # Append name of third channel to key
       pl.legend(leg)                                                      # Create key on plot
       pl.xlabel(taxis)
