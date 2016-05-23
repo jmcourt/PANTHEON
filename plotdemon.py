@@ -401,6 +401,7 @@ def burstplot(key,text,units):
 
 fldtxt=''
 bursts=None
+burst_alg='cubic spline'
 
 flux_axis=r'Flux (cts s$^{-1}$ PCU$^{-1}$)'
 
@@ -471,6 +472,9 @@ def give_inst():                                                          # Defi
    print '* "lines" to toggle lines joining points in graphs.'
    print '* "ckey" to toggle colour key (red-blue) for the first five points in all plots.'
    print '* "save" to save to disk any plots which would otherwise be shown.'
+   print ''
+   print 'ADVANCED OPTIONS:'
+   print '* "burstalg" to select algorithm for finding pulse peaks in lightcurve.'
    print ''
    print 'OTHER COMMANDS:'
    print '* "info" to display a list of facts and figures about the current PlotDemon session.'
@@ -722,7 +726,7 @@ while plotopt not in ['quit','exit']:                                     # If t
          except AssertionError:
             print 'Invalid Phase Resolution!'
 
-      phases=pan.fold_bursts(times,flux,iq_hi,iq_lo,do_smooth=False)
+      phases=pan.fold_bursts(times,flux,iq_hi,iq_lo,do_smooth=False,alg=burst_alg)
       nbins=int(1.0/phase_res)
       phases=(nbins*phases).astype(int)
 
@@ -1618,7 +1622,7 @@ while plotopt not in ['quit','exit']:                                     # If t
             print 'Invalid Entry!  Valid entry is of the form High>Low.'
 
       bursts={}
-      bursts['endpoints']=pan.get_bursts(flux,q_lo=iq_lo,q_hi=iq_hi,just_peaks=False)
+      bursts['endpoints']=pan.get_bursts(flux,q_lo=iq_lo,q_hi=iq_hi,just_peaks=False,alg=burst_alg)
 
       pl.figure()
       doplot(times,timese,flux,fluxe,ovr=True)                            # Plot flux/time using doplot from pan_lib
@@ -1705,6 +1709,20 @@ while plotopt not in ['quit','exit']:                                     # If t
 
    elif plotopt in ['burst help','bursthelp','burst_help','bursts help','burstshelp','bursts_help']:
       print 'Help coming soon.'
+
+   #-----'burst alg'---------------------------------------------------------------------------------------------------
+
+   elif plotopt in ['burst alg','burstalg','burst_alg','bursts alg','burstsalg','bursts_alg']:
+      print 'Available Burst-Finding Algorithms:'
+      print ' * CUBIC SPLINE'
+      print ' * LOAD'
+      print ''
+      inp_burst_alg=raw_input('Select Burst Algorithm:').lower()
+      if inp_burst_alg in ('cubic spline','load'):
+         burst_alg=inp_burst_alg
+         print 'Burst-Finding Algorithm set to "'+burst_alg+'"!'
+      else:
+         print 'Invalid Burst-Finding Algorithm!'
 
 
    #-----'lombscargle' Option------------------------------------------------------------------------------------------

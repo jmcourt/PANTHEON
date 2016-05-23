@@ -507,7 +507,7 @@ def foldify(t,y,ye,period,binsize,phres=None,name='',compr=False,verb=True):
 #-----Fold_Bursts------------------------------------------------------------------------------------------------------
 
 @jit
-def fold_bursts(times,data,q_lo=50,q_hi=90,do_smooth=False):
+def fold_bursts(times,data,q_lo=50,q_hi=90,do_smooth=False,alg='cubic spline'):
 
    '''Return Phases Using Bursts as Reference Points
 
@@ -533,6 +533,7 @@ def fold_bursts(times,data,q_lo=50,q_hi=90,do_smooth=False):
                         larger than q_med.
     smooth     -  BOOL: [Optional: Default=False] Apply a Savitsky-Golay Filter to smooth the lightcurve
                         before fetching peaks.
+    alg        -STRING: [Optional: Default='cubic spline'] The algorithm to use to obtain peaks.
 
 
    Outputs:
@@ -543,7 +544,7 @@ def fold_bursts(times,data,q_lo=50,q_hi=90,do_smooth=False):
 
    assert len(times)==len(data)
    phases=np.zeros(len(times))
-   peaks=get_bursts(data,q_lo,q_hi,just_peaks=True,smooth=do_smooth)
+   peaks=get_bursts(data,q_lo,q_hi,just_peaks=True,smooth=do_smooth,alg=alg)
    peaks.sort()
    print peaks[-1]
    peak_placemark=0
@@ -572,7 +573,7 @@ def gauss(mean,standev,x):
 #-----Get_Bursts-------------------------------------------------------------------------------------------------------
 
 #@jit
-def get_bursts(data,q_lo=50,q_hi=90,just_peaks=False,smooth=False,savgol=5):
+def get_bursts(data,q_lo=50,q_hi=90,just_peaks=False,smooth=False,savgol=5,alg='cubic spline'):
 
    '''Get Bursts
 
@@ -598,6 +599,7 @@ def get_bursts(data,q_lo=50,q_hi=90,just_peaks=False,smooth=False,savgol=5):
     smooth     -  BOOL: [Optional: Default=False] If set to true, applies a univariate spline to the data
                         to smooth it.
     savgol     -   INT: [Optional: Default=5] The window size for the Savitsky-Golay filter
+    alg        -STRING: [Optional: Default='cubic spline'] The algorithm to use to obtain peaks.
 
    Outputs:
 
@@ -619,24 +621,37 @@ def get_bursts(data,q_lo=50,q_hi=90,just_peaks=False,smooth=False,savgol=5):
 
    peak_locs=[]
    burst_locs=[]
-   while True:                                                            
+   if alg=='cubic spline':
+      while True:                                                            
                                                                           
-      masked=np.array(data)*over_thresh                                   # Reduce all data outside of burst-candidate regions to zero
-      if max(masked)<high_thresh:                                         # If highest peak in all remaining burst-candidate regions is below the high threshold,
+         masked=np.array(data)*over_thresh                                # Reduce all data outside of burst-candidate regions to zero
+         if max(masked)<high_thresh:                                      # If highest peak in all remaining burst-candidate regions is below the high threshold,
                                                                           #  assume there are no more bursts to be found.
-         break
+            break
 
-      peak_loc=masked.tolist().index(max(masked))                         # Find peak in remaining data
-      peak_locs.append(peak_loc)                                          # Construct list of peak location
-      i=peak_loc
-      while i<len(data) and over_thresh[i]:                               # Scrub the True objects in the Boolean array corresponding to that peak's candidate
+         peak_loc=masked.tolist().index(max(masked))                      # Find peak in remaining data
+         peak_locs.append(peak_loc)                                       # Construct list of peak location
+         i=peak_loc
+         while i<len(data) and over_thresh[i]:                            # Scrub the True objects in the Boolean array corresponding to that peak's candidate
                                                                           #  region, thus removing it
-         over_thresh[i]=False
-         i+=1
-      i=peak_loc-1
-      while i>=0 and over_thresh[i]:
-         over_thresh[i]=False
-         i-=1
+            over_thresh[i]=False
+            i+=1
+         i=peak_loc-1
+         while i>=0 and over_thresh[i]:
+            over_thresh[i]=False
+            i-=1
+
+   elif alg=='load':
+      loadfilename=raw_input('Burst File Name: ')
+      loadfile=open(loadfilename)
+      if len(loadfile[0].split(','))>6:
+         peak_locs=loadfile[0].split(',')      
+      else:
+         for line in loadfile:
+            l=line.split(',')
+            peak_locs.append(l[0])
+      loadfile.close()
+         
 
    if just_peaks: return peak_locs
    peak_locs.sort()                                                       # Sort the list so peaks can be returned in chronological order

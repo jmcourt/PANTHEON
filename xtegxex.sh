@@ -27,6 +27,7 @@ echo ''
 
 #-----Setting Switches-------------------------------------------------------------------------------------------------
 
+heainit
 gx1=0                                                                     # Counter of GoodXenon1 events
 gx2=0                                                                     # Counter of GoodXenon2 events
 

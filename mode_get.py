@@ -37,7 +37,7 @@ print ''
 
 read=0
 
-outname=pan.uniqfname('info','txt')
+outname=pan.uniqfname('modes','txt')
 tmpname=pan.uniqfname('temp','txt')
 info = open(outname, 'w')
 files=sorted(os.listdir(os.getcwd()))

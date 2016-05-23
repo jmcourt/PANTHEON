@@ -27,6 +27,7 @@ echo ''
 
 #-----Setting Switches-------------------------------------------------------------------------------------------------
 
+heainit
 s2=0                                                                      # Counter of GoodXenon1 events
 
 
@@ -72,7 +73,6 @@ if [ $s2 == 0 ]
 then
   rm -r s20                                                               # Remove s2 if no Standard2 data found
   echo 'No Standard2 files found!'
-  echo 'Cannot make good xenon files!'
   echo 'Removing s2 directory'
 else                                                                      # Remove any stray background files
   rm s20/*.bg
