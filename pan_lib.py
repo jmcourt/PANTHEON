@@ -544,9 +544,8 @@ def fold_bursts(times,data,q_lo=50,q_hi=90,do_smooth=False,alg='cubic spline'):
 
    assert len(times)==len(data)
    phases=np.zeros(len(times))
-   peaks=get_bursts(data,q_lo,q_hi,just_peaks=True,smooth=do_smooth,alg=alg)
+   peaks=get_bursts(data,q_lo,q_hi,just_peaks=True,smooth=do_smooth,alg=alg,binning=times[1]-times[0])
    peaks.sort()
-   print peaks[-1]
    peak_placemark=0
    if peaks[0]!=0:
       peaks=np.hstack([0,peaks])
@@ -573,7 +572,7 @@ def gauss(mean,standev,x):
 #-----Get_Bursts-------------------------------------------------------------------------------------------------------
 
 #@jit
-def get_bursts(data,q_lo=50,q_hi=90,just_peaks=False,smooth=False,savgol=5,alg='cubic spline'):
+def get_bursts(data,q_lo=50,q_hi=90,just_peaks=False,smooth=False,savgol=5,alg='cubic spline',binning=1.0):
 
    '''Get Bursts
 
@@ -600,6 +599,8 @@ def get_bursts(data,q_lo=50,q_hi=90,just_peaks=False,smooth=False,savgol=5,alg='
                         to smooth it.
     savgol     -   INT: [Optional: Default=5] The window size for the Savitsky-Golay filter
     alg        -STRING: [Optional: Default='cubic spline'] The algorithm to use to obtain peaks.
+    binning    - FLOAT: [Optional: Default=1] If algorithm is set to 'load', the binning of the data is required
+                        to return the correct index list.
 
    Outputs:
 
@@ -643,14 +644,19 @@ def get_bursts(data,q_lo=50,q_hi=90,just_peaks=False,smooth=False,savgol=5,alg='
 
    elif alg=='load':
       loadfilename=raw_input('Burst File Name: ')
-      loadfile=open(loadfilename)
-      if len(loadfile[0].split(','))>6:
-         peak_locs=loadfile[0].split(',')      
+      loadfile=open(loadfilename,'r')
+      with open(loadfilename,'r') as f:
+         first_line=f.readline()
+      if len(first_line.split(','))>6:
+         dataex=np.array(first_line.split(','))    
+         for l in dataex:
+            peak_locs.append(float(l))  
       else:
          for line in loadfile:
             l=line.split(',')
-            peak_locs.append(l[0])
+            peak_locs.append(float(l[0]))
       loadfile.close()
+      peak_locs=np.array(peak_locs)/float(binning)
          
 
    if just_peaks: return peak_locs

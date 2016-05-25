@@ -706,16 +706,20 @@ while plotopt not in ['quit','exit']:                                     # If t
          print 'Cannot perform burst analysis on folded data!'
          continue
 
-      while True:
-         try:
-            iq_lo=float(raw_input('Low Threshold:  '))
-            iq_hi=float(raw_input('High Threshold: '))
-            assert iq_hi>iq_lo
-            assert iq_hi<=100
-            assert iq_lo>=0
-            break
-         except AssertionError:
-            print 'Invalid Entry!  Valid entry is of the form High>Low.'
+      if burst_alg=='cubic spline':
+         while True:
+            try:
+               iq_lo=float(raw_input('Low Threshold:  '))
+               iq_hi=float(raw_input('High Threshold: '))
+               assert iq_hi>iq_lo
+               assert iq_hi<=100
+               assert iq_lo>=0
+               break
+            except AssertionError:
+               print 'Invalid Entry!  Valid entry is of the form High>Low.'
+      else:
+         iq_lo=0
+         iq_hi=100
 
       while True:
          try:
@@ -991,50 +995,32 @@ while plotopt not in ['quit','exit']:                                     # If t
 
       ofil = open(ofilename, 'w')                                         # Open file
 
-      if folded:
+      for i in range(len(times)):
 
-         exfac=period                                                     # A factor to convert phase for folded data into time
+         row=['0.0 ']*15                                                  # Create a row of strings reading 0.0, append data into it
+         row[0]=str(times[i])+' '                                         # Column 00: Time
+         row[1]=str(timese[i])+' '                                        # Column 01: Time Error
+         row[2]=str(flux[i])+' '                                          # Column 02: Total Flux
+         row[3]=str(fluxe[i])+' '                                         # Column 03: Total Flux Error
+         row[4]=str(y1[gmask][i])+' '                                     # Column 04: Band 1 Flux
+         row[5]=str(ye1[gmask][i])+' '                                    # Column 05: Band 1 Flux Error
+         row[14]='\n'                                                     # Column 14: Return (so further data will be appended to a new line)
 
-         try:
-            asciilcrep=int(raw_input('Number of waveforms to save: '))    # If folded, ask the user how many iterations of the waveform they would like to save
-            assert asciilcrep>0                                           # Force this number to be positive
-            print 'Saving '+str(asciilcrep)+' waveform repetition'+('s' if asciilcrep>0 else None)+'.'
-         except:
-            print 'Saving 1 waveform repetition.'
-            asciilcrep=1                                                  # Default to 1 repetition if the user inputs garbage
+         if nfiles>1:                                                     # If 2+ bands are given:
 
-      else:
+            row[6]=str(y2[gmask][i])+' '                                  # Column 06: Band 2 Flux
+            row[7]=str(ye2[gmask][i])+' '                                 # Column 07: Band 2 Flux Error
+            row[10]=str(col[21][i])+' '                                   # Column 10: [2/1] Colour
+            row[11]=str(cole[21][i])+' '                                  # Column 11: [2/1] Colour Error
 
-         exfac=1                                                          # Use one repetition if data is unfolded
-         asciilcrep=1                                                     # No need to multiply the x-axis by a factor for unfolded data
+         if nfiles==3:                                                    # If 3 bands are given:
 
-      for j in range(asciilcrep):                                         # Repeat the data as many times as the user asks:
-         for i in range(len(times)):
+            row[8]=str(y3[gmask][i])+' '                                  # Column 08: Band 3 Flux
+            row[9]=str(ye3[gmask][i])+' '                                 # Column 09: Band 3 Flux Error
+            row[12]=str(col[31][i])+' '                                   # Column 12: [3/1] Colour
+            row[13]=str(cole[31][i])+' '                                  # Column 13: [3/1] Colour Error
 
-            row=['0.0 ']*15                                               # Create a row of strings reading 0.0, append data into it
-            row[0]=str(times[i]*exfac)+' '                                # Column 00: Time
-            row[1]=str(timese[i]*exfac)+' '                               # Column 01: Time Error
-            row[2]=str(flux[i])+' '                                       # Column 02: Total Flux
-            row[3]=str(fluxe[i])+' '                                      # Column 03: Total Flux Error
-            row[4]=str(y1[gmask][i])+' '                                  # Column 04: Band 1 Flux
-            row[5]=str(ye1[gmask][i])+' '                                 # Column 05: Band 1 Flux Error
-            row[14]='\n'                                                  # Column 14: Return (so further data will be appended to a new line)
-
-            if nfiles>1:                                                  # If 2+ bands are given:
-
-               row[6]=str(y2[gmask][i])+' '                               # Column 06: Band 2 Flux
-               row[7]=str(ye2[gmask][i])+' '                              # Column 07: Band 2 Flux Error
-               row[10]=str(col[21][i])+' '                                # Column 10: [2/1] Colour
-               row[11]=str(cole[21][i])+' '                               # Column 11: [2/1] Colour Error
-
-            if nfiles==3:                                                 # If 3 bands are given:
-
-               row[8]=str(y3[gmask][i])+' '                               # Column 08: Band 3 Flux
-               row[9]=str(ye3[gmask][i])+' '                              # Column 09: Band 3 Flux Error
-               row[12]=str(col[31][i])+' '                                # Column 12: [3/1] Colour
-               row[13]=str(cole[31][i])+' '                               # Column 13: [3/1] Colour Error
-
-            ofil.writelines(row)                                          # Append row of data into open file
+         ofil.writelines(row)                                             # Append row of data into open file
 
          times=times+1                                                    # Shift x-axis along by one period
 
@@ -1622,7 +1608,7 @@ while plotopt not in ['quit','exit']:                                     # If t
             print 'Invalid Entry!  Valid entry is of the form High>Low.'
 
       bursts={}
-      bursts['endpoints']=pan.get_bursts(flux,q_lo=iq_lo,q_hi=iq_hi,just_peaks=False,alg=burst_alg)
+      bursts['endpoints']=pan.get_bursts(flux,q_lo=iq_lo,q_hi=iq_hi,just_peaks=False,alg=burst_alg,binning=binning)
 
       pl.figure()
       doplot(times,timese,flux,fluxe,ovr=True)                            # Plot flux/time using doplot from pan_lib
@@ -1717,7 +1703,7 @@ while plotopt not in ['quit','exit']:                                     # If t
       print ' * CUBIC SPLINE'
       print ' * LOAD'
       print ''
-      inp_burst_alg=raw_input('Select Burst Algorithm:').lower()
+      inp_burst_alg=raw_input('Select Burst Algorithm: ').lower()
       if inp_burst_alg in ('cubic spline','load'):
          burst_alg=inp_burst_alg
          print 'Burst-Finding Algorithm set to "'+burst_alg+'"!'
