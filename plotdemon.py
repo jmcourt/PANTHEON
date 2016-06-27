@@ -1022,8 +1022,6 @@ while plotopt not in ['quit','exit']:                                     # If t
 
          ofil.writelines(row)                                             # Append row of data into open file
 
-         times=times+1                                                    # Shift x-axis along by one period
-
       ofil.close()                                                        # Close file
 
       print 'Data saved!'
