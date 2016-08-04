@@ -506,7 +506,7 @@ def foldify(t,y,ye,period,binsize,phres=None,name='',compr=False,verb=True):
 
 #-----Fold_Bursts------------------------------------------------------------------------------------------------------
 
-@jit
+#@jit
 def fold_bursts(times,data,q_lo=50,q_hi=90,do_smooth=False,alg='cubic spline'):
 
    '''Return Phases Using Bursts as Reference Points
@@ -544,7 +544,7 @@ def fold_bursts(times,data,q_lo=50,q_hi=90,do_smooth=False,alg='cubic spline'):
 
    assert len(times)==len(data)
    phases=np.zeros(len(times))
-   peaks=get_bursts(data,q_lo,q_hi,just_peaks=True,smooth=do_smooth,alg=alg,binning=times[1]-times[0])
+   peaks=get_bursts(data,q_lo,q_hi,just_peaks=True,smooth=do_smooth,alg=alg,binning=times=times)
    peaks.sort()
    peak_placemark=0
    if peaks[0]!=0:
