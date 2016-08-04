@@ -404,6 +404,7 @@ bursts=None
 burst_alg='cubic spline'
 
 flux_axis=r'Flux (cts s$^{-1}$ PCU$^{-1}$)'
+time_n=0                                                                  # Normalise dump time
 
 
 #-----User Menu--------------------------------------------------------------------------------------------------------
@@ -466,6 +467,7 @@ def give_inst():                                                          # Defi
    print 'SAVING DATA TO ASCII:'
    print '* "export" to dump the lightcurve and colour data into an ASCII file.'
    print '* "bgdump" to export background lightcurve to an ASCII file.'
+   print '* "timenorm" to toggle absolute or relative time values on x-axis.'
    print ''
    print 'TOGGLE OPTIONS:'
    print '* "errors" to toggle whether to display errors in plots.'
@@ -975,7 +977,7 @@ while plotopt not in ['quit','exit']:                                     # If t
          for i in range(len(bdata_x)):
 
             row=['0.0']*3                                              # Create a row of strings reading 0.0, append data into it
-            row[0]=str(bdata_x[i])+' '                                 # Column 01: Time
+            row[0]=str(bdata_x[i]+time_n)+' '                          # Column 01: Time
             row[1]=str(bdata_y[i])+' '                                 # Column 02: Rate
             row[2]='\n'
             ofil.writelines(row) 
@@ -998,7 +1000,7 @@ while plotopt not in ['quit','exit']:                                     # If t
       for i in range(len(times)):
 
          row=['0.0 ']*15                                                  # Create a row of strings reading 0.0, append data into it
-         row[0]=str(times[i])+' '                                         # Column 00: Time
+         row[0]=str(times[i]+time_n)+' '                                         # Column 00: Time
          row[1]=str(timese[i])+' '                                        # Column 01: Time Error
          row[2]=str(flux[i])+' '                                          # Column 02: Total Flux
          row[3]=str(fluxe[i])+' '                                         # Column 03: Total Flux Error
@@ -1026,6 +1028,19 @@ while plotopt not in ['quit','exit']:                                     # If t
 
       print 'Data saved!'
 
+
+   #-----'timenorm' Option---------------------------------------------------------------------------------------------
+   
+   elif plotopt=='timenorm':
+
+      print ''
+      if time_n==0:
+         time_n=tst1
+         print 'Using absolute time!'
+      else:
+         time_n=0
+         print 'Using relative time!'
+      print ''
 
    #-----'animate' Option----------------------------------------------------------------------------------------------
 

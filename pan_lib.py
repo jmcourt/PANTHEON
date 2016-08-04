@@ -572,7 +572,7 @@ def gauss(mean,standev,x):
 #-----Get_Bursts-------------------------------------------------------------------------------------------------------
 
 #@jit
-def get_bursts(data,q_lo=50,q_hi=90,just_peaks=False,smooth=False,savgol=5,alg='cubic spline',binning=1.0):
+def get_bursts(data,q_lo=50,q_hi=90,just_peaks=False,smooth=False,savgol=5,alg='cubic spline',times=None):
 
    '''Get Bursts
 
@@ -599,8 +599,9 @@ def get_bursts(data,q_lo=50,q_hi=90,just_peaks=False,smooth=False,savgol=5,alg='
                         to smooth it.
     savgol     -   INT: [Optional: Default=5] The window size for the Savitsky-Golay filter
     alg        -STRING: [Optional: Default='cubic spline'] The algorithm to use to obtain peaks.
-    binning    - FLOAT: [Optional: Default=1] If algorithm is set to 'load', the binning of the data is required
-                        to return the correct index list.
+    times      - ARRAY: [Optional: Default=None] If 'load' selected for algorithm, user must also give the
+                        time array associated with the data.
+
 
    Outputs:
 
@@ -643,6 +644,9 @@ def get_bursts(data,q_lo=50,q_hi=90,just_peaks=False,smooth=False,savgol=5,alg='
             i-=1
 
    elif alg=='load':
+      if times==None:
+         raise Exception('Must provide data times when using "load" mode!')
+      times=np.array(times)
       loadfilename=raw_input('Burst File Name: ')
       loadfile=open(loadfilename,'r')
       with open(loadfilename,'r') as f:
@@ -656,7 +660,8 @@ def get_bursts(data,q_lo=50,q_hi=90,just_peaks=False,smooth=False,savgol=5,alg='
             l=line.split(',')
             peak_locs.append(float(l[0]))
       loadfile.close()
-      peak_locs=np.array(peak_locs)/float(binning)
+      peak_locs=(np.array(peak_locs)-times[0])/(times[1]-times[0])
+      peak_locs=peak_locs.astype(int)
          
 
    if just_peaks: return peak_locs
@@ -1484,7 +1489,7 @@ def rms_n(data,counts,datres,rate,bg,const):
 #-----RMS--------------------------------------------------------------------------------------------------------------
 
 @jit
-def rms(data):
+def rms(data,data_err=[0]):
 
    '''RMS
 
@@ -1494,7 +1499,8 @@ def rms(data):
 
    Inputs:
 
-    data -  LIST: The data to find the RMS of.
+    data     - LIST: The data to find the RMS of.
+    data_err - LIST: The errors on those data points
 
    Outputs:
 
@@ -1504,8 +1510,10 @@ def rms(data):
 
    if np.mean(data)==0:
       return 'div0'
-   data=np.array(data)
-   rms=((sum((data-np.mean(data))**2)/len(data))**0.5)/abs(np.mean(data))
+   nr=1.0/len(data)
+   mn=np.mean(data)
+   vd=np.sum((data-mn)**2)-np.sum((data_err)**2)
+   rms= ((vd*nr)**0.5)/abs(mn) 
    return rms
 
 
