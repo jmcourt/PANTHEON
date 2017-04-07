@@ -315,6 +315,29 @@ def ccor(data1,data2):
    return times,crosscor,crosscore
    
 
+#-----Eddington--------------------------------------------------------------------------------------------------------
+
+def eddington(M):
+
+   '''Eddington
+
+   Description:
+
+    Returns the Eddington Limit for a given black hole mass, assuming Hydrogen accreta.
+
+   Inputs:
+
+    M - FLOAT: The mass of the black hole in solar masses
+
+   Outputs:
+
+    L - FLOAT: The Eddington Luminosity in ergs/s
+
+   -J.M.Court, 2016'''
+
+   return 1.26E38*M
+
+
 #-----EqRange----------------------------------------------------------------------------------------------------------
 
 # Equal Length Range

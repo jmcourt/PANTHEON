@@ -72,6 +72,8 @@ def chrange(data,low,high,datamode):
 
    -J.M.Court, 2015'''
 
+   if datamode[:16]='B_8ms_16A_0_35_H': datamode='B_8ms_16A_0_35_H'
+
    if datamode in ['B_2ms_4B_0_35_H','B_8ms_16A_0_35_H']:
 
       low=bihchan(datamode,low)
@@ -131,6 +133,8 @@ def discnev(datas,datamode):
 
    -J.M.Court, 2014'''
 
+   if datamode[:16]='B_8ms_16A_0_35_H': datamode='B_8ms_16A_0_35_H'
+
    if datamode in ['B_2ms_4B_0_35_H','B_8ms_16A_0_35_H']:
       return discnevb(datamode,datas.field(1))
 
@@ -151,6 +155,8 @@ def discnevb(datamode,datas):
    -J.M.Court, 2014'''
 
    chan={}
+
+   if datamode[:16]='B_8ms_16A_0_35_H': datamode='B_8ms_16A_0_35_H'
 
    if datamode=='B_2ms_4B_0_35_H':
       nbchan=4
@@ -192,6 +198,8 @@ def bihchan(datamode,chan):
     n_chan - INT: the ID of the range containing the relevant channel.
 
    -J.M.Court, 2015'''
+
+   if datamode[:16]='B_8ms_16A_0_35_H': datamode='B_8ms_16A_0_35_H'
 
    chan=int(chan)
 
@@ -430,6 +438,8 @@ def getbin(event,datamode):
 
    -J.M.Court, 2014'''
 
+   if datamode[:16]='B_8ms_16A_0_35_H': datamode='B_8ms_16A_0_35_H'
+
    if datamode in ['B_2ms_4B_0_35_H','B_8ms_16A_0_35_H']:
       bsz=event[1].header['1CDLT2']
    else:
@@ -519,6 +529,8 @@ def getobs(event,datamode,filepath):
 
     Fetches a tuple consisting of the object and obs_id of the observation.'''
 
+   if datamode[:16]='B_8ms_16A_0_35_H': datamode='B_8ms_16A_0_35_H'
+
    if datamode=='GoodXenon_2s':
       try:
          obsid=(filepath.split('/')[-4])                                  # GoodXenon for XTE doesnt store obs_id for some reason
@@ -536,7 +548,7 @@ def getobs(event,datamode,filepath):
 
 #-----Get PCU----------------------------------------------------------------------------------------------------------
 
-def getpcu(words,datamode,t_pcus=None):
+def getpcu(words,datamode,t_pcus=None,pculist=False):
 
    '''Get PCUs
 
@@ -558,6 +570,8 @@ def getpcu(words,datamode,t_pcus=None):
                          word is given, 1 is returned instead along with an error message.
 
    -J.M.Court, 2015'''
+
+   if datamode[:16]='B_8ms_16A_0_35_H': datamode='B_8ms_16A_0_35_H'
 
    if datamode in ['E_125us_64M_0_1s','E_16us_16B_36_1s']:
       r=1,4
@@ -588,17 +602,21 @@ def getpcu(words,datamode,t_pcus=None):
 
    words=(words[:,r[0]:r[1]]).tolist()
 
-   if [False,False,False] in words: pcus+=1
-   if [False,False,True] in words: pcus+=1
-   if [False,True,False] in words: pcus+=1
-   if [False,True,True] in words: pcus+=1
-   if [True,False,False] in words: pcus+=1
+   pcus=[0,0,0,0,0]
+
+   if [False,False,False] in words: pcus[0]=1
+   if [False,False,True] in words: pcus[1]=1
+   if [False,True,False] in words: pcus[2]=1
+   if [False,True,True] in words: pcus[3]=1
+   if [True,False,False] in words: pcus[4]=1
 
    if pcus==0:
       print 'Error!  0 PCUs present in data!'
       return 1
+   elif not pculist:
+      return sum(pcus)
    else:
-      return pcus
+      return (sum(pcus), pcus)
 
 
 #-----Get Tim----------------------------------------------------------------------------------------------------------
@@ -611,7 +629,9 @@ def gettim(data,tstart,res,datamode):
 
    -J.M.Court, 2015'''
 
-   if datamode in ['B_2ms_4B_0_35_H','B_8ms_16A_0_35_H']:
+   if datamode[:16]='B_8ms_16A_0_35_H': datamode='B_8ms_16A_0_35_H'
+
+   if datamode in ['B_2ms_4B_0_35_H','B_8ms_16A_0_35_H','B_8ms_16A_0_35_H_4P']:
       times=[]
       for i in range(len(data)):
          times+=[(i*res)+tstart]
@@ -631,6 +651,8 @@ def getwrd(data,datamode):
 
    -J.M.Court, 2015'''
 
+   if datamode[:16]='B_8ms_16A_0_35_H': datamode='B_8ms_16A_0_35_H'
+
    if datamode in ['B_2ms_4B_0_35_H','B_8ms_16A_0_35_H']:
       return None
    else:
@@ -646,6 +668,8 @@ def getwrdrow(words,mask,datamode):
    Description: Returns Data Words filtered by a mask, for data that has datawords.
 
    -J.M.Court, 2015'''
+
+   if datamode[:16]='B_8ms_16A_0_35_H': datamode='B_8ms_16A_0_35_H'
 
    if datamode in ['B_2ms_4B_0_35_H','B_8ms_16A_0_35_H']:
       return None
@@ -663,6 +687,8 @@ def maxen(datamode):
     Returns the highest energy or channel valid for the instrument.
 
    -J.M.Court, 2015'''
+
+   if datamode[:16]='B_8ms_16A_0_35_H': datamode='B_8ms_16A_0_35_H'
 
    if datamode in ['B_2ms_4B_0_35_H','B_8ms_16A_0_35_H']:
       return 35
