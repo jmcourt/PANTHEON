@@ -72,8 +72,6 @@ def chrange(data,low,high,datamode):
 
    -J.M.Court, 2015'''
 
-   if datamode[:16]='B_8ms_16A_0_35_H': datamode='B_8ms_16A_0_35_H'
-
    if datamode in ['B_2ms_4B_0_35_H','B_8ms_16A_0_35_H']:
 
       low=bihchan(datamode,low)
@@ -85,6 +83,11 @@ def chrange(data,low,high,datamode):
          ndat+=array(data[i])
 
       return ndat
+
+   elif datamode in ['SB_125us_14_35_1s','SB_125us_8_13_1s']:
+
+      print 'No energy information in this datamode!'                     # No energy information in SB datamodes, so don't filter
+      return data
 
    else:
 
@@ -133,9 +136,7 @@ def discnev(datas,datamode):
 
    -J.M.Court, 2014'''
 
-   if datamode[:16]='B_8ms_16A_0_35_H': datamode='B_8ms_16A_0_35_H'
-
-   if datamode in ['B_2ms_4B_0_35_H','B_8ms_16A_0_35_H']:
+   if datamode in ['B_2ms_4B_0_35_H','B_8ms_16A_0_35_H','SB_125us_14_35_1s','SB_125us_8_13_1s']:
       return discnevb(datamode,datas.field(1))
 
    mask=datas['Event'][:,0]==True                                         # Creating a mask to obscure any data not labelled as photons
@@ -154,9 +155,12 @@ def discnevb(datamode,datas):
 
    -J.M.Court, 2014'''
 
-   chan={}
+   if datamode in ['SB_125us_14_35_1s','SB_125us_8_13_1s']:
 
-   if datamode[:16]='B_8ms_16A_0_35_H': datamode='B_8ms_16A_0_35_H'
+      datas=datas.reshape([len(datas)*len(datas[0])])
+      return datas
+
+   chan={}
 
    if datamode=='B_2ms_4B_0_35_H':
       nbchan=4
@@ -198,8 +202,6 @@ def bihchan(datamode,chan):
     n_chan - INT: the ID of the range containing the relevant channel.
 
    -J.M.Court, 2015'''
-
-   if datamode[:16]='B_8ms_16A_0_35_H': datamode='B_8ms_16A_0_35_H'
 
    chan=int(chan)
 
@@ -438,9 +440,7 @@ def getbin(event,datamode):
 
    -J.M.Court, 2014'''
 
-   if datamode[:16]='B_8ms_16A_0_35_H': datamode='B_8ms_16A_0_35_H'
-
-   if datamode in ['B_2ms_4B_0_35_H','B_8ms_16A_0_35_H']:
+   if datamode in ['B_2ms_4B_0_35_H','B_8ms_16A_0_35_H','SB_125us_14_35_1s','SB_125us_8_13_1s']:
       bsz=event[1].header['1CDLT2']
    else:
       bsz=event[1].header['TIMEDEL']
@@ -529,14 +529,12 @@ def getobs(event,datamode,filepath):
 
     Fetches a tuple consisting of the object and obs_id of the observation.'''
 
-   if datamode[:16]='B_8ms_16A_0_35_H': datamode='B_8ms_16A_0_35_H'
-
    if datamode=='GoodXenon_2s':
       try:
          obsid=(filepath.split('/')[-4])                                  # GoodXenon for XTE doesnt store obs_id for some reason
       except:
          obsid=''
-   elif datamode in ['E_125us_64M_0_1s','E_16us_64M_0_1s','E_16us_16B_36_1s']:
+   elif datamode in ['E_125us_64M_0_1s','E_16us_64M_0_1s','E_16us_16B_36_1s','SB_125us_14_35_1s','SB_125us_8_13_1s']:
       obsid=event[1].header['OBS_ID']
    else:
       obsid=''
@@ -570,8 +568,6 @@ def getpcu(words,datamode,t_pcus=None,pculist=False):
                          word is given, 1 is returned instead along with an error message.
 
    -J.M.Court, 2015'''
-
-   if datamode[:16]='B_8ms_16A_0_35_H': datamode='B_8ms_16A_0_35_H'
 
    if datamode in ['E_125us_64M_0_1s','E_16us_16B_36_1s']:
       r=1,4
@@ -629,9 +625,7 @@ def gettim(data,tstart,res,datamode):
 
    -J.M.Court, 2015'''
 
-   if datamode[:16]='B_8ms_16A_0_35_H': datamode='B_8ms_16A_0_35_H'
-
-   if datamode in ['B_2ms_4B_0_35_H','B_8ms_16A_0_35_H','B_8ms_16A_0_35_H_4P']:
+   if datamode in ['B_2ms_4B_0_35_H','B_8ms_16A_0_35_H','B_8ms_16A_0_35_H_4P','SB_125us_8_13_1s','SB_125us_14_35_1s']:
       times=[]
       for i in range(len(data)):
          times+=[(i*res)+tstart]
@@ -651,9 +645,7 @@ def getwrd(data,datamode):
 
    -J.M.Court, 2015'''
 
-   if datamode[:16]='B_8ms_16A_0_35_H': datamode='B_8ms_16A_0_35_H'
-
-   if datamode in ['B_2ms_4B_0_35_H','B_8ms_16A_0_35_H']:
+   if datamode in ['B_2ms_4B_0_35_H','B_8ms_16A_0_35_H','SB_125us_14_35_1s','SB_125us_8_13_1s']:
       return None
    else:
       return data.field(1)
@@ -669,9 +661,7 @@ def getwrdrow(words,mask,datamode):
 
    -J.M.Court, 2015'''
 
-   if datamode[:16]='B_8ms_16A_0_35_H': datamode='B_8ms_16A_0_35_H'
-
-   if datamode in ['B_2ms_4B_0_35_H','B_8ms_16A_0_35_H']:
+   if datamode in ['B_2ms_4B_0_35_H','B_8ms_16A_0_35_H','SB_125us_14_35_1s','SB_125us_8_13_1s']:
       return None
    else:
       return words[mask]
@@ -688,10 +678,10 @@ def maxen(datamode):
 
    -J.M.Court, 2015'''
 
-   if datamode[:16]='B_8ms_16A_0_35_H': datamode='B_8ms_16A_0_35_H'
-
-   if datamode in ['B_2ms_4B_0_35_H','B_8ms_16A_0_35_H']:
+   if datamode in ['B_2ms_4B_0_35_H','B_8ms_16A_0_35_H','SB_125us_14_35_1s']:
       return 35
+   elif datamode=='SB_125us_8_13_1s':
+      return 14
    else:
       return 255
 

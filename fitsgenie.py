@@ -194,7 +194,7 @@ except:
    pan.signoff()
    exit()
 
-if event[1].header['DATAMODE'] in ['B_2ms_4B_0_35_H','B_8ms_16A_0_35_H']:
+if event[1].header['DATAMODE'] in ['B_2ms_4B_0_35_H','B_8ms_16A_0_35_H','SB_125us_14_35_1s','SB_125us_0_13_1s']:
    spec_on=False
    bin_dat=True
    print 'No .speca file can be produced!'
@@ -305,13 +305,13 @@ datas=inst.getdat(event)                                                  # Extr
 
 print 'Discarding photons outside of '+etype+' range '+str(lowc)+escale+'-'+str(highc)+escale+'...'
 
-try:
-   datas=inst.discnev(datas,event[1].header['DATAMODE'])                  # Discarding non-events / reformatting XTE Binned data into a less awful structure
-except:
-   print 'Could not filter data!'
-   print 'Aborting!'
-   pan.signoff()
-   exit()
+#try:
+datas=inst.discnev(datas,event[1].header['DATAMODE'])                  # Discarding non-events / reformatting XTE Binned data into a less awful structure
+#except:
+#   print 'Could not filter data!'
+#   print 'Aborting!'
+#   pan.signoff()
+#   exit()
 
 if event[1].header['DATAMODE'] in ['B_2ms_4B_0_35_H','B_8ms_16A_0_35_H']:
    olen=str(npsum(array(datas)))
