@@ -194,7 +194,7 @@ except:
    pan.signoff()
    exit()
 
-if event[1].header['DATAMODE'] in ['B_2ms_4B_0_35_H','B_8ms_16A_0_35_H','SB_125us_14_35_1s','SB_125us_0_13_1s']:
+if event[1].header['DATAMODE'] in ['B_2ms_4B_0_35_H','B_8ms_16A_0_35_H','SB_125us_14_35_1s','SB_125us_8_13_1s']:
    spec_on=False
    bin_dat=True
    print 'No .speca file can be produced!'
