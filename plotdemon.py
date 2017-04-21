@@ -102,8 +102,7 @@ if nfiles>1:
    file2=args[2]
    if pan.filenamecheck(file2,'plotd'):
       print 'Opening',file2                                               # Opening file 2
-      x2r,y2r,ye2r,tst2,bsz2,null,pcus2,bg2,bsub2,bdata2,flv2,ch[2],mis2,obsd2,v2=pan.plotdld(file2)
-      del null
+      x2r,y2r,ye2r,tst2,bsz2,gti2,pcus2,bg2,bsub2,bdata2,flv2,ch[2],mis2,obsd2,v2=pan.plotdld(file2)
       y2r=y2r/float(pcus2)                                                # Normalising flux by dividing by the number of active PCUs and the binsize
       ye2r=ye2r/float(pcus2)
    else:
@@ -116,7 +115,7 @@ if nfiles>2:
    file3=args[3]
    if pan.filenamecheck(file2,'plotd'):
       print 'Opening',file3                                               # Opening file 3
-      x3r,y3r,ye3r,tst3,bsz3,null,pcus3,bg3,bsub3,bdata3,flv3,ch[3],mis3,obsd3,v3=pan.plotdld(file3)
+      x3r,y3r,ye3r,tst3,bsz3,gti3,pcus3,bg3,bsub3,bdata3,flv3,ch[3],mis3,obsd3,v3=pan.plotdld(file3)
       del null
       y3r=y3r/float(pcus3)                                                # Normalising flux by dividing by the number of active PCUs and the binsize
       ye3r=ye3r/float(pcus3)
@@ -294,7 +293,10 @@ if wrongsize:                                                             # Forc
 print 'Fetching GTI mask...'
 
 gmask=pan.gtimask(x1,gti)                                                 # A mask to blank values that fall outside of the GTIs
-
+if nfiles>1:
+   gmask2=pan.gtimask(x2,gti2)
+if nfiles>2:
+   gmask3=pan.gtimask(x3,gti3)
 print str(int(100*sum(gmask)/len(gmask)))+'% of data within GTI!'
 print ''
 

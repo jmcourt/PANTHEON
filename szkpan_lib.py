@@ -229,7 +229,7 @@ def getpcu(words,datamode):
 
 #-----Get Tim----------------------------------------------------------------------------------------------------------
 
-def gettim(data,tstart,res,datamode):
+def gettim(data,event,tstart,res,datamode):
 
    '''Get Times
 
@@ -237,7 +237,7 @@ def gettim(data,tstart,res,datamode):
 
    -J.M.Court, 2015'''
 
-   return data.field('TIME') 
+   return data.field('TIME'),data 
 
 
 #-----Get Wrd----------------------------------------------------------------------------------------------------------

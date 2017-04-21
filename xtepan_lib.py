@@ -42,7 +42,7 @@
 #-----Importing Modules------------------------------------------------------------------------------------------------
 
 import pan_lib as pan
-from numpy import array, zeros
+from numpy import array, zeros, arange
 from numpy import sum as npsum
 from numba import jit
 
@@ -84,7 +84,7 @@ def chrange(data,low,high,datamode):
 
       return ndat
 
-   elif datamode in ['SB_125us_14_35_1s','SB_125us_8_13_1s']:
+   elif datamode in ['SB_125us_14_35_1s','SB_125us_8_13_1s','SB_125us_0_13_1s']:
 
       print 'No energy information in this datamode!'                     # No energy information in SB datamodes, so don't filter
       return data
@@ -136,7 +136,7 @@ def discnev(datas,datamode):
 
    -J.M.Court, 2014'''
 
-   if datamode in ['B_2ms_4B_0_35_H','B_8ms_16A_0_35_H','SB_125us_14_35_1s','SB_125us_8_13_1s']:
+   if datamode in ['B_2ms_4B_0_35_H','B_8ms_16A_0_35_H','SB_125us_14_35_1s','SB_125us_8_13_1s','SB_125us_0_13_1s']:
       return discnevb(datamode,datas.field(1))
 
    mask=datas['Event'][:,0]==True                                         # Creating a mask to obscure any data not labelled as photons
@@ -155,7 +155,7 @@ def discnevb(datamode,datas):
 
    -J.M.Court, 2014'''
 
-   if datamode in ['SB_125us_14_35_1s','SB_125us_8_13_1s']:
+   if datamode in ['SB_125us_14_35_1s','SB_125us_8_13_1s','SB_125us_0_13_1s']:
 
       datas=datas.reshape([len(datas)*len(datas[0])])
       return datas
@@ -440,7 +440,7 @@ def getbin(event,datamode):
 
    -J.M.Court, 2014'''
 
-   if datamode in ['B_2ms_4B_0_35_H','B_8ms_16A_0_35_H','SB_125us_14_35_1s','SB_125us_8_13_1s']:
+   if datamode in ['B_2ms_4B_0_35_H','B_8ms_16A_0_35_H','SB_125us_14_35_1s','SB_125us_8_13_1s','SB_125us_0_13_1s']:
       bsz=event[1].header['1CDLT2']
    else:
       bsz=event[1].header['TIMEDEL']
@@ -534,7 +534,7 @@ def getobs(event,datamode,filepath):
          obsid=(filepath.split('/')[-4])                                  # GoodXenon for XTE doesnt store obs_id for some reason
       except:
          obsid=''
-   elif datamode in ['E_125us_64M_0_1s','E_16us_64M_0_1s','E_16us_16B_36_1s','SB_125us_14_35_1s','SB_125us_8_13_1s']:
+   elif datamode in ['E_125us_64M_0_1s','E_16us_64M_0_1s','E_16us_16B_36_1s','SB_125us_14_35_1s','SB_125us_8_13_1s','SB_125us_0_13_1s']:
       obsid=event[1].header['OBS_ID']
    else:
       obsid=''
@@ -617,7 +617,7 @@ def getpcu(words,datamode,t_pcus=None,pculist=False):
 
 #-----Get Tim----------------------------------------------------------------------------------------------------------
 
-def gettim(data,tstart,res,datamode):
+def gettim(data,event,tstart,res,datamode):
 
    '''Get Times
 
@@ -625,14 +625,36 @@ def gettim(data,tstart,res,datamode):
 
    -J.M.Court, 2015'''
 
-   if datamode in ['B_2ms_4B_0_35_H','B_8ms_16A_0_35_H','B_8ms_16A_0_35_H_4P','SB_125us_8_13_1s','SB_125us_14_35_1s']:
+   if datamode in ['B_2ms_4B_0_35_H','B_8ms_16A_0_35_H','B_8ms_16A_0_35_H_4P']:
       times=[]
       for i in range(len(data)):
          times+=[(i*res)+tstart]
-      return array(times)
+      return array(times),data
+
+   elif datamode in ['SB_125us_8_13_1s','SB_125us_0_13_1s','SB_125us_14_35_1s']:
+      data=data.tolist()
+      timeseeds=event.field(0)-event.field(0)[0]+tstart
+      times=[]
+      indx=0
+      prevtimeseed=timeseeds[0]
+      for i in timeseeds:                                                
+         nx=prevtimeseed+1
+         while i-nx>0.9:                                                  # When a 1s chunk is missing, zero pad the data here
+            times+=(arange(0,1.0,res)+nx).tolist()
+            data=data[:indx]+([0]*int(1.0/res))+data[indx:]
+            nx+=1
+            indx+=int(1.0/res)
+         for j in arange(0,1.0,res):
+            times+=[i+j]
+         indx+=int(1.0/res)
+         prevtimeseed=i
+      if not len(times)==len(data):
+         print len(times),len(data)
+      return array(times),array(data)
+      
 
    else:
-      return data.field(0) 
+      return data.field(0),data 
 
 
 #-----Get Wrd----------------------------------------------------------------------------------------------------------
@@ -645,7 +667,7 @@ def getwrd(data,datamode):
 
    -J.M.Court, 2015'''
 
-   if datamode in ['B_2ms_4B_0_35_H','B_8ms_16A_0_35_H','SB_125us_14_35_1s','SB_125us_8_13_1s']:
+   if datamode in ['B_2ms_4B_0_35_H','B_8ms_16A_0_35_H','SB_125us_14_35_1s','SB_125us_8_13_1s','SB_125us_0_13_1s']:
       return None
    else:
       return data.field(1)
@@ -661,7 +683,7 @@ def getwrdrow(words,mask,datamode):
 
    -J.M.Court, 2015'''
 
-   if datamode in ['B_2ms_4B_0_35_H','B_8ms_16A_0_35_H','SB_125us_14_35_1s','SB_125us_8_13_1s']:
+   if datamode in ['B_2ms_4B_0_35_H','B_8ms_16A_0_35_H','SB_125us_14_35_1s','SB_125us_8_13_1s','SB_125us_0_13_1s']:
       return None
    else:
       return words[mask]
@@ -680,7 +702,7 @@ def maxen(datamode):
 
    if datamode in ['B_2ms_4B_0_35_H','B_8ms_16A_0_35_H','SB_125us_14_35_1s']:
       return 35
-   elif datamode=='SB_125us_8_13_1s':
+   elif datamode in ['SB_125us_8_13_1s','SB_125us_0_13_1s']:
       return 14
    else:
       return 255
