@@ -295,8 +295,10 @@ print 'Fetching GTI mask...'
 gmask=pan.gtimask(x1,gti)                                                 # A mask to blank values that fall outside of the GTIs
 if nfiles>1:
    gmask2=pan.gtimask(x2,gti2)
+   gmask=gmask&gmask2
 if nfiles>2:
    gmask3=pan.gtimask(x3,gti3)
+   gmask=gmask&gmask3
 print str(int(100*sum(gmask)/len(gmask)))+'% of data within GTI!'
 print ''
 
