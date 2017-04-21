@@ -27,7 +27,7 @@
 #-----User-set Parameters----------------------------------------------------------------------------------------------
 
 minbin=0.015625                                                           # The minimum bin size the code is allowed to attempt to use.  This can prevent long hang-ups
-version=4.2                                                               # The version of PlotDemon
+version=4.3                                                               # The version of PlotDemon
 cbin=32.0                                                                 # The number of bins to use when calculating inhomonogeneity in circfold
 
 #-----Welcoming Header-------------------------------------------------------------------------------------------------
@@ -45,7 +45,7 @@ try:
    import pylab as pl
    import pan_lib as pan
    import numpy as np
-
+   import scipy.signal as sig
    from math import pi
 
 
@@ -430,6 +430,7 @@ def give_inst():                                                          # Defi
    print '* "animate" to create an animation of the lightcurve as the binning is increased.'
    print '* "circanim" to create an animation of the lightcurve circularly folded as the period is increased.'
    print '* "lombscargle" to create a Lomb-Scargle periodogram of the lightcurve.'
+   print '* "autocor" to plot the auto-correlation function.'
    if nfiles>1:                                                           # Only display 2-data-set instructions if 2+ datasets given
       print ''
       print '2+ DATASET PLOTS:'
@@ -441,6 +442,7 @@ def give_inst():                                                          # Defi
       print '* "bands" to plot lightcurves of all bands on adjacent axes.'
       print '* "xbands" to plot lightcurves of all bands on the same axes.'
       print '* "crosscor21" to plot the cross-correlation function of band 1 with band 2.'
+      print '* "timeres crosscor21" to plot the time-resolved cross-correlation function of band 1 with band 2'
       print '* "xbg" to plot background of all bands on the same axes.'
       print '* "all" to plot all available data products.'
    if nfiles==3:                                                           # Only display 3-data-set instructions if 3 datasets given
@@ -455,6 +457,8 @@ def give_inst():                                                          # Defi
       print '* "col31" to plot file3/file1 colour against time.'
       print '* "col13" to plot file1/file3 colour against time.'
       print '* "ccd" to plot a colour-colour diagram (3/1 colour against 2/1 colour).'
+      print '* "timeres crosscor31" to plot the time-resolved cross-correlation function of band 3 with band 1'
+      print '* "timeres crosscor32" to plot the time-resolved cross-correlation function of band 3 with band 2'
       print '* "crosscor31" to plot the cross-correlation function of band 3 with band 1.'
       print '* "crosscor32" to plot the cross-correlation function of band 3 with band 2.'
    print ''
@@ -1341,14 +1345,33 @@ while plotopt not in ['quit','exit']:                                     # If t
          print 'Not enough infiles for HID!'
 
 
+   #-----'autocor' Option------------------------------------------------------------------------------------------------
+
+   elif plotopt=='autocor':                                                # Plot autocorrelation function
+
+      ccor=sig.correlate(flux-np.mean(flux),flux-np.mean(flux),mode='same')/(len(flux)*(np.std(flux)**2))
+         
+      nlen=len(times)
+
+      cct=range(nlen)                                                # Set up the lag axis
+      cct=((np.array(cct)-nlen/2.0)*binning).tolist()
+
+      pl.figure()
+      pl.plot(cct,ccor)
+      pl.xlabel('Lag (s)')
+      pl.ylabel('Cross-Correlation')
+      plot_save(saveplots,show_block)
+      print 'Autocorrelation diagram plotted!'
+
+
    #-----'crosscor' Option------------------------------------------------------------------------------------------------
 
-   elif plotopt[:8]=='crosscor':                                           # Plot x/y HID
+   elif plotopt[:8]=='crosscor':                                           # Plot cross-correlation function
 
       ht=plotopt[8:]                                                       # Collect the xy token from the user
 
       if nfiles>1:
-         if not (ht in ['12','13','21','23','31','32','11','22','33']):    # Check that the token is 2 long and contains two different characters of the set [1,2,3]
+         if not (ht in ['12','13','21','23','31','32']):                   # Check that the token is 2 long and contains two different characters of the set [1,2,3]
 
             print 'Invalid command!'
             print ''
@@ -1368,18 +1391,87 @@ while plotopt not in ['quit','exit']:                                     # If t
 
             h1=int(ht[0])                                                 # Extract file 1 number
             h2=int(ht[1])                                                 # Extract file 2 number
-            cct,ccor,ccore=pan.ccor(ys[h1],ys[h2])
-            ccorclipval=int(3*len(cct)/8.0)
-            cct=cct[ccorclipval:-ccorclipval]
-            cct=cct*binning
-            ccor=ccor[ccorclipval:-ccorclipval]
-            ccore=ccore[ccorclipval:-ccorclipval]
+            ccor=sig.correlate(ys[h1]-np.mean(ys[h1]),ys[h2]-np.mean(ys[h2]),mode='same')/(len(ys[h2])*np.std(ys[h1])*np.std(ys[h2]))
+            
+            nlen=len(times)
+
+            cct=range(nlen)                                                # Set up the lag axis
+            cct=((np.array(cct)-nlen/2.0)*binning).tolist()
+
             pl.figure()
             pl.plot(cct,ccor)
             pl.xlabel(str(ht[1])+'-'+str(ht[0])+' lag (s)')
             pl.ylabel('Cross-Correlation')
             plot_save(saveplots,show_block)
-            print 'File'+str(h1)+'/File'+str(h2)+' HID plotted!'
+            print 'File'+str(h2)+'-File'+str(h1)+' lag (cross-correlation) diagram plotted!'
+
+      else:
+         print 'Not enough infiles for cross-correlation!'
+
+
+   #-----'timeres crosscor' Option----------------------------------------------------------------------------------------
+
+   elif plotopt[:16]=='timeres crosscor':                                 # Plot time-resolved cross-correlation function
+
+      ht=plotopt[16:]                                                     # Collect the xy token from the user
+
+      if nfiles>1:
+         if not (ht in ['12','13','21','23','31','32']):                  # Check that the token is 2 long and contains two different characters of the set [1,2,3]
+
+            print 'Invalid command!'
+            print ''
+            print 'Did you mean...'
+            print ''
+            print 'HID options:'
+            print '* "timeres crosscor21" for 2 against 1 time-resolved cross-correlation'
+            if nfiles==3:
+               print '* "timeres crosscor32" for 3 against 2 time-resolved cross-correlation'
+               print '* "timeres crosscor31" for 3 against 1 time-resolved cross-correlation'
+
+         elif ('3' in ht) and (nfiles<3):
+
+            print 'Not enough infiles for advanced cross-correlation!'    # If token contains a 3 but only 2 infiles are used, abort!
+
+         else:
+
+            try:
+               nlen=int(float(raw_input('Length of segments (s): '))/binning)
+               frang=float(raw_input('Max lag (s) : '))
+            except:
+               print 'Not a number!  Aborting!'
+               continue
+
+            n=len(times)/nlen
+
+            matrix=[]                                                     # Set up the 2d matrix
+            mtimes=[]                                                     # Set up the time axis
+
+            xn=range(nlen)                                                # Set up the lag axis
+            xn=((np.array(xn)-nlen/2.0)*binning).tolist()
+
+            h1=int(ht[0])                                                 # Extract file 1 number
+            h2=int(ht[1])                                                 # Extract file 2 number
+
+            for i in range(n):
+               y1clip=np.array(ys[h1][nlen*i:nlen*(i+1)])                 # Clip the first lightcurve into chunks
+               y2clip=np.array(ys[h2][nlen*i:nlen*(i+1)])                 # Clip the second lightcurve into chunks
+               cclip=sig.correlate(y1clip-np.mean(y1clip),y2clip-np.mean(y2clip),mode='same')/(len(y2clip)*np.std(y1clip)*np.std(y2clip))
+                                                                          # ^ do the cross-correlation
+
+               cclip=np.array(cclip)[np.array(xn)<=frang]                 # Cut the matrix line to the user requested lag range
+               txn=np.array(xn)[np.array(xn)<=frang]
+               cclip=cclip[txn>-frang]
+               txn=txn[txn>-frang]  
+
+               matrix.append(cclip)                                       # Grow the matrix!
+               mtimes.append(nlen*i*binning)
+
+            pl.figure()
+            pl.pcolor(mtimes+[mtimes[-1]+binning*nlen],txn,np.array(matrix).T)
+            pl.xlabel('Time (s)')
+            pl.ylabel(str(ht[1])+'-'+str(ht[0])+' lag (s)')
+            plot_save(saveplots,show_block)
+            print 'File'+str(h2)+'-File'+str(h1)+' time-resolved lag (cross-correlation) diagram plotted!'
 
       else:
          print 'Not enough infiles for cross-correlation!'

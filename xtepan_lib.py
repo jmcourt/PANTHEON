@@ -641,7 +641,7 @@ def gettim(data,event,tstart,res,datamode):
          nx=prevtimeseed+1
          while i-nx>0.9:                                                  # When a 1s chunk is missing, zero pad the data here
             times+=(arange(0,1.0,res)+nx).tolist()
-            data=data[:indx]+([0]*int(1.0/res))+data[indx:]
+            data=data[:indx]+([(data[indx]+data[indx-1])/2.0]*int(1.0/res))+data[indx:]
             nx+=1
             indx+=int(1.0/res)
          for j in arange(0,1.0,res):
