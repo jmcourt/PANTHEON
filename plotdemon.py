@@ -744,11 +744,14 @@ while plotopt not in ['quit','exit']:                                     # If t
          except AssertionError:
             print 'Invalid Phase Resolution!'
 
-      phases=pan.fold_bursts(times,flux,iq_hi,iq_lo,do_smooth=False,alg=burst_alg)
-      nbins=int(1.0/phase_res)
-      phases=(nbins*phases).astype(int)
+      phases=pan.fold_bursts(times,flux,iq_hi,iq_lo,do_smooth=True,alg=burst_alg)
 
-      x1=x1[gmask];y1=y1[gmask];ye1=ye1[gmask]                            # Removing all data points outside of GTI
+      ymask=(phases!=np.inf)
+
+      nbins=int(1.0/phase_res)
+      phases=(nbins*phases[ymask]).astype(int)
+
+      x1=x1[gmask][ymask];y1=y1[gmask][ymask];ye1=ye1[gmask][ymask]       # Removing all data points outside of GTI
 
       newx1=[]
       newy1=[]
@@ -757,16 +760,17 @@ while plotopt not in ['quit','exit']:                                     # If t
       for i in range(nbins):
          newx1.append(float(i)/float(nbins))
          newy1.append(np.mean(y1[phases==i]))
-         #newye1.append(np.std(y1[phases==i]))
          newye1.append((np.sum(ye1[phases==i]**2))**0.5/len(ye1[phases==i]))
 
       x1=np.array(newx1)
+      #y1=sig.savgol(np.array(newy1),5,3)
+      #ye1=sig.savgol(np.array(newye1),5,3)
       y1=np.array(newy1)
       ye1=np.array(newye1)
 
       if nfiles>1:
 
-         x2=x2[gmask];y2=y2[gmask];ye2=ye2[gmask]                         # Removing all data points outside of GTI
+         x2=x2[gmask][ymask];y2=y2[gmask][ymask];ye2=ye2[gmask][ymask]    # Removing all data points outside of GTI
 
          newx2=[]
          newy2=[]
@@ -775,7 +779,6 @@ while plotopt not in ['quit','exit']:                                     # If t
          for i in range(nbins):
             newx2.append(float(i)/float(nbins))
             newy2.append(np.mean(y2[phases==i]))
-            #newye2.append(np.std(y2[phases==i]))
             newye2.append((np.sum(ye2[phases==i]**2))**0.5/len(ye2[phases==i]))
 
          x2=np.array(newx2)
@@ -784,7 +787,7 @@ while plotopt not in ['quit','exit']:                                     # If t
 
       if nfiles==3:
  
-         x3=x3[gmask];y3=y3[gmask];ye3=ye3[gmask]                         # Removing all data points outside of GTI
+         x3=x3[gmask][ymask];y3=y3[gmask][ymask];ye3=ye3[gmask][ymask]    # Removing all data points outside of GTI
 
          newx3=[]
          newy3=[]
@@ -793,7 +796,6 @@ while plotopt not in ['quit','exit']:                                     # If t
          for i in range(nbins):
             newx3.append(float(i)/float(nbins))
             newy3.append(np.mean(y3[phases==i]))
-            #newye3.append(np.std(y3[phases==i]))
             newye3.append((np.sum(ye3[phases==i]**2))**0.5/len(ye3[phases==i]))
 
          x3=np.array(newx3)
@@ -1753,7 +1755,7 @@ while plotopt not in ['quit','exit']:                                     # If t
             print 'Invalid Entry!  Valid entry is of the form High>Low.'
 
       bursts={}
-      bursts['endpoints']=pan.get_bursts(flux,q_lo=iq_lo,q_hi=iq_hi,just_peaks=False,alg=burst_alg,binning=binning)
+      bursts['endpoints']=pan.get_bursts(flux,q_lo=iq_lo,q_hi=iq_hi,just_peaks=False,alg=burst_alg)
 
       pl.figure()
       doplot(times,timese,flux,fluxe,ovr=True)                            # Plot flux/time using doplot from pan_lib
@@ -1788,7 +1790,7 @@ while plotopt not in ['quit','exit']:                                     # If t
       print 'Analysing Bursts...'
 
       bursts['peaks']=[]
-      bursts['trghs']=[]
+      #bursts['trghs']=[]
       bursts['rises']=[]
       bursts['falls']=[]
       bursts['duras']=[]
@@ -1798,7 +1800,7 @@ while plotopt not in ['quit','exit']:                                     # If t
          btime=times[endpoints[0]:endpoints[1]]
          peak,trough,pk_time,rise_time,fall_time=pan.eval_burst(btime,burst)
          bursts['peaks'].append(peak)
-         bursts['trghs'].append(troughs)
+         #bursts['trghs'].append(troughs)
          bursts['rises'].append(rise_time)
          bursts['falls'].append(fall_time)
          bursts['duras'].append(btime[-1]-btime[0])

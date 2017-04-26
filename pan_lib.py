@@ -566,21 +566,39 @@ def fold_bursts(times,data,q_lo=50,q_hi=90,do_smooth=False,alg='cubic spline'):
    -J.M.Court, 2015'''
 
    assert len(times)==len(data)
-   phases=np.zeros(len(times))
    peaks=get_bursts(data,q_lo,q_hi,just_peaks=True,smooth=do_smooth,alg=alg,times=times)
    peaks.sort()
    peak_placemark=0
-   if peaks[0]!=0:
-      peaks=np.hstack([0,peaks])
-   if peaks[-1]!=len(times)-1:
-      peaks=np.hstack([peaks,len(times)-1])
+   #if peaks[0]!=0:
+   #   peaks=np.hstack([0,peaks])
+   #if peaks[-1]!=len(times)-1:
+   #   peaks=np.hstack([peaks,len(times)-1])
+
+   p0=peaks[0]
+   pe=peaks[-1]
+
+   ldat=len(data)
+
+   data=data[p0:pe+1]
+   times=times[p0:pe+1]
+   phases=np.zeros(len(times))
+   peaks=np.array(peaks)-p0
+
+   npeaks=[0]   
+
+   for i in range(len(peaks)-1):
+      if peaks[i+1]-peaks[i]>0.5*(peaks[-1]/float(len(peaks))):           # Remove any peaks separated by less than 10% of average separation
+         npeaks.append(peaks[i+1])
+   peaks=npeaks
 
    for i in range(len(data)):
       while i>peaks[peak_placemark+1] and peak_placemark+2<len(peaks):
          peak_placemark+=1
       phases[i]=float(times[i]-times[peaks[peak_placemark]])/float(times[peaks[peak_placemark+1]]-times[peaks[peak_placemark]])
 
-   return phases   
+   phases=([np.inf]*p0)+phases.tolist()+([np.inf]*(ldat-pe-1))
+
+   return np.array(phases)   
 
 
 #-----Gauss------------------------------------------------------------------------------------------------------------
@@ -747,7 +765,6 @@ def get_bursts_windowed(data,windows,q_lo=50,q_hi=90,smooth=False):
    win_starts=[windowlength*i for i in range(windows)]
    win_ends=[windowlength*(i+1) for i in range(windows-1)]
    win_ends.append(len(data)+1)
-   print win_starts
    peak_locs=[]
 
    for i in range(windows):
