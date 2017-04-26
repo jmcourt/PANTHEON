@@ -26,7 +26,7 @@
 
 #-----User-set Parameters----------------------------------------------------------------------------------------------
 
-minbin=0.015625                                                           # The minimum bin size the code is allowed to attempt to use.  This can prevent long hang-ups
+minbin=0.0078125                                                          # The minimum bin size the code is allowed to attempt to use.  This can prevent long hang-ups
 version=4.3                                                               # The version of PlotDemon
 cbin=32.0                                                                 # The number of bins to use when calculating inhomonogeneity in circfold
 
@@ -46,6 +46,7 @@ try:
    import pan_lib as pan
    import numpy as np
    import scipy.signal as sig
+   import scipy.interpolate as ipo
    from math import pi
 
 
@@ -116,7 +117,6 @@ if nfiles>2:
    if pan.filenamecheck(file2,'plotd'):
       print 'Opening',file3                                               # Opening file 3
       x3r,y3r,ye3r,tst3,bsz3,gti3,pcus3,bg3,bsub3,bdata3,flv3,ch[3],mis3,obsd3,v3=pan.plotdld(file3)
-      del null
       y3r=y3r/float(pcus3)                                                # Normalising flux by dividing by the number of active PCUs and the binsize
       ye3r=ye3r/float(pcus3)
    else:
@@ -227,6 +227,10 @@ else:
          break
       except:
          print 'Invalid bin size input!'
+
+if minbin>max(binning,bsz1,bsz2,bsz3):
+   print 'Warning!  User-entered bin is smaller than the minimum!'
+   print 'Minimum can be changed in the user-input section of this code'
 
 binning=max(binning,bsz1,bsz2,bsz3,minbin)                                # Prevent overbinning by setting minimum binning to the maximum of the binnings of the files
 
@@ -1391,21 +1395,28 @@ while plotopt not in ['quit','exit']:                                     # If t
 
          else:
 
+            nlen=len(times)
             h1=int(ht[0])                                                 # Extract file 1 number
             h2=int(ht[1])                                                 # Extract file 2 number
-            ccor=sig.correlate(ys[h1]-np.mean(ys[h1]),ys[h2]-np.mean(ys[h2]),mode='same')/(len(ys[h2])*np.std(ys[h1])*np.std(ys[h2]))
-            
-            nlen=len(times)
+            h1a=ys[h1]                                                    # Extract dataset 1
+            h2a=ys[h2]                                                    # Extract dataset 2
 
-            cct=range(nlen)                                                # Set up the lag axis
-            cct=((np.array(cct)-nlen/2.0)*binning).tolist()
+            if nlen%2==0:                                                 # Cross-correlation only gives a point at zero lag if an even number of points are input
+               nlen-=1
+               h1a=h1a[:-1]
+               h2a=h2a[:-1]
+
+            ccor=sig.correlate(h1a-np.mean(h1a),h2a-np.mean(h2a),mode='same')/(nlen*np.std(h1a)*np.std(h2a))
+            
+            cct=range(nlen)                                               # Set up the lag axis
+            cct=(((np.array(cct)-nlen/2.0)*binning)+(binning/2.0)).tolist()
 
             pl.figure()
             pl.plot(cct,ccor)
-            pl.xlabel(str(ht[1])+'-'+str(ht[0])+' lag (s)')
+            pl.xlabel('Band '+str(h1)+' lag (s) wrt Band '+str(h2))
             pl.ylabel('Cross-Correlation')
             plot_save(saveplots,show_block)
-            print 'File'+str(h2)+'-File'+str(h1)+' lag (cross-correlation) diagram plotted!'
+            print 'Band '+str(h1)+' lag against band '+str(h2)+' (cross-correlation) diagram plotted!'
 
       else:
          print 'Not enough infiles for cross-correlation!'
@@ -1438,10 +1449,14 @@ while plotopt not in ['quit','exit']:                                     # If t
 
             try:
                nlen=int(float(raw_input('Length of segments (s): '))/binning)
+               if nlen%2!=0: nlen-=1
                frang=float(raw_input('Max lag (s) : '))
             except:
                print 'Not a number!  Aborting!'
                continue
+
+            maxtims=[]
+            maxlocs=[]
 
             n=len(times)/nlen
 
@@ -1454,6 +1469,8 @@ while plotopt not in ['quit','exit']:                                     # If t
             h1=int(ht[0])                                                 # Extract file 1 number
             h2=int(ht[1])                                                 # Extract file 2 number
 
+            #zps=int(frang/binning)-1                                      # Get index of zero in txn array (constructed later)
+
             for i in range(n):
                y1clip=np.array(ys[h1][nlen*i:nlen*(i+1)])                 # Clip the first lightcurve into chunks
                y2clip=np.array(ys[h2][nlen*i:nlen*(i+1)])                 # Clip the second lightcurve into chunks
@@ -1465,15 +1482,34 @@ while plotopt not in ['quit','exit']:                                     # If t
                cclip=cclip[txn>-frang]
                txn=txn[txn>-frang]  
 
+               #print txn[zps]
+               #zeroint=ipo.CubicSpline([zps-2,zps-1,zps+1,zps+2],[cclip[zps-2],cclip[zps-1],cclip[zps+1],cclip[zps+2]])(zps)
+               #print zeroint
+
+               #pl.figure()
+               #pl.plot(txn,cclip)
+
+               #cclip[zps]=zeroint
+
+               #pl.plot(txn,cclip)
+               #pl.show(block=True)
+
+               maxc=max(cclip)
+               maxloc=txn[cclip.tolist().index(maxc)]
+
                matrix.append(cclip)                                       # Grow the matrix!
                mtimes.append(nlen*i*binning)
+               maxtims.append(nlen*(i+0.5)*binning)
+               maxlocs.append(maxloc)
 
             pl.figure()
-            pl.pcolor(mtimes+[mtimes[-1]+binning*nlen],txn,np.array(matrix).T)
+            pl.pcolor(np.array(mtimes+[mtimes[-1]+binning*nlen])-binning/2.0,txn,np.array(matrix).T)
             pl.xlabel('Time (s)')
-            pl.ylabel(str(ht[1])+'-'+str(ht[0])+' lag (s)')
+            pl.ylabel('Band '+str(h1)+' lag (s) wrt Band '+str(h2))
+            pl.plot(maxtims,maxlocs,':k',label='Peak lag')
+            pl.legend()
             plot_save(saveplots,show_block)
-            print 'File'+str(h2)+'-File'+str(h1)+' time-resolved lag (cross-correlation) diagram plotted!'
+            print 'Band '+str(h1)+' lag against band '+str(h2)+' (time-resolved cross-correlation) diagram plotted!'
 
       else:
          print 'Not enough infiles for cross-correlation!'
@@ -1752,7 +1788,7 @@ while plotopt not in ['quit','exit']:                                     # If t
       print 'Analysing Bursts...'
 
       bursts['peaks']=[]
-      bursts['trghs']
+      bursts['trghs']=[]
       bursts['rises']=[]
       bursts['falls']=[]
       bursts['duras']=[]
