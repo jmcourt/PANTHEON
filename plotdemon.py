@@ -321,16 +321,16 @@ def colorget(verbose=True):                                               # Defi
       flux=y1[gmask]                                                      # Use gmask to clip out the areas outside of GTI
       fluxe=ye1[gmask]
    elif nfiles==2:
-      flux,fluxe,ys,col,cole=pan.pdcolex2(y1,y2,ye1,ye2,gmask)            # Get 2/1 and 1/2 colour information using PDColEx in pan_lib
+      flux,fluxe,ys,yes,col,cole=pan.pdcolex2(y1,y2,ye1,ye2,gmask)        # Get 2/1 and 1/2 colour information using PDColEx in pan_lib
    elif nfiles==3:
-      flux,fluxe,ys,col,cole=pan.pdcolex3(y1,y2,y3,ye1,ye2,ye3,gmask)     # Get ALL colour values with 3D PDColEx
+      flux,fluxe,ys,yes,col,cole=pan.pdcolex3(y1,y2,y3,ye1,ye2,ye3,gmask) # Get ALL colour values with 3D PDColEx
    else:
       print 'Error!  Too much data somehow.'                              # This warning should never come up...
       pan.signoff()
       exit()
-   return times,timese,flux,fluxe,ys,col,cole
+   return times,timese,flux,fluxe,ys,yes,col,cole
 
-times,timese,flux,fluxe,ys,col,cole=colorget()                            # Use colorget
+times,timese,flux,fluxe,ys,yes,col,cole=colorget()                        # Use colorget
 
 print 'Done!'
 print ''
@@ -370,20 +370,20 @@ def doplot(x,xe,y,ye,ovr=False,ft='-k',per2=False):                       # Defi
       ploty=y
       plotxe=xe
       plotye=ye
-
-   if es:
-      pl.errorbar(plotx,ploty,xerr=plotxe,yerr=plotye,fmt=formst)         # Plot errorbar plot if errors turned on
-   else:
-      pl.plot(plotx,ploty,formst)                                         # Else plot regular graph
    if cs and not ovr:                                                     # If coloured mode on, colour first 5 data points unless override given
       if len(x)<5:                                                        # Abort if less than 5 data points present
          print 'Not enough data to colour!'
       else:
-         pl.plot(x[0],y[0],'or')                                          # Plot a round marker over each of the first five points with colour ascending red->blue
-         pl.plot(x[1],y[1],'oy')
-         pl.plot(x[2],y[2],'og')
-         pl.plot(x[3],y[3],'oc')
-         pl.plot(x[4],y[4],'ob')
+         pl.plot(x[0],y[0],'or',zorder=1)                                 # Plot a round marker over each of the first five points with colour ascending red->blue
+         pl.plot(x[1],y[1],'oy',zorder=2)
+         pl.plot(x[2],y[2],'og',zorder=3)
+         pl.plot(x[3],y[3],'oc',zorder=4)
+         pl.plot(x[4],y[4],'ob',zorder=5)
+   if es:
+      pl.errorbar(plotx,ploty,xerr=plotxe,yerr=plotye,fmt=formst,zorder=0)# Plot errorbar plot if errors turned on
+   else:
+      pl.plot(plotx,ploty,formst,zorder=0)                                # Else plot regular graph
+
 
 def plot_save(saveplots,show_block):                                      # Add a function to redirect all show calls to savefigs if toggled
    if saveplots:
@@ -447,6 +447,7 @@ def give_inst():                                                          # Defi
       print '* "band" to plot the lightcurve of a single energy band.'
       print '* "bands" to plot lightcurves of all bands on adjacent axes.'
       print '* "xbands" to plot lightcurves of all bands on the same axes.'
+      print '* "compbands21" to plot lightcurves of bands 2 and 1 against each other.'
       print '* "crosscor21" to plot the cross-correlation function of band 1 with band 2.'
       print '* "timeres crosscor21" to plot the time-resolved cross-correlation function of band 1 with band 2'
       print '* "xbg" to plot background of all bands on the same axes.'
@@ -462,6 +463,8 @@ def give_inst():                                                          # Defi
       print '* "col23" to plot file2/file3 colour against time.'
       print '* "col31" to plot file3/file1 colour against time.'
       print '* "col13" to plot file1/file3 colour against time.'
+      print '* "compbands31" to plot lightcurves of bands 3 and 1 against each other.'
+      print '* "compbands32" to plot lightcurves of bands 3 and 2 against each other.'
       print '* "ccd" to plot a colour-colour diagram (3/1 colour against 2/1 colour).'
       print '* "timeres crosscor31" to plot the time-resolved cross-correlation function of band 3 with band 1'
       print '* "timeres crosscor32" to plot the time-resolved cross-correlation function of band 3 with band 2'
@@ -603,7 +606,7 @@ while plotopt not in ['quit','exit']:                                     # If t
       print 'Binning complete!'
       print ''
 
-      times,timese,flux,fluxe,ys,col,cole=colorget()                      # Re-get colours
+      times,timese,flux,fluxe,ys,yes,col,cole=colorget()                  # Re-get colours
       folded=False                                                        # Re-allow clipping
       print 'Done!'
       print ''
@@ -652,7 +655,7 @@ while plotopt not in ['quit','exit']:                                     # If t
          x3,y3,ye3=pan.foldify(x3,y3,ye3,period,binning,phres=phres,name='ch. '+ch[3]) # Fold data of file 3 if present
 
       gmask=np.ones(len(x1),dtype=bool)                                   # Re-establish gmask
-      times,timese,flux,fluxe,ys,col,cole=colorget()                      # Re-get colours
+      times,timese,flux,fluxe,ys,yes,col,cole=colorget()                  # Re-get colours
       folded=True
 
       print 'Folding Complete!'
@@ -705,7 +708,7 @@ while plotopt not in ['quit','exit']:                                     # If t
          x3,y3,ye3=pan.foldify(x3,y3,ye3,period,binning,phres=phres,name='ch. '+ch[3]) # Fold data of file 3 if present
 
       gmask=np.ones(len(x1),dtype=bool)                                   # Re-establish gmask
-      times,timese,flux,fluxe,ys,col,cole=colorget()                      # Re-get colours
+      times,timese,flux,fluxe,ys,yes,col,cole=colorget()                  # Re-get colours
       folded=True
 
       print 'Folding Complete!'
@@ -803,7 +806,7 @@ while plotopt not in ['quit','exit']:                                     # If t
          ye3=np.array(newye3)
 
       gmask=np.ones(len(x1),dtype=bool)                                   # Re-establish gmask
-      times,timese,flux,fluxe,ys,col,cole=colorget()                      # Re-get colours
+      times,timese,flux,fluxe,ys,yes,col,cole=colorget()                  # Re-get colours
 
       folded=True
 
@@ -848,7 +851,7 @@ while plotopt not in ['quit','exit']:                                     # If t
                ye3=ye3[mint:maxt]
 
             gmask=pan.gtimask(x1,gti)                                     # Re-establish gmask
-            times,timese,flux,fluxe,ys,col,cole=colorget()                # Re-get colours
+            times,timese,flux,fluxe,ys,yes,col,cole=colorget()            # Re-get colours
 
             print 'Data clipped!'
 
@@ -873,7 +876,7 @@ while plotopt not in ['quit','exit']:                                     # If t
 
             gmask[mint:maxt]=False                                        # Force all values inside the bad window to appear as outside of GTIs
 
-            times,timese,flux,fluxe,ys,col,cole=colorget()                # Re-get colours
+            times,timese,flux,fluxe,ys,yes,col,cole=colorget()            # Re-get colours
 
             print 'Data masked!'
 
@@ -1113,7 +1116,7 @@ while plotopt not in ['quit','exit']:                                     # If t
 
          gmask=pan.gtimask(x1,gti)                                        # Re-establish gmask
 
-         times,timese,flux,fluxe,ys,col,cole=colorget(verbose=False)      # Re-get colours
+         times,timese,flux,fluxe,ys,yes,col,cole=colorget(verbose=False)  # Re-get colours
 
          if anstep==1:
             if es:
@@ -1150,7 +1153,7 @@ while plotopt not in ['quit','exit']:                                     # If t
             x3,y3,ye3=pan.binify(x3r,y3r,ye3r,binning)                    # Reset binning File 3 using 'binify' in pan_lib
 
       gmask=pan.gtimask(x1,gti)                                           # Re-establish gmask
-      times,timese,flux,fluxe,ys,col,cole=colorget(verbose=False)         # Re-get colours
+      times,timese,flux,fluxe,ys,yes,col,cole=colorget(verbose=False)     # Re-get colours
 
       print ''
       print "Animation saved to",animsloc+'/animation.gif!'
@@ -1351,6 +1354,47 @@ while plotopt not in ['quit','exit']:                                     # If t
 
       else:
          print 'Not enough infiles for HID!'
+
+
+   #-----'compbandsxy' Option------------------------------------------------------------------------------------------
+
+   elif plotopt[:9]=='compbands':                                          # Plot two bands against each other
+
+      ht=plotopt[9:]                                                       # Collect the xy token from the user
+      if nfiles>1:
+         if not (ht in ['12','13','21','23','31','32']):                   # Check that the token is 2 long and contains two different characters of the set [1,2,3]
+
+            print 'Invalid command!'
+            print ''
+            print 'Did you mean...'
+            print ''
+            print 'HID options:'
+            print '* "compbands21" to plot lightcurve 2 against 1'
+            print '* "compbands12" to plot lightcurve 1 against 2'
+            if nfiles==3:
+               print '* "compbands32" to plot lightcurve 3 against 2'
+               print '* "compbands23" to plot lightcurve 2 against 3'
+               print '* "compbands31" to plot lightcurve 3 against 1'
+               print '* "compbands13" to plot lightcurve 1 against 3'
+
+         elif ('3' in ht) and (nfiles<3):
+
+            print 'Not enough infiles for advanced lightcurve comparison!'# If token contains a 3 but only 2 infiles are used, abort!
+
+         else:
+
+            h1=int(ht[0])                                                 # Extract numerator file number
+            h2=int(ht[1])                                                 # Extract denominator file number
+            pl.figure()
+            doplot(ys[h1],yes[h1],ys[h2],yes[h2])                         # Collect colours from col library and plot
+            pl.ylabel(r'Band '+str(h1)+r' rate (cts s$^{-1}$ PCU$^{-1}$)')
+            pl.xlabel(r'Band '+str(h2)+r' rate (cts s$^{-1}$ PCU$^{-1}$)')
+            pl.title(fldtxt+'Lightcurve Comparison Diagram'+qflav)
+            plot_save(saveplots,show_block)
+            print 'File'+str(h1)+'/File'+str(h2)+' LC Comparison plotted!'
+
+      else:
+         print 'Not enough infiles for lightcurve comparison!'
 
 
    #-----'autocor' Option------------------------------------------------------------------------------------------------

@@ -1323,7 +1323,7 @@ def pdcolex2(y1,y2,ye1,ye2,gmask):
             col[ld]=(y[i]/y[j])                                           # Fetch colour
             cole[ld]=col[ld]*np.sqrt(((ye[i]/y[i])**2)+((ye[j]/y[j])**2)) # Fetch colour error
 
-   return flux,fluxe,y,col,cole
+   return flux,fluxe,y,ye,col,cole
 
 @jit
 def pdcolex3(y1,y2,y3,ye1,ye2,ye3,gmask):
@@ -1358,7 +1358,7 @@ def pdcolex3(y1,y2,y3,ye1,ye2,ye3,gmask):
             col[ld]=(y[i]/y[j])                                           # Fetch colour
             cole[ld]=col[ld]*np.sqrt(((ye[i]/y[i])**2)+((ye[j]/y[j])**2)) # Fetch colour error
 
-   return flux,fluxe,y,col,cole
+   return flux,fluxe,y,ye,col,cole
 
 
 #-----PlotdLd----------------------------------------------------------------------------------------------------------
