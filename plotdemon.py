@@ -440,6 +440,8 @@ def give_inst():                                                          # Defi
    if nfiles>1:                                                           # Only display 2-data-set instructions if 2+ datasets given
       print ''
       print '2+ DATASET PLOTS:'
+      print '* "hardness21" to plot a hardness/time diagram of file2/file1 colour over time.'
+      print '* "hardness12" to plot a hardness/time diagram of file1/file2 colour over time.'
       print '* "hid21" to plot a hardness-intensity diagram of file2/file1 colour against total flux.'
       print '* "hid12" to plot a hardness-intensity diagram of file1/file2 colour against total flux.'
       print '* "col21" to plot file2/file1 colour against time.'
@@ -450,11 +452,14 @@ def give_inst():                                                          # Defi
       print '* "compbands21" to plot lightcurves of bands 2 and 1 against each other.'
       print '* "crosscor21" to plot the cross-correlation function of band 1 with band 2.'
       print '* "timeres crosscor21" to plot the time-resolved cross-correlation function of band 1 with band 2'
-      print '* "xbg" to plot background of all bands on the same axes.'
       print '* "all" to plot all available data products.'
    if nfiles==3:                                                           # Only display 3-data-set instructions if 3 datasets given
       print ''
       print '3 DATASET PLOTS:'
+      print '* "hardness32" to plot a hardness/time diagram of file3/file2 colour over time.'
+      print '* "hardness23" to plot a hardness/time diagram of file2/file3 colour over time.'
+      print '* "hardness31" to plot a hardness/time diagram of file3/file1 colour over time.'
+      print '* "hardness13" to plot a hardness/time diagram of file1/file3 colour over time.'
       print '* "hid32" to plot a hardness-intensity diagram of file3/file2 colour against total flux.'
       print '* "hid23" to plot a hardness-intensity diagram of file2/file3 colour against total flux.'
       print '* "hid31" to plot a hardness-intensity diagram of file3/file1 colour against total flux.'
@@ -1354,6 +1359,50 @@ while plotopt not in ['quit','exit']:                                     # If t
 
       else:
          print 'Not enough infiles for HID!'
+
+
+   #-----'hardnessxy' Option------------------------------------------------------------------------------------------------
+
+   elif plotopt[:8]=='hardness':                                           # Plot x/y hardness/time plot
+
+      ht=plotopt[8:]                                                       # Collect the xy token from the user
+
+      if nfiles>1:
+         if not (ht in ['12','13','21','23','31','32']):                   # Check that the token is 2 long and contains two different characters of the set [1,2,3]
+
+            print 'Invalid command!'
+            print ''
+            print 'Did you mean...'
+            print ''
+            print 'HID options:'
+            print '* "hardness21" for 2/1 hardness over time'
+            print '* "hardness12" for 1/2 hardness over time'
+            if nfiles==3:
+               print '* "hardness32" for 3/2 hardness over time'
+               print '* "hardness23" for 2/3 hardness over time'
+               print '* "hardness31" for 3/1 hardness over time'
+               print '* "hardness13" for 1/3 hardness over time'
+
+         elif ('3' in ht) and (nfiles<3):
+
+            print 'Not enough infiles for advanced HID!'                  # If token contains a 3 but only 2 infiles are used, abort!
+
+         else:
+
+            h1=int(ht[0])                                                 # Extract numerator file number
+            h2=int(ht[1])                                                 # Extract denominator file number
+            ht=int(ht)
+            pl.figure()
+            doplot(times,timese,col[ht],cole[ht],ovr=True,per2=folded)    # Collect colours from col library and plot
+            pl.ylabel('('+ch[h1]+'/'+ch[h2]+') colour')
+            pl.xlabel(taxis)
+            pl.title(fldtxt+'Hardness/Time plot'+qflav)
+            plot_save(saveplots,show_block)
+            print 'File'+str(h1)+'/File'+str(h2)+' Hardness/time diagram plotted!'
+
+      else:
+         print 'Not enough infiles for HID!'
+
 
 
    #-----'compbandsxy' Option------------------------------------------------------------------------------------------
