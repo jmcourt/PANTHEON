@@ -363,7 +363,8 @@ def doplot(x,xe,y,ye,ovr=False,ft='-k',per2=False):                       # Defi
       plotx=np.append(x,x+1.0)
       ploty=np.append(y,y)
       plotxe=np.append(xe,xe)
-      plotye=np.append(ye,ye)      
+      plotye=np.append(ye,ye)
+      pl.axvline(1,color='0.7',linestyle=':')      
 
    else:
       plotx=x
@@ -451,7 +452,7 @@ def give_inst():                                                          # Defi
       print '* "xbands" to plot lightcurves of all bands on the same axes.'
       print '* "compbands21" to plot lightcurves of bands 2 and 1 against each other.'
       print '* "crosscor21" to plot the cross-correlation function of band 1 with band 2.'
-      print '* "timeres crosscor21" to plot the time-resolved cross-correlation function of band 1 with band 2'
+      print '* "timeres crosscor21" to plot the time-resolved cross-correlation function of band 1 with band 2' 
       print '* "all" to plot all available data products.'
    if nfiles==3:                                                           # Only display 3-data-set instructions if 3 datasets given
       print ''
@@ -1019,32 +1020,38 @@ while plotopt not in ['quit','exit']:                                     # If t
 
       ofil = open(ofilename, 'w')                                         # Open file
 
-      for i in range(len(times)):
+      if folded:
+         itr=[0,1]
+      else:
+         itr=[0]
 
-         row=['0.0 ']*15                                                  # Create a row of strings reading 0.0, append data into it
-         row[0]=str(times[i]+time_n)+' '                                         # Column 00: Time
-         row[1]=str(timese[i])+' '                                        # Column 01: Time Error
-         row[2]=str(flux[i])+' '                                          # Column 02: Total Flux
-         row[3]=str(fluxe[i])+' '                                         # Column 03: Total Flux Error
-         row[4]=str(y1[gmask][i])+' '                                     # Column 04: Band 1 Flux
-         row[5]=str(ye1[gmask][i])+' '                                    # Column 05: Band 1 Flux Error
-         row[14]='\n'                                                     # Column 14: Return (so further data will be appended to a new line)
+      for ti in itr:
+         for i in range(len(times)):
 
-         if nfiles>1:                                                     # If 2+ bands are given:
+            row=['0.0 ']*15                                               # Create a row of strings reading 0.0, append data into it
+            row[0]=str(times[i]+time_n+ti)+' '                            # Column 00: Time
+            row[1]=str(timese[i])+' '                                     # Column 01: Time Error
+            row[2]=str(flux[i])+' '                                       # Column 02: Total Flux
+            row[3]=str(fluxe[i])+' '                                      # Column 03: Total Flux Error
+            row[4]=str(y1[gmask][i])+' '                                  # Column 04: Band 1 Flux
+            row[5]=str(ye1[gmask][i])+' '                                 # Column 05: Band 1 Flux Error
+            row[14]='\n'                                                  # Column 14: Return (so further data will be appended to a new line)
 
-            row[6]=str(y2[gmask][i])+' '                                  # Column 06: Band 2 Flux
-            row[7]=str(ye2[gmask][i])+' '                                 # Column 07: Band 2 Flux Error
-            row[10]=str(col[21][i])+' '                                   # Column 10: [2/1] Colour
-            row[11]=str(cole[21][i])+' '                                  # Column 11: [2/1] Colour Error
+            if nfiles>1:                                                  # If 2+ bands are given:
 
-         if nfiles==3:                                                    # If 3 bands are given:
+               row[6]=str(y2[gmask][i])+' '                               # Column 06: Band 2 Flux
+               row[7]=str(ye2[gmask][i])+' '                              # Column 07: Band 2 Flux Error
+               row[10]=str(col[21][i])+' '                                # Column 10: [2/1] Colour
+               row[11]=str(cole[21][i])+' '                               # Column 11: [2/1] Colour Error
 
-            row[8]=str(y3[gmask][i])+' '                                  # Column 08: Band 3 Flux
-            row[9]=str(ye3[gmask][i])+' '                                 # Column 09: Band 3 Flux Error
-            row[12]=str(col[31][i])+' '                                   # Column 12: [3/1] Colour
-            row[13]=str(cole[31][i])+' '                                  # Column 13: [3/1] Colour Error
+            if nfiles==3:                                                 # If 3 bands are given:
 
-         ofil.writelines(row)                                             # Append row of data into open file
+               row[8]=str(y3[gmask][i])+' '                               # Column 08: Band 3 Flux
+               row[9]=str(ye3[gmask][i])+' '                              # Column 09: Band 3 Flux Error
+               row[12]=str(col[31][i])+' '                                # Column 12: [3/1] Colour
+               row[13]=str(cole[31][i])+' '                               # Column 13: [3/1] Colour Error
+
+            ofil.writelines(row)                                          # Append row of data into open file
 
       ofil.close()                                                        # Close file
 
@@ -1508,6 +1515,7 @@ while plotopt not in ['quit','exit']:                                     # If t
 
             pl.figure()
             pl.plot(cct,ccor)
+            pl.axvline(0,linestyle=':',color='0.7')
             pl.xlabel('Band '+str(h1)+' lag (s) wrt Band '+str(h2))
             pl.ylabel('Cross-Correlation')
             plot_save(saveplots,show_block)
@@ -1644,7 +1652,7 @@ while plotopt not in ['quit','exit']:                                     # If t
             h2=int(ht[1])                                                 # Extract denominator file number
             ht=int(ht)
             pl.figure()
-            doplot(times,timese,col[ht],cole[ht],ovr=True)                # Collect colours from col library and plot
+            doplot(times,timese,col[ht],cole[ht],ovr=True,per2=folded)    # Collect colours from col library and plot
             pl.xlabel(taxis)
             pl.ylabel('('+ch[h1]+'/'+ch[h2]+') colour')
             pl.ylim(ymin=0)
@@ -1809,17 +1817,34 @@ while plotopt not in ['quit','exit']:                                     # If t
 
    elif plotopt=='xbands':                                                # Plot lightcurves of individual bands together
 
+      donorm=raw_input('Normalise bands? : ')                             # Fetch whether user wants to normalise
+      donorm=donorm in ('y','yes')
+         
       taxis='Phase' if folded else 'Time (s)'
 
       pl.figure()
       leg=[ch[1]]                                                         # Create a legend array to populate with channel names
-      doplot(times,timese,y1[gmask],ye1[gmask],ovr=True,ft='-b',per2=folded)    # Plot the lowest band
+      if donorm:
+         n1=max(y1[gmask])
+      else:
+         n1=1.0
+      doplot(times,timese,y1[gmask]/n1,ye1[gmask]/n1,ovr=True,ft='-b',per2=folded)    # Plot the lowest band
       if nfiles>1:
-         doplot(times,timese,y2[gmask],ye2[gmask],ovr=True,ft='-g',per2=folded) # Plot the second band
+         if donorm:
+            n2=max(y2[gmask])
+         else:
+            n2=1.0
+         doplot(times,timese,y2[gmask]/n2,ye2[gmask]/n2,ovr=True,ft='-g',per2=folded) # Plot the second band
          leg.append(ch[2])                                                # Append name of second channel to key
       if nfiles>2:
-         doplot(times,timese,y3[gmask],ye3[gmask],ovr=True,ft='-r',per2=folded) # Plot the third band
+         if donorm:
+            n3=max(y3[gmask])
+         else:
+            n3=1.0
+         doplot(times,timese,y3[gmask]/n3,ye3[gmask]/n3,ovr=True,ft='-r',per2=folded) # Plot the third band
          leg.append(ch[3])                                                # Append name of third channel to key
+      if folded:
+         pl.axvline(1,linestyle=':',color='0.7')
       pl.legend(leg)                                                      # Create key on plot
       pl.xlabel(taxis)
       pl.ylabel(flux_axis)
