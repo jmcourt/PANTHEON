@@ -591,6 +591,8 @@ def fold_bursts(times,data,q_lo=50,q_hi=90,do_smooth=False,alg='cubic spline'):
          npeaks.append(peaks[i+1])
    peaks=npeaks
 
+   numpeaks=len(peaks)
+
    for i in range(len(data)):
       while i>peaks[peak_placemark+1] and peak_placemark+2<len(peaks):
          peak_placemark+=1
@@ -598,7 +600,7 @@ def fold_bursts(times,data,q_lo=50,q_hi=90,do_smooth=False,alg='cubic spline'):
 
    phases=([np.inf]*p0)+phases.tolist()+([np.inf]*(ldat-pe-1))
 
-   return np.array(phases)   
+   return np.array(phases),numpeaks  
 
 
 #-----Gauss------------------------------------------------------------------------------------------------------------

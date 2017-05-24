@@ -753,7 +753,10 @@ while plotopt not in ['quit','exit']:                                     # If t
          except AssertionError:
             print 'Invalid Phase Resolution!'
 
-      phases=pan.fold_bursts(times,flux,iq_hi,iq_lo,do_smooth=True,alg=burst_alg)
+      phases,numpeaks=pan.fold_bursts(times,flux,iq_hi,iq_lo,do_smooth=True,alg=burst_alg)
+      peaksep=(times[-1]-times[0])/numpeaks
+
+      print numpeaks,'flares identified: average separation of',str(peaksep)+'s'
 
       ymask=(phases!=np.inf)
 
