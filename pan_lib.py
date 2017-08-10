@@ -112,8 +112,23 @@ import scipy.interpolate as intp
 import scipy.signal as sgnl
 import numpy as np
 from matplotlib.ticker import ScalarFormatter
-from numba import jit
+try:
+   import numba as nb
+   gotnumba=True
+except:
+   print 'Warning: numba module not found!  May run slow.'
+   gotnumba=False
 from math import pi
+
+
+#-----Setup Conditional Wrapper to use jit when available--------------------------------------------------------------
+
+class mjit(object):
+    def __call__(self, f):
+        if not gotnumba:
+            return f
+        else:
+            return nb.jit(f)
 
 
 #-----ArgCheck---------------------------------------------------------------------------------------------------------
@@ -149,7 +164,7 @@ def argcheck(x,y):
 
 #-----Binify-----------------------------------------------------------------------------------------------------------
 
-@jit
+@mjit()
 def binify(x,y,ye,binsize):                                               # Defining 'binify' subscript
 
    '''Binify
@@ -366,7 +381,7 @@ def eqrange(array):
 
 # Evaluate Burst
 
-@jit
+@mjit()
 def eval_burst(t,y):
 
    '''Evaluate Burst
@@ -529,7 +544,7 @@ def foldify(t,y,ye,period,binsize,phres=None,name='',compr=False,verb=True):
 
 #-----Fold_Bursts------------------------------------------------------------------------------------------------------
 
-#@jit
+@mjit()
 def fold_bursts(times,data,q_lo=50,q_hi=90,do_smooth=False,alg='cubic spline'):
 
    '''Return Phases Using Bursts as Reference Points
@@ -605,7 +620,7 @@ def fold_bursts(times,data,q_lo=50,q_hi=90,do_smooth=False,alg='cubic spline'):
 
 #-----Gauss------------------------------------------------------------------------------------------------------------
 
-@jit
+@mjit()
 def gauss(mean,standev,x):
 
    '''Gauss.  Returns a Gaussian'''
@@ -614,7 +629,7 @@ def gauss(mean,standev,x):
 
 #-----Get_Bursts-------------------------------------------------------------------------------------------------------
 
-#@jit
+@mjit()
 def get_bursts(data,q_lo=50,q_hi=90,just_peaks=False,smooth=False,savgol=5,alg='cubic spline',times=None):
 
    '''Get Bursts
@@ -727,7 +742,7 @@ def get_bursts(data,q_lo=50,q_hi=90,just_peaks=False,smooth=False,savgol=5,alg='
 
 #-----Get_Bursts_Windowed----------------------------------------------------------------------------------------------
 
-#@jit
+@mjit()
 def get_bursts_windowed(data,windows,q_lo=50,q_hi=90,smooth=False):
 
    '''Get Bursts
@@ -817,7 +832,7 @@ def get_dip(data,start,finish,smooth=False,savgol=1):
 
 #-----Get Phase--------------------------------------------------------------------------------------------------------
 
-#@jit
+@mjit()
 def get_phases(data,windows=1,q_lo=20,q_hi=90):
 
    '''Get Phases
@@ -932,7 +947,7 @@ def get_phases_intp(data,windows=1,q_lo=20,q_hi=90,peaks=None):
 
 #-----GTIMask----------------------------------------------------------------------------------------------------------
 
-@jit
+@mjit()
 def gtimask(times,gtis):
 
    '''GTI Mask
@@ -966,7 +981,7 @@ def gtimask(times,gtis):
 
 #-----LBinify----------------------------------------------------------------------------------------------------------
 
-@jit
+@mjit()
 def lbinify(x,y,ye,logres):
 
    '''Logarithmic Binify
@@ -1035,7 +1050,7 @@ def lbinify(x,y,ye,logres):
 
 #-----LeahyN-----------------------------------------------------------------------------------------------------------
 
-@jit
+@mjit()
 def leahyn(data,counts,datres):
 
    '''Leahy Normaliser
@@ -1062,7 +1077,7 @@ def leahyn(data,counts,datres):
 
 #-----Lh2RMS-----------------------------------------------------------------------------------------------------------
 
-@jit
+@mjit()
 def lh2rms(leahy,rate,bg,const):
 
    '''Leahy 2 RMS Converter
@@ -1132,7 +1147,7 @@ def lhconst(data):
 
 #-----Lomb_Scargle-----------------------------------------------------------------------------------------------------
 
-@jit
+@mjit()
 def lomb_scargle(x,y,ye,freqs):
 
    '''Lomb Scargle
@@ -1194,7 +1209,7 @@ def lomb_scargle(x,y,ye,freqs):
 
 #-----MXRebin----------------------------------------------------------------------------------------------------------
 
-@jit
+@mjit()
 def mxrebin(spcdata,spcerrs,xaxis,good,bfac):
 
    '''Matrix X-Rebin
@@ -1276,7 +1291,7 @@ def nones(shape):
 
 #-----PDColEx----------------------------------------------------------------------------------------------------------
 
-@jit
+@mjit()
 def pdcolex2(y1,y2,ye1,ye2,gmask):
 
    '''Plot Demon Colour Extract (2D)
@@ -1327,7 +1342,7 @@ def pdcolex2(y1,y2,ye1,ye2,gmask):
 
    return flux,fluxe,y,ye,col,cole
 
-@jit
+@mjit()
 def pdcolex3(y1,y2,y3,ye1,ye2,ye3,gmask):
 
    '''Plot Demon Colour Extract (3D)
@@ -1432,7 +1447,7 @@ def plotdld(filename):
 
 #-----PlotdSv----------------------------------------------------------------------------------------------------------
 
-@jit
+@mjit()
 def plotdsv(filename,times,rates,errors,tstart,binsize,gti,mxpcus,bgest,bgsub,bgdata,flavour,chanstr,mission,obsdata,version):
 
    '''.Plotd Save
@@ -1496,7 +1511,7 @@ def plotdsv(filename,times,rates,errors,tstart,binsize,gti,mxpcus,bgest,bgsub,bg
 
 #-----RMS_N------------------------------------------------------------------------------------------------------------
 
-@jit
+@mjit()
 def rms_n(data,counts,datres,rate,bg,const):
 
    '''RMS Normaliser
@@ -1530,7 +1545,7 @@ def rms_n(data,counts,datres,rate,bg,const):
 
 #-----RMS--------------------------------------------------------------------------------------------------------------
 
-@jit
+@mjit()
 def rms(data,data_err=[0]):
 
    '''RMS
@@ -1561,7 +1576,7 @@ def rms(data,data_err=[0]):
 
 #-----Safe_Div---------------------------------------------------------------------------------------------------------
 
-@jit
+@mjit()
 def safe_div(x,y):
 
    '''Safe Div
@@ -1606,7 +1621,7 @@ def signoff():
 
 #-----sinfromcos-------------------------------------------------------------------------------------------------------
 
-@jit
+@mjit()
 def sinfromcos(x,cosx):
 
    '''Sine from Cosine
@@ -1631,7 +1646,7 @@ def sinfromcos(x,cosx):
    signx=np.sign(((x+pi)%(2*pi))-pi)
    return sinx*signx
 
-@jit
+@mjit()
 def cosfromsin(x,sinx):
 
    '''Sine from Cosine
@@ -1730,7 +1745,7 @@ def slplot(x,y,ye,xlabel,ylabel,title,figid="",typ='both',errors=True):
 
 #-----Spliner----------------------------------------------------------------------------------------------------------
 
-@jit
+@mjit()
 def spliner(data,errors=None):
 
    '''Spliner
@@ -1856,7 +1871,7 @@ def specald(filename):
 
 #-----SpecaSv----------------------------------------------------------------------------------------------------------
 
-@jit
+@mjit()
 def specasv(filename,spcdata,good,rates,prates,trates,phcts,npcus,binsize,bgest,foures,flavour,cs,mission,obsdata,wtype,slide,spcbinfac,version):
 
    '''.Speca Save
@@ -2069,7 +2084,7 @@ def uniqfname(filename,extension):
 
 #-----VCRebin----------------------------------------------------------------------------------------------------------
 
-@jit
+@mjit()
 def vcrebin(vecdata,bfac):
 
    '''Vector X-Rebin
@@ -2110,7 +2125,7 @@ def vcrebin(vecdata,bfac):
 
 #-----XtrFilLoc--------------------------------------------------------------------------------------------------------
 
-@jit
+@mjit()
 def xtrfilloc(filepath):
 
    '''Extract File Location
