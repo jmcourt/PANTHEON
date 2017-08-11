@@ -44,7 +44,6 @@
 import pan_lib as pan
 from numpy import array, zeros, arange
 from numpy import sum as npsum
-from numba import jit
 
 
 #-----ChRange----------------------------------------------------------------------------------------------------------
@@ -380,7 +379,7 @@ def evmchan(chan):
 
 #-----GetBG------------------------------------------------------------------------------------------------------------
 
-@jit
+@pan.mjit()
 def getbg(data,low_channel,high_channel):
 
    '''Get BG

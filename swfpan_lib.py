@@ -37,7 +37,6 @@
 import pan_lib as pan
 from numpy import array, zeros
 from numpy import sum as npsum
-from numba import jit
 
 
 #-----ChRange----------------------------------------------------------------------------------------------------------
