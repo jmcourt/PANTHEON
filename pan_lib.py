@@ -545,7 +545,7 @@ def foldify(t,y,ye,period,binsize,phres=None,name='',compr=False,verb=True):
 #-----Fold_Bursts------------------------------------------------------------------------------------------------------
 
 @mjit()
-def fold_bursts(times,data,q_lo=50,q_hi=90,do_smooth=False,alg='cubic spline'):
+def fold_bursts(times,data,q_lo=50,q_hi=90,do_smooth=False,alg='cubic spline',savgol=5):
 
    '''Return Phases Using Bursts as Reference Points
 
@@ -581,7 +581,7 @@ def fold_bursts(times,data,q_lo=50,q_hi=90,do_smooth=False,alg='cubic spline'):
    -J.M.Court, 2015'''
 
    assert len(times)==len(data)
-   peaks=get_bursts(data,q_lo,q_hi,just_peaks=True,smooth=do_smooth,alg=alg,times=times)
+   peaks=get_bursts(data,q_lo,q_hi,just_peaks=True,smooth=do_smooth,alg=alg,times=times,savgol=savgol)
    peaks.sort()
    peak_placemark=0
    #if peaks[0]!=0:
@@ -629,7 +629,6 @@ def gauss(mean,standev,x):
 
 #-----Get_Bursts-------------------------------------------------------------------------------------------------------
 
-@mjit()
 def get_bursts(data,q_lo=50,q_hi=90,just_peaks=False,smooth=False,savgol=5,alg='cubic spline',times=None):
 
    '''Get Bursts

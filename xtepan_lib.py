@@ -184,7 +184,7 @@ def discnevb(datamode,datas):
 
 def bihchan(datamode,chan,chanconv):
 
-   '''Bin Mode H Channel-Get
+   '''Channel-Get
 
    Description:
 

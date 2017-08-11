@@ -315,6 +315,7 @@ def colorget(verbose=True):                                               # Defi
    times=x1[gmask]
    timese=np.zeros(len(times))
    ys={}
+   yes={}
    col={}
    cole={}
    if nfiles==1:                                                          # If only one file given, flux and flux_error are just the flux and error of this one file
@@ -428,8 +429,8 @@ def give_inst():                                                          # Defi
    print '* "rms" to return the fractional rms of the data.'
    print '* "fold" to fold data over a period of your choosing'+(' (requires PyAstronomy module!)' if not module_pyastro else '')+'.'
    print '* "autofold" to automatically seek a period over which to fold data'+(' (requires PyAstronomy module!)' if not module_pyastro else '')+'.'
-   print '* "circfold" to circularly fold data over a period of your choosing.'
    print '* "varifold" to fold over a non-constant period using an algorithm optimised for high-amplitude quasi-periodic flares.'
+   print '* "plot bursts" to plot the results of the peak-finding algorithm used in varifold.'
    print ''
    print '1+ DATASET PLOTS:'
    print '* "lc" to plot a simple graph of flux over time.'
@@ -753,7 +754,7 @@ while plotopt not in ['quit','exit']:                                     # If t
          except AssertionError:
             print 'Invalid Phase Resolution!'
 
-      phases,numpeaks=pan.fold_bursts(times,flux,iq_hi,iq_lo,do_smooth=True,alg=burst_alg)
+      phases,numpeaks=pan.fold_bursts(times,flux,iq_hi,iq_lo,do_smooth=True,alg=burst_alg,savgol=5)
       peaksep=(times[-1]-times[0])/numpeaks
 
       print numpeaks,'flares identified: average separation of',str(peaksep)+'s'
@@ -823,6 +824,44 @@ while plotopt not in ['quit','exit']:                                     # If t
       print ''
       period='N/A'
 
+
+   #-----'Plot Bursts' Option------------------------------------------------------------------------------------------
+
+   elif plotopt=='plot bursts':
+
+      if folded:
+         print 'Cannot perform burst analysis on folded data!'
+         continue
+
+      while True:
+         try:
+            q_lo=float(raw_input('Low Threshold : '))
+            assert q_lo<100
+            assert q_lo>0
+            break
+         except:
+            pass
+
+      while True:
+         try:
+            q_hi=float(raw_input('High Threshold: '))
+            assert q_hi<100
+            assert q_hi>0
+            assert q_hi>=q_lo
+            break
+         except:
+            pass
+
+      peaks=pan.get_bursts(flux,q_lo,q_hi,just_peaks=True)
+      pl.figure()
+      doplot(times,timese,flux,fluxe,ovr=True,per2=False)
+      for i in peaks:
+         pl.plot([times[i]],[flux[i]],'g*',zorder=5)
+      pl.axhline(np.percentile(flux,q_lo),color='b',zorder=2)
+      pl.axhline(np.percentile(flux,q_hi),color='r',zorder=2)
+      plot_save(saveplots,show_block)
+
+      
 
    #-----'clip' Option-------------------------------------------------------------------------------------------------
 
