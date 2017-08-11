@@ -149,12 +149,12 @@ if mission == 'XTE' :
    escale=''
    escaleb=''
 
-   try:
-      import xtepan_lib as inst                                           # Import XTE extraction functions
-   except:
-      print 'XTE PANTHEON Library not found!  Aborting!'
-      pan.signoff()
-      exit()
+   #try:
+   import xtepan_lib as inst                                           # Import XTE extraction functions
+   #except:
+   #   print 'XTE PANTHEON Library not found!  Aborting!'
+   #   pan.signoff()
+   #   exit()
 
 elif mission == 'SUZAKU':
    etype='energy'                                                         # SUZAKU requires an input of raw energies
@@ -259,6 +259,8 @@ else:
 if len(args)>6:
    foures=float(args[6])                                                  # Collect Fourier resolution from inputs if given, else ask user, else use 128s
    print 'Fourier Res.=',foures
+elif not spec_on:
+   foures=16
 else:
    try:
       foures=float(raw_input("Length of time per Fourier Window (s): "))
@@ -269,6 +271,8 @@ else:
 if len(args)>7:
    slide=float(args[7])                                                   # Collect Fourier resolution from inputs if given, else ask user, else use 128s
    print 'Fourier Sep.=',slide
+elif not spec_on:
+   slide=16
 else:
    try:
       slide=float(raw_input("Separation of Fourier Windows (s): "))
@@ -306,7 +310,7 @@ datas=inst.getdat(event)                                                  # Extr
 print 'Discarding photons outside of '+etype+' range '+str(lowc)+escale+'-'+str(highc)+escale+'...'
 
 #try:
-datas=inst.discnev(datas,event[1].header['DATAMODE'])                  # Discarding non-events / reformatting XTE Binned data into a less awful structure
+datas=inst.discnev(datas,event[1].header['DATAMODE'])                     # Discarding non-events / reformatting XTE Binned data into a less awful structure
 #except:
 #   print 'Could not filter data!'
 #   print 'Aborting!'
@@ -317,7 +321,7 @@ if event[1].header['DATAMODE'] in ['B_2ms_4B_0_35_H','B_8ms_16A_0_35_H']:
    olen=str(npsum(array(datas)))
 else:
    olen=str(len(datas))
-datas=inst.chrange(datas,lowc,highc,event[1].header['DATAMODE'])
+datas=inst.chrange(datas,lowc,highc,event[1].header)
 tstart=inst.getini(event)
 
 if event[1].header['DATAMODE'] in ['B_2ms_4B_0_35_H','B_8ms_16A_0_35_H']:
@@ -469,7 +473,7 @@ if not bin_dat:
 
          f,txis=histogram(datrow,t+stpoint)                                 #  Bin well this subrange of event data
 
-         pcus=inst.getpcu(wrdrow,event[1].header['DATAMODE'],t_pcus=pcus)   #  Count active PCUs by assuming any that recorded 0 events in the time period were inactive
+         pcus=inst.getpcu(wrdrow,event[1].header,t_pcus=pcus)               #  Count active PCUs by assuming any that recorded 0 events in the time period were inactive
          npcus.append(pcus)
 
          counts=sum(f)

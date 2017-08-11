@@ -2045,6 +2045,40 @@ def tnorm(t,res):
    return t
 
 
+#-----TokenLoc---------------------------------------------------------------------------------------------------------
+
+def tokenloc(enigma,token):
+
+   envals=[]
+   entoks=[]
+
+   for i in range(len(enigma)):
+
+      if enigma[i][0]==',':
+
+         et=enigma[i][1:]                                           # Extract the tokens and how many bytes are allocated to each in the datawords
+
+      else:
+
+         et=enigma[i]
+
+      entoks.append(et[0])
+
+      if et[0]=='C':
+
+         tk=et.split('[')[1].split(']')[0].split(',')
+         envals.append(int(enigma[i].split('{')[1]))
+
+   if not (token in entoks):
+
+      return None,None
+
+   cloc=entoks.index(token)                                         # Fetch the 'channels' token
+   r1=sum(envals[:cloc])
+   r2=sum(envals[cloc+1:])
+
+   return tk,(r1,r2)
+
 #-----UniqFName--------------------------------------------------------------------------------------------------------
 
 def uniqfname(filename,extension):

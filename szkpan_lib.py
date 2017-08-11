@@ -35,7 +35,7 @@ from numpy import array, ones
 
 #-----ChRange----------------------------------------------------------------------------------------------------------
 
-def chrange(data,low,high,datamode):
+def chrange(data,low,high,header):
 
    '''Channel Ranger
 
@@ -58,6 +58,7 @@ def chrange(data,low,high,datamode):
 
    -J.M.Court, 2015'''
 
+   datamode=header['DATAMODE']
    words=data.field('PI')
 
    low=(low/3.65)
@@ -201,7 +202,7 @@ def getobs(event,datamode,filename):
 
 #-----Get PCU----------------------------------------------------------------------------------------------------------
 
-def getpcu(words,datamode):
+def getpcu(words,header):
 
    '''Get PCUs
 

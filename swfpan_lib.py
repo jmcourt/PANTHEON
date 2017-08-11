@@ -41,7 +41,7 @@ from numpy import sum as npsum
 
 #-----ChRange----------------------------------------------------------------------------------------------------------
 
-def chrange(data,low,high,datamode):
+def chrange(data,low,high,header):
 
    '''Channel Ranger
 
@@ -64,7 +64,7 @@ def chrange(data,low,high,datamode):
 
    -J.M.Court, 2015'''
 
-
+   datamode=header['DATAMODE']
    energies=data.field(1)
 
    if low<=0 and high>=4096:
@@ -212,7 +212,7 @@ def getobs(event,datamode,filepath):
 
 #-----Get PCU----------------------------------------------------------------------------------------------------------
 
-def getpcu(words,datamode,t_pcus=None):
+def getpcu(words,header):
 
    '''Get PCUs
 
