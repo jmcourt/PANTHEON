@@ -578,7 +578,6 @@ def fold_bursts(times,data,q_lo=50,q_hi=90,do_smooth=False,alg='cubic spline',sa
    assert len(times)==len(data)
    peaks=get_bursts(data,q_lo,q_hi,just_peaks=True,smooth=do_smooth,alg=alg,times=times,savgol=savgol)
    peaks.sort()
-   peak_placemark=0
    #if peaks[0]!=0:
    #   peaks=np.hstack([0,peaks])
    #if peaks[-1]!=len(times)-1:
@@ -586,8 +585,6 @@ def fold_bursts(times,data,q_lo=50,q_hi=90,do_smooth=False,alg='cubic spline',sa
 
    p0=peaks[0]
    pe=peaks[-1]
-
-   ldat=len(data)
 
    data=data[p0:pe+1]
    times=times[p0:pe+1]
@@ -603,12 +600,7 @@ def fold_bursts(times,data,q_lo=50,q_hi=90,do_smooth=False,alg='cubic spline',sa
 
    numpeaks=len(peaks)
 
-   for i in range(len(data)):
-      while i>peaks[peak_placemark+1] and peak_placemark+2<len(peaks):
-         peak_placemark+=1
-      phases[i]=float(times[i]-times[peaks[peak_placemark]])/float(times[peaks[peak_placemark+1]]-times[peaks[peak_placemark]])
-
-   phases=([np.inf]*p0)+phases.tolist()+([np.inf]*(ldat-pe-1))
+   phases=get_phases_intp(data,windows=1,q_lo=20,q_hi=90,peaks=peaks,givespline=False)
 
    return np.array(phases),numpeaks  
 
@@ -917,26 +909,24 @@ def get_phases(data,windows=1,q_lo=20,q_hi=90):
 
 #-----Get Phase INTP---------------------------------------------------------------------------------------------------
 
-def get_phases_intp(data,windows=1,q_lo=20,q_hi=90,peaks=None):
+def get_phases_intp(data,windows=1,q_lo=20,q_hi=90,peaks=None,givespline=False):
 
    if peaks==None:
       peak_keys=get_bursts_windowed(data,windows,q_lo=50,q_hi=90,smooth=False)
    else:
       peak_keys=peaks
    peak_keys.sort()
-   data_keys=np.array(range(len(data)))
    peak_keys=np.array(peak_keys)
 
    data=np.array(data)
    p_phases=np.arange(0,len(peak_keys))+0.5
 
    spline=intp.PchipInterpolator(peak_keys, p_phases, extrapolate=False)
+   if givespline:
+       return spline
    phases=spline(range(len(data)))
-   pl.plot(peak_keys,p_phases)
-   pl.plot(data_keys,phases)
-   pl.show(block=True)
    phases=np.remainder(phases,1)
-   return phases 
+   return phases
 
 #-----GTIMask----------------------------------------------------------------------------------------------------------
 

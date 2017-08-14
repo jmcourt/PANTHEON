@@ -46,6 +46,7 @@ try:
    import pan_lib as pan
    import numpy as np
    import scipy.signal as sig
+   import scipy.optimize as optm
    from math import pi
 
 
@@ -759,7 +760,7 @@ while plotopt not in ['quit','exit']:                                     # If t
 
       print numpeaks,'flares identified: average separation of',str(peaksep)+'s'
 
-      ymask=(phases!=np.inf)
+      ymask=np.logical_not(np.isnan(phases))
 
       nbins=int(1.0/phase_res)
       phases=(nbins*phases[ymask]).astype(int)
@@ -825,6 +826,75 @@ while plotopt not in ['quit','exit']:                                     # If t
       period='N/A'
 
 
+   #-----Get GTIs------------------------------------------------------------------------------------------------------
+
+   elif plotopt=='get gtis':
+
+      if folded:
+         print 'Cannot perform burst analysis on folded data!'
+         continue
+
+      if burst_alg=='cubic spline':
+         while True:
+            try:
+               iq_lo=float(raw_input('Low Threshold:  '))
+               iq_hi=float(raw_input('High Threshold: '))
+               assert iq_hi>iq_lo
+               assert iq_hi<=100
+               assert iq_lo>=0
+               break
+            except AssertionError:
+               print 'Invalid Entry!  Valid entry is of the form High>Low.'
+      else:
+         iq_lo=0
+         iq_hi=100
+
+      while True:
+         try:
+            nphbins=int(raw_input('Number of phase bins: '))
+            assert phase_res>1
+            break
+         except AssertionError:
+            print 'Invalid Phase Resolution!'
+
+      spline=pan.get_phases_intp(flux,windows=1,q_lo=iq_lo,q_hi=iq_hi,peaks=None,givespline=True)
+      ymask=np.logical_not(np.isnan(phases))
+      
+      numpeaks=int(spline(len(times)))
+      
+      print 'Spline created, extracting phases...'
+      print ''
+      flnm_prefix=raw_input('Filename Prefix: ')
+      
+      gtif={}
+      
+      for i in range(nphbins):
+          gtif[i]=open(flnm_prefix+'_'+str(i)+'.csv','w')
+          
+      guess=spline(0)          
+          
+      prevcut=optm.fsolve(spline,guess)*binning+tst1
+      
+      for i in range(numpeaks):
+          for j in range(nphbins):
+              subval=i+((j+1)/float(nphbins))
+              
+              def newspline(x):
+                  return spline(x)-subval
+                  
+              newcut=optm.fsolve(newspline,guess)*binning+tst1
+              
+              gti[j].write(str(prevcut)+','+str(newcut)+'\n')
+              
+      for i in range(nphbins):
+          
+          gti[i].close()
+          
+      print ''
+      print 'GTI files written!'
+           
+
+
    #-----'Plot Bursts' Option------------------------------------------------------------------------------------------
 
    elif plotopt=='plot bursts':
@@ -852,7 +922,7 @@ while plotopt not in ['quit','exit']:                                     # If t
          except:
             pass
 
-      peaks=pan.get_bursts(flux,q_lo,q_hi,just_peaks=True)
+      peaks=pan.get_bursts_windowed(flux,q_lo,q_hi,just_peaks=True)
       pl.figure()
       doplot(times,timese,flux,fluxe,ovr=True,per2=False)
       for i in peaks:
