@@ -111,7 +111,6 @@ import scipy.optimize as optm
 import scipy.interpolate as intp
 import scipy.signal as sgnl
 import numpy as np
-from matplotlib.ticker import ScalarFormatter
 try:
    import numba as nb
    gotnumba=True
@@ -408,7 +407,6 @@ def eval_burst(t,y):
    peak=max(y)
    trough=min(y)
    p_ind=np.array(y).tolist().index(peak)
-   t_ind=np.array(y).tolist().index(trough)
    rise_time=t[p_ind]-t[0]
    fall_time=t[-1]-t[p_ind]
    peak_time=t[p_ind]
@@ -518,9 +516,6 @@ def foldify(t,y,ye,period,binsize,phres=None,name='',compr=False,verb=True):
    phasy =np.zeros(npbins)
    phasye=np.zeros(npbins)
    ny=np.zeros(npbins)
-
-   a=[];ax=[]
-   b=[];bx=[]
 
    for i in range(len(y)):
       k=int(phases[i]*npbins)
@@ -777,7 +772,6 @@ def get_bursts_windowed(data,windows,q_lo=50,q_hi=90,smooth=False):
 
    windows=int(windows)
    windowlength=len(data)/windows
-   windowexcess=len(data)%windows
    win_starts=[windowlength*i for i in range(windows)]
    win_ends=[windowlength*(i+1) for i in range(windows-1)]
    win_ends.append(len(data)+1)
@@ -1012,19 +1006,15 @@ def lbinify(x,y,ye,logres):
    -J.M.Court, 2015'''
 
    hinge=((x[1]-x[0])*10**logres)/((10**logres)-1)                        # Find the 'hinge' point at which to switch between linear and logarithmic binning
-   hingep=int((hinge-x[0])/(x[1]-x[0]))
 
    lbin=np.log10(x[0])
    xb =10**(np.arange(lbin,np.log10(x[-1]),logres))                       # Setting up arrays to append binned values into
    yb =np.zeros(len(xb))
    yeb=np.zeros(len(xb))
-   ct =np.zeros(len(xb))
 
    hingel=sum((xb)<=hinge)                                                # Getting the ID of the hinge-point in the log
 
    xbl=len(xb)
-
-   lx=(np.log10(x)-lbin)/logres
 
    for i in range(hingel,xbl):
 
@@ -1376,6 +1366,47 @@ def pdcolex3(y1,y2,y3,ye1,ye2,ye3,gmask):
 
    return flux,fluxe,y,ye,col,cole
 
+#-----PDload-----------------------------------------------------------------------------------------------------------
+
+def pdload(filename,isplotd):
+    
+   '''PlotDemon loader
+
+   Description:
+
+    Calls plotdld or csvload depending on the type of file to be opened  .
+    
+   Inputs:
+   
+    filename - STRING: The absolute or relative path to the location of the file that will be opened.
+    isplotd  - BOOL  : Whether the file to be opened has been identified as a .plotd file
+    
+   Outputs:
+
+    times    -      ARRAY: An array, the elements of which are the left-hand edges of the time bins
+                           into which counts have been binned.  Units of seconds.
+    counts   -      ARRAY: The number of counts in each bin defined in 'times'.
+    errors   -      ARRAY: The 1-sigma errors associated with each value in 'counts'
+    binsize  -      FLOAT: The size of each bin in 'times'.  Saved for speed upon loading.
+    gti      - FITS TABLE: The table of GTI values from the event data .fits file.
+    mxpcus   -        INT: The maximum number of PCUs active at any one time during the observation.
+    bgpcu    -      FLOAT: An estimate of the count rate of the background flux during the full 
+                           observation, in counts per second per PCU, multiplied by the number of
+                           PCUs.
+    flavour  -     STRING: A useful bit of text to put on plots to help identify them later on.
+    chanstr  -     STRING: A string containing the high and low channel numbers separated by a dash.
+    mission  -     STRING: The name of the satellite
+    obsdata  -      TUPLE: The first element is the name of the object, the second is the observation
+                           ID.
+    version  -     STRING: The Version of FITSGenie in which the file was created
+    
+   -J.M.Court, 2015'''
+    
+   if isplotd:
+       return plotdld(filename)
+   else:
+       return csvload(filename)
+
 
 #-----PlotdLd----------------------------------------------------------------------------------------------------------
 
@@ -1444,6 +1475,99 @@ def plotdld(filename):
    return times,rates,errors,tstart,binsize,gti,mxpcus,bgpcu,bgsub,bgdata,flavour,chanstr,mission,obsdata,version
 
 
+#-----csvLoad----------------------------------------------------------------------------------------------------------
+
+@mjit()
+def csvload(filename):
+
+   '''.csv Loader
+   
+   Description:
+   
+    Extracts information from a csv file.  Column delimiters automatically set using python string object's
+    .split() function.  Assumes the file is of format 'time,rate' if two columns, 'time,rate,rate_error' if
+    three columns of 'time,time_error,rate,rate_error; if four or more columns.
+   
+   Inputs:
+
+    filename - STRING: The absolute or relative path to the location of the file that will be opened.
+
+   Outputs:
+
+    times    -      ARRAY: An array, the elements of which are the left-hand edges of the time bins
+                           into which counts have been binned.  Units of seconds.
+    counts   -      ARRAY: The number of counts in each bin defined in 'times'.
+    errors   -      ARRAY: The 1-sigma errors associated with each value in 'counts'
+    binsize  -      FLOAT: The size of each bin in 'times'.  Saved for speed upon loading.
+    gti      - FITS TABLE: The table of GTI values from the event data .fits file.
+    mxpcus   -        INT: The maximum number of PCUs active at any one time during the observation.
+    bgpcu    -      FLOAT: An estimate of the count rate of the background flux during the full 
+                           observation, in counts per second per PCU, multiplied by the number of
+                           PCUs.
+    flavour  -     STRING: A useful bit of text to put on plots to help identify them later on.
+    chanstr  -     STRING: A string containing the high and low channel numbers separated by a dash.
+    mission  -     STRING: The name of the satellite
+    obsdata  -      TUPLE: The first element is the name of the object, the second is the observation
+                           ID.
+    version  -     STRING: The Version of FITSGenie in which the file was created
+    
+   -J.M.Court, 2015'''
+   
+   f=open(filename,'r')
+
+   times=[]
+   rates=[]
+   errors=[]
+   got_firstline=False
+
+   for line in f:
+       l=line.split()
+       if not got_firstline:
+          if len(l)<2: continue                                           # Assume lines with <2 columns, or a non-number in col
+          try:                                                            #  zero are part of the header, skip 'em
+             float(l[0])
+          except:
+             continue
+          llen=len(l)
+          if llen<3:                                                      # Interpret csv data depending on how many columns
+             yind=1
+             haserrs=False
+          elif llen<4:
+             yind=1
+             haserrs=True
+             eind=2
+          else:
+             yind=2
+             haserrs=True
+             eind=3
+          got_firstline=True
+       times.append(float(l[0]))
+       rates.append(float(l[yind]))
+       if haserrs:
+          errors.append(float(l[eind]))
+
+   if not haserrs:
+       errors=[0]*len(times)                                              # Assume zero errors if none in file
+      
+       
+       
+       
+
+   tstart=times[0]
+   binsize=times[1]-times[0]
+   gti=None
+   mxpcus=1
+   bgpcu=1
+   bgsub='N/A'
+   bgdata=None
+   flavour='csv'
+   chanstr='Unknown'
+   mission='Unknown'
+   obsdata=['Unknown','Unknown']
+   version='From csv'
+   return times,rates,errors,tstart,binsize,gti,mxpcus,bgpcu,bgsub,bgdata,flavour,chanstr,mission,obsdata,version
+
+   
 #-----PlotdSv----------------------------------------------------------------------------------------------------------
 
 @mjit()
