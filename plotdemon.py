@@ -759,16 +759,22 @@ while plotopt not in ['quit','exit']:                                     # If t
          except AssertionError:
             print 'Invalid Phase Resolution!'
 
-      phases,numpeaks=pan.fold_bursts(times,flux,iq_hi,iq_lo,do_smooth=False,alg=burst_alg,savgol=5)
+      phases,numpeaks,flpeaks=pan.fold_bursts(times,flux,iq_hi,iq_lo,do_smooth=False,alg=burst_alg,savgol=5)
       peaksep=(times[-1]-times[0])/numpeaks
 
       print numpeaks,'flares identified: average separation of',str(peaksep)+'s'
 
-      ymask=np.logical_not(np.isnan(phases))
+      st_time=flpeaks[0]
+      endtime=flpeaks[1]
+
+      intran=np.array(range(len(times)))
+
+      ymask1=intran>=st_time
+      ymask2=intran<endtime
+      ymask=ymask1&ymask2
 
       nbins=int(1.0/phase_res)
-      phases=(nbins*phases[ymask]).astype(int)
-
+      phases=(nbins*phases[gmask][ymask]).astype(int)
 
       x1=x1[gmask][ymask];y1=y1[gmask][ymask];ye1=ye1[gmask][ymask]       # Removing all data points outside of GTI
 
@@ -863,8 +869,11 @@ while plotopt not in ['quit','exit']:                                     # If t
             print 'Invalid Phase Resolution!'
 
       spline=pan.get_phases_intp(flux,windows=1,q_lo=iq_lo,q_hi=iq_hi,peaks=None,givespline=True)
+
+      start_valid=times[spline.firstpeak]+tst1
+      end_valid=times[spline.lastpeak]+tst1
       
-      numpeaks=int(spline(len(times)))
+      numpeaks=int(spline(spline.lastpeak))
       
       print 'Spline created, extracting phases...'
       print ''
@@ -877,7 +886,7 @@ while plotopt not in ['quit','exit']:                                     # If t
           
       guess=spline(0)          
           
-      prevcut=optm.fsolve(spline,guess)*binning+tst1
+      prevcut=optm.fsolve(spline,guess)[0]*binning+tst1
       
       for i in range(numpeaks):
           for j in range(nphbins):
@@ -886,9 +895,12 @@ while plotopt not in ['quit','exit']:                                     # If t
               def newspline(x):
                   return spline(x)-subval
                   
-              newcut=optm.fsolve(newspline,guess)*binning+tst1
-              
-              gtif[j].write(str(prevcut)+','+str(newcut)+'\n')
+              newcut=optm.fsolve(newspline,guess)[0]*binning+tst1
+
+              if newcut<end_valid and prevcut>start_valid:
+                 gtif[j].write(str(prevcut)+','+str(newcut)+'\n')
+
+              prevcut=newcut
               
       for i in range(nphbins):
           

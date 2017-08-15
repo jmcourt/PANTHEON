@@ -589,12 +589,12 @@ def fold_bursts(times,data,q_lo=50,q_hi=90,do_smooth=False,alg='cubic spline',sa
    #data=data[p0:pe+1]
    #times=times[p0:pe+1]
    phases=np.zeros(len(times))
-   peaks=np.array(peaks)-p0
+   peaks=np.array(peaks)
 
    npeaks=[0]   
 
    for i in range(len(peaks)-1):
-      if peaks[i+1]-peaks[i]>0.5*(peaks[-1]/float(len(peaks))):           # Remove any peaks separated by less than 10% of average separation
+      if peaks[i+1]-peaks[i]>0.1*(peaks[-1]/float(len(peaks))):           # Remove any peaks separated by less than 10% of average separation
          npeaks.append(peaks[i+1])
    peaks=npeaks
 
@@ -602,7 +602,7 @@ def fold_bursts(times,data,q_lo=50,q_hi=90,do_smooth=False,alg='cubic spline',sa
 
    phases=get_phases_intp(data,windows=1,q_lo=20,q_hi=90,peaks=peaks,givespline=False)
 
-   return np.array(phases),numpeaks  
+   return np.array(phases),numpeaks,(peaks[0],peaks[-1])  
 
 
 #-----Gauss------------------------------------------------------------------------------------------------------------
@@ -911,16 +911,18 @@ def get_phases(data,windows=1,q_lo=20,q_hi=90):
 def get_phases_intp(data,windows=1,q_lo=20,q_hi=90,peaks=None,givespline=False):
 
    if peaks==None:
-      peak_keys=get_bursts_windowed(data,windows,q_lo=50,q_hi=90,smooth=False)
+      peak_keys=pan.get_bursts(data,q_lo=q_lo,q_hi=q_hi,just_peaks=True,smooth=False,savgol=5)
    else:
       peak_keys=peaks
    peak_keys.sort()
    peak_keys=np.array(peak_keys)
 
    data=np.array(data)
-   p_phases=np.arange(0,len(peak_keys))+0.5
+   p_phases=np.arange(0,len(peak_keys),1.0)
 
    spline=intp.PchipInterpolator(peak_keys, p_phases, extrapolate=True)
+   spline.firstpeak=peak_keys[0]                                          # Store the keys of the first and last peaks in the spline object
+   spline.lastpeak=peak_keys[-1]
    if givespline:
        return spline
    phases=spline(range(len(data)))
