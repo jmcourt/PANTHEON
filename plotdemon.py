@@ -46,7 +46,7 @@ try:
    import pan_lib as pan
    import numpy as np
    import scipy.signal as sig
-   import scipy.interpolate as ipo
+   import scipy.optimize as optm
    from math import pi
 
 
@@ -80,7 +80,7 @@ nfiles=len(args)-isbininp-1                                               # Fetc
 if nfiles>3: nfiles=3
 
 file1=args[1]
-pan.filenamecheck(file1,'plotd')
+isplotd1=pan.filenamecheck(file1,'plotd',continu=True)                    # Work out whether input file is a plotdemon file or a csv
 
 ch={}                                                                     # Save channel info in a library
 
@@ -89,7 +89,7 @@ bg2=0
 bg3=0
 
 print 'Opening',file1                                                     # Opening file 1
-x1r,y1r,ye1r,tst1,bsz1,gti,pcus1,bg1,bsub1,bdata1,flv1,ch[1],mis1,obsd1,v1=pan.plotdld(file1)
+x1r,y1r,ye1r,tst1,bsz1,gti,pcus1,bg1,bsub1,bdata1,flv1,ch[1],mis1,obsd1,v1=pan.pdload(file1,isplotd1)
 y1r=y1r/float(pcus1)                                                      # Normalising flux by dividing by the number of active PCUs and the binsize
 ye1r=ye1r/float(pcus1)
 
@@ -101,28 +101,22 @@ else:
 
 if nfiles>1:
    file2=args[2]
-   if pan.filenamecheck(file2,'plotd'):
-      print 'Opening',file2                                               # Opening file 2
-      x2r,y2r,ye2r,tst2,bsz2,gti2,pcus2,bg2,bsub2,bdata2,flv2,ch[2],mis2,obsd2,v2=pan.plotdld(file2)
-      y2r=y2r/float(pcus2)                                                # Normalising flux by dividing by the number of active PCUs and the binsize
-      ye2r=ye2r/float(pcus2)
-   else:
-      nfiles=1
-      print 'Warning: File 2 of incorrect file type!'
-      print 'Only loading File 1.'
+   isplotd2=pan.filenamecheck(file2,'plotd',continu=True)
+   print 'Opening',file2                                                  # Opening file 2
+   x2r,y2r,ye2r,tst2,bsz2,gti2,pcus2,bg2,bsub2,bdata2,flv2,ch[2],mis2,obsd2,v2=pan.pdload(file2,isplotd2)
+   y2r=y2r/float(pcus2)                                                   # Normalising flux by dividing by the number of active PCUs and the binsize
+   ye2r=ye2r/float(pcus2)
+
 else: x2r=y2r=ye2r=tst2=bsz2=None
 
 if nfiles>2:
    file3=args[3]
-   if pan.filenamecheck(file2,'plotd'):
-      print 'Opening',file3                                               # Opening file 3
-      x3r,y3r,ye3r,tst3,bsz3,gti3,pcus3,bg3,bsub3,bdata3,flv3,ch[3],mis3,obsd3,v3=pan.plotdld(file3)
-      y3r=y3r/float(pcus3)                                                # Normalising flux by dividing by the number of active PCUs and the binsize
-      ye3r=ye3r/float(pcus3)
-   else:
-      nfiles=2
-      print 'Warning: File 3 of incorrect file type!'
-      print 'Only loading Files 1 & 2.'
+   isplotd3=pan.filenamecheck(file3,'plotd',continu=True)
+   print 'Opening',file3                                                  # Opening file 3
+   x3r,y3r,ye3r,tst3,bsz3,gti3,pcus3,bg3,bsub3,bdata3,flv3,ch[3],mis3,obsd3,v3=pan.pdload(file3,isplotd3)
+   y3r=y3r/float(pcus3)                                                   # Normalising flux by dividing by the number of active PCUs and the binsize
+   ye3r=ye3r/float(pcus3)
+
 else: x3r=y3r=ye3r=tst3=bsz3=None
 
 bg=(bg1+bg2+bg3)/float(pcus1)
@@ -296,12 +290,19 @@ if wrongsize:                                                             # Forc
 
 print 'Fetching GTI mask...'
 
-gmask=pan.gtimask(x1,gti)                                                 # A mask to blank values that fall outside of the GTIs
+def getmask(xarr,gtis):
+   if gtis==None:
+       return [True]*len(xarr)                                            # Assume all is in gtis if loaded from csv
+   else:
+       return pan.gtimask(xarr,gtis)
+
+gmask=getmask(x1,gti)                                                     # A mask to blank values that fall outside of the GTIs
+
 if nfiles>1:
-   gmask2=pan.gtimask(x2,gti2)
+   gmask2=getmask(x2,gti2)                                                # 'And' masks for different files    
    gmask=gmask&gmask2
 if nfiles>2:
-   gmask3=pan.gtimask(x3,gti3)
+   gmask3=getmask(x3,gti3)    
    gmask=gmask&gmask3
 print str(int(100*sum(gmask)/len(gmask)))+'% of data within GTI!'
 print ''
@@ -608,7 +609,7 @@ while plotopt not in ['quit','exit']:                                     # If t
             y3=y3[:mindex]
             ye3=ye3[:mindex]
 
-      gmask=pan.gtimask(x1,gti)                                           # Re-establish gmask
+      gmask=getmask(x1,gti)                                               # Re-establish gmask
 
       print 'Binning complete!'
       print ''
@@ -759,7 +760,7 @@ while plotopt not in ['quit','exit']:                                     # If t
 
       print numpeaks,'flares identified: average separation of',str(peaksep)+'s'
 
-      ymask=(phases!=np.inf)
+      ymask=np.logical_not(np.isnan(phases))
 
       nbins=int(1.0/phase_res)
       phases=(nbins*phases[ymask]).astype(int)
@@ -825,6 +826,75 @@ while plotopt not in ['quit','exit']:                                     # If t
       period='N/A'
 
 
+   #-----Get GTIs------------------------------------------------------------------------------------------------------
+
+   elif plotopt=='get gtis':
+
+      if folded:
+         print 'Cannot perform burst analysis on folded data!'
+         continue
+
+      if burst_alg=='cubic spline':
+         while True:
+            try:
+               iq_lo=float(raw_input('Low Threshold:  '))
+               iq_hi=float(raw_input('High Threshold: '))
+               assert iq_hi>iq_lo
+               assert iq_hi<=100
+               assert iq_lo>=0
+               break
+            except AssertionError:
+               print 'Invalid Entry!  Valid entry is of the form High>Low.'
+      else:
+         iq_lo=0
+         iq_hi=100
+
+      while True:
+         try:
+            nphbins=int(raw_input('Number of phase bins: '))
+            assert phase_res>1
+            break
+         except AssertionError:
+            print 'Invalid Phase Resolution!'
+
+      spline=pan.get_phases_intp(flux,windows=1,q_lo=iq_lo,q_hi=iq_hi,peaks=None,givespline=True)
+      ymask=np.logical_not(np.isnan(phases))
+      
+      numpeaks=int(spline(len(times)))
+      
+      print 'Spline created, extracting phases...'
+      print ''
+      flnm_prefix=raw_input('Filename Prefix: ')
+      
+      gtif={}
+      
+      for i in range(nphbins):
+          gtif[i]=open(flnm_prefix+'_'+str(i)+'.csv','w')
+          
+      guess=spline(0)          
+          
+      prevcut=optm.fsolve(spline,guess)*binning+tst1
+      
+      for i in range(numpeaks):
+          for j in range(nphbins):
+              subval=i+((j+1)/float(nphbins))
+              
+              def newspline(x):
+                  return spline(x)-subval
+                  
+              newcut=optm.fsolve(newspline,guess)*binning+tst1
+              
+              gti[j].write(str(prevcut)+','+str(newcut)+'\n')
+              
+      for i in range(nphbins):
+          
+          gti[i].close()
+          
+      print ''
+      print 'GTI files written!'
+           
+
+
    #-----'Plot Bursts' Option------------------------------------------------------------------------------------------
 
    elif plotopt=='plot bursts':
@@ -852,7 +922,7 @@ while plotopt not in ['quit','exit']:                                     # If t
          except:
             pass
 
-      peaks=pan.get_bursts(flux,q_lo,q_hi,just_peaks=True)
+      peaks=pan.get_bursts_windowed(flux,q_lo,q_hi,just_peaks=True)
       pl.figure()
       doplot(times,timese,flux,fluxe,ovr=True,per2=False)
       for i in peaks:
@@ -898,7 +968,7 @@ while plotopt not in ['quit','exit']:                                     # If t
                y3=y3[mint:maxt]
                ye3=ye3[mint:maxt]
 
-            gmask=pan.gtimask(x1,gti)                                     # Re-establish gmask
+            gmask=getmask(x1,gti)                                         # Re-establish gmask
             times,timese,flux,fluxe,ys,yes,col,cole=colorget()            # Re-get colours
 
             print 'Data clipped!'
@@ -1168,7 +1238,7 @@ while plotopt not in ['quit','exit']:                                     # If t
                y3=y3[mint:maxt]
                ye3=ye3[mint:maxt]
 
-         gmask=pan.gtimask(x1,gti)                                        # Re-establish gmask
+         gmask=getmask(x1,gti)                                            # Re-establish gmask
 
          times,timese,flux,fluxe,ys,yes,col,cole=colorget(verbose=False)  # Re-get colours
 
@@ -1206,7 +1276,7 @@ while plotopt not in ['quit','exit']:                                     # If t
          if nfiles>2:
             x3,y3,ye3=pan.binify(x3r,y3r,ye3r,binning)                    # Reset binning File 3 using 'binify' in pan_lib
 
-      gmask=pan.gtimask(x1,gti)                                           # Re-establish gmask
+      gmask=getmask(x1,gti)                                               # Re-establish gmask
       times,timese,flux,fluxe,ys,yes,col,cole=colorget(verbose=False)     # Re-get colours
 
       print ''
