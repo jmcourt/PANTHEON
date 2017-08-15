@@ -586,8 +586,8 @@ def fold_bursts(times,data,q_lo=50,q_hi=90,do_smooth=False,alg='cubic spline',sa
    p0=peaks[0]
    pe=peaks[-1]
 
-   data=data[p0:pe+1]
-   times=times[p0:pe+1]
+   #data=data[p0:pe+1]
+   #times=times[p0:pe+1]
    phases=np.zeros(len(times))
    peaks=np.array(peaks)-p0
 
@@ -653,11 +653,6 @@ def get_bursts(data,q_lo=50,q_hi=90,just_peaks=False,smooth=False,savgol=5,alg='
 
    -J.M.Court, 2015'''
 
-   high_thresh=np.percentile(data,q_hi)
-   low_thresh=np.percentile(data,q_lo)
-   over_thresh=data>low_thresh                                            # Create a Boolean array by testing whether the input array is above the mid
-                                                                          #  threshold.  Each region of consecutive 'True' objects is considered a burst-
-                                                                          #  -candidate region.
 
    if smooth:                                                             # If user has requested smoothing...
       savgol=int(savgol)
@@ -665,6 +660,11 @@ def get_bursts(data,q_lo=50,q_hi=90,just_peaks=False,smooth=False,savgol=5,alg='
          savgol+=1
       data=sgnl.savgol_filter(data,savgol,3)                              #  Smooth it!
 
+   high_thresh=np.percentile(data,q_hi)
+   low_thresh=np.percentile(data,q_lo)
+   over_thresh=data>low_thresh                                            # Create a Boolean array by testing whether the input array is above the mid
+                                                                          #  threshold.  Each region of consecutive 'True' objects is considered a burst-
+                                                                          #  -candidate region.
    peak_locs=[]
    burst_locs=[]
    if alg=='cubic spline':
@@ -728,7 +728,6 @@ def get_bursts(data,q_lo=50,q_hi=90,just_peaks=False,smooth=False,savgol=5,alg='
 
 #-----Get_Bursts_Windowed----------------------------------------------------------------------------------------------
 
-@mjit()
 def get_bursts_windowed(data,windows,q_lo=50,q_hi=90,smooth=False):
 
    '''Get Bursts
@@ -921,7 +920,7 @@ def get_phases_intp(data,windows=1,q_lo=20,q_hi=90,peaks=None,givespline=False):
    data=np.array(data)
    p_phases=np.arange(0,len(peak_keys))+0.5
 
-   spline=intp.PchipInterpolator(peak_keys, p_phases, extrapolate=False)
+   spline=intp.PchipInterpolator(peak_keys, p_phases, extrapolate=True)
    if givespline:
        return spline
    phases=spline(range(len(data)))
@@ -1467,7 +1466,6 @@ def plotdld(filename):
 
 #-----csvLoad----------------------------------------------------------------------------------------------------------
 
-@mjit()
 def csvload(filename):
 
    '''.csv Loader
@@ -1511,7 +1509,7 @@ def csvload(filename):
    got_firstline=False
 
    for line in f:
-       l=line.split()
+       l=line.split(',')
        if not got_firstline:
           if len(l)<2: continue                                           # Assume lines with <2 columns, or a non-number in col
           try:                                                            #  zero are part of the header, skip 'em
@@ -1537,11 +1535,11 @@ def csvload(filename):
           errors.append(float(l[eind]))
 
    if not haserrs:
-       errors=[0]*len(times)                                              # Assume zero errors if none in file
-      
-       
-       
-       
+       errors=np.sqrt(np.array(rates))                                    # Assume root flux errors if none in file     
+
+   times=np.array(times)
+   rates=np.array(rates)
+   errors=np.array(errors)
 
    tstart=times[0]
    binsize=times[1]-times[0]

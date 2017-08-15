@@ -90,6 +90,7 @@ bg3=0
 
 print 'Opening',file1                                                     # Opening file 1
 x1r,y1r,ye1r,tst1,bsz1,gti,pcus1,bg1,bsub1,bdata1,flv1,ch[1],mis1,obsd1,v1=pan.pdload(file1,isplotd1)
+
 y1r=y1r/float(pcus1)                                                      # Normalising flux by dividing by the number of active PCUs and the binsize
 ye1r=ye1r/float(pcus1)
 
@@ -291,8 +292,8 @@ if wrongsize:                                                             # Forc
 print 'Fetching GTI mask...'
 
 def getmask(xarr,gtis):
-   if gtis==None:
-       return [True]*len(xarr)                                            # Assume all is in gtis if loaded from csv
+   if gtis is None:
+       return np.array([True]*len(xarr))                                  # Assume all is in gtis if loaded from csv
    else:
        return pan.gtimask(xarr,gtis)
 
@@ -313,8 +314,10 @@ print ''
 def colorget(verbose=True):                                               # Define colorget to easily re-obtain colours if base data is modified
    if verbose:
       print 'Analysing Data...'
+
    times=x1[gmask]
    timese=np.zeros(len(times))
+
    ys={}
    yes={}
    col={}
@@ -330,6 +333,7 @@ def colorget(verbose=True):                                               # Defi
       print 'Error!  Too much data somehow.'                              # This warning should never come up...
       pan.signoff()
       exit()
+
    return times,timese,flux,fluxe,ys,yes,col,cole
 
 times,timese,flux,fluxe,ys,yes,col,cole=colorget()                        # Use colorget
@@ -397,7 +401,7 @@ def plot_save(saveplots,show_block):                                      # Add 
 
 def burstplot(key,text,units):
 
-   if bursts==None:
+   if bursts is None:
       print 'No burst data to plot!  Run "burst get" first!'
       return
 
@@ -755,7 +759,7 @@ while plotopt not in ['quit','exit']:                                     # If t
          except AssertionError:
             print 'Invalid Phase Resolution!'
 
-      phases,numpeaks=pan.fold_bursts(times,flux,iq_hi,iq_lo,do_smooth=True,alg=burst_alg,savgol=5)
+      phases,numpeaks=pan.fold_bursts(times,flux,iq_hi,iq_lo,do_smooth=False,alg=burst_alg,savgol=5)
       peaksep=(times[-1]-times[0])/numpeaks
 
       print numpeaks,'flares identified: average separation of',str(peaksep)+'s'
@@ -764,6 +768,7 @@ while plotopt not in ['quit','exit']:                                     # If t
 
       nbins=int(1.0/phase_res)
       phases=(nbins*phases[ymask]).astype(int)
+
 
       x1=x1[gmask][ymask];y1=y1[gmask][ymask];ye1=ye1[gmask][ymask]       # Removing all data points outside of GTI
 
@@ -852,13 +857,12 @@ while plotopt not in ['quit','exit']:                                     # If t
       while True:
          try:
             nphbins=int(raw_input('Number of phase bins: '))
-            assert phase_res>1
+            assert nphbins>1
             break
          except AssertionError:
             print 'Invalid Phase Resolution!'
 
       spline=pan.get_phases_intp(flux,windows=1,q_lo=iq_lo,q_hi=iq_hi,peaks=None,givespline=True)
-      ymask=np.logical_not(np.isnan(phases))
       
       numpeaks=int(spline(len(times)))
       
@@ -884,11 +888,11 @@ while plotopt not in ['quit','exit']:                                     # If t
                   
               newcut=optm.fsolve(newspline,guess)*binning+tst1
               
-              gti[j].write(str(prevcut)+','+str(newcut)+'\n')
+              gtif[j].write(str(prevcut)+','+str(newcut)+'\n')
               
       for i in range(nphbins):
           
-          gti[i].close()
+          gtif[i].close()
           
       print ''
       print 'GTI files written!'
@@ -922,7 +926,7 @@ while plotopt not in ['quit','exit']:                                     # If t
          except:
             pass
 
-      peaks=pan.get_bursts_windowed(flux,q_lo,q_hi,just_peaks=True)
+      peaks=pan.get_bursts_windowed(flux,1,q_lo=q_lo,q_hi=q_hi,smooth=False)
       pl.figure()
       doplot(times,timese,flux,fluxe,ovr=True,per2=False)
       for i in peaks:
