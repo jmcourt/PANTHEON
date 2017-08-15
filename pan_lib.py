@@ -111,7 +111,6 @@ import scipy.optimize as optm
 import scipy.interpolate as intp
 import scipy.signal as sgnl
 import numpy as np
-from matplotlib.ticker import ScalarFormatter
 try:
    import numba as nb
    gotnumba=True
@@ -408,7 +407,6 @@ def eval_burst(t,y):
    peak=max(y)
    trough=min(y)
    p_ind=np.array(y).tolist().index(peak)
-   t_ind=np.array(y).tolist().index(trough)
    rise_time=t[p_ind]-t[0]
    fall_time=t[-1]-t[p_ind]
    peak_time=t[p_ind]
@@ -519,9 +517,6 @@ def foldify(t,y,ye,period,binsize,phres=None,name='',compr=False,verb=True):
    phasye=np.zeros(npbins)
    ny=np.zeros(npbins)
 
-   a=[];ax=[]
-   b=[];bx=[]
-
    for i in range(len(y)):
       k=int(phases[i]*npbins)
       phasy[k]+=y[i]
@@ -583,7 +578,6 @@ def fold_bursts(times,data,q_lo=50,q_hi=90,do_smooth=False,alg='cubic spline',sa
    assert len(times)==len(data)
    peaks=get_bursts(data,q_lo,q_hi,just_peaks=True,smooth=do_smooth,alg=alg,times=times,savgol=savgol)
    peaks.sort()
-   peak_placemark=0
    #if peaks[0]!=0:
    #   peaks=np.hstack([0,peaks])
    #if peaks[-1]!=len(times)-1:
@@ -592,10 +586,8 @@ def fold_bursts(times,data,q_lo=50,q_hi=90,do_smooth=False,alg='cubic spline',sa
    p0=peaks[0]
    pe=peaks[-1]
 
-   ldat=len(data)
-
-   data=data[p0:pe+1]
-   times=times[p0:pe+1]
+   #data=data[p0:pe+1]
+   #times=times[p0:pe+1]
    phases=np.zeros(len(times))
    peaks=np.array(peaks)-p0
 
@@ -608,12 +600,7 @@ def fold_bursts(times,data,q_lo=50,q_hi=90,do_smooth=False,alg='cubic spline',sa
 
    numpeaks=len(peaks)
 
-   for i in range(len(data)):
-      while i>peaks[peak_placemark+1] and peak_placemark+2<len(peaks):
-         peak_placemark+=1
-      phases[i]=float(times[i]-times[peaks[peak_placemark]])/float(times[peaks[peak_placemark+1]]-times[peaks[peak_placemark]])
-
-   phases=([np.inf]*p0)+phases.tolist()+([np.inf]*(ldat-pe-1))
+   phases=get_phases_intp(data,windows=1,q_lo=20,q_hi=90,peaks=peaks,givespline=False)
 
    return np.array(phases),numpeaks  
 
@@ -666,11 +653,6 @@ def get_bursts(data,q_lo=50,q_hi=90,just_peaks=False,smooth=False,savgol=5,alg='
 
    -J.M.Court, 2015'''
 
-   high_thresh=np.percentile(data,q_hi)
-   low_thresh=np.percentile(data,q_lo)
-   over_thresh=data>low_thresh                                            # Create a Boolean array by testing whether the input array is above the mid
-                                                                          #  threshold.  Each region of consecutive 'True' objects is considered a burst-
-                                                                          #  -candidate region.
 
    if smooth:                                                             # If user has requested smoothing...
       savgol=int(savgol)
@@ -678,6 +660,11 @@ def get_bursts(data,q_lo=50,q_hi=90,just_peaks=False,smooth=False,savgol=5,alg='
          savgol+=1
       data=sgnl.savgol_filter(data,savgol,3)                              #  Smooth it!
 
+   high_thresh=np.percentile(data,q_hi)
+   low_thresh=np.percentile(data,q_lo)
+   over_thresh=data>low_thresh                                            # Create a Boolean array by testing whether the input array is above the mid
+                                                                          #  threshold.  Each region of consecutive 'True' objects is considered a burst-
+                                                                          #  -candidate region.
    peak_locs=[]
    burst_locs=[]
    if alg=='cubic spline':
@@ -741,7 +728,6 @@ def get_bursts(data,q_lo=50,q_hi=90,just_peaks=False,smooth=False,savgol=5,alg='
 
 #-----Get_Bursts_Windowed----------------------------------------------------------------------------------------------
 
-@mjit()
 def get_bursts_windowed(data,windows,q_lo=50,q_hi=90,smooth=False):
 
    '''Get Bursts
@@ -777,7 +763,6 @@ def get_bursts_windowed(data,windows,q_lo=50,q_hi=90,smooth=False):
 
    windows=int(windows)
    windowlength=len(data)/windows
-   windowexcess=len(data)%windows
    win_starts=[windowlength*i for i in range(windows)]
    win_ends=[windowlength*(i+1) for i in range(windows-1)]
    win_ends.append(len(data)+1)
@@ -923,26 +908,24 @@ def get_phases(data,windows=1,q_lo=20,q_hi=90):
 
 #-----Get Phase INTP---------------------------------------------------------------------------------------------------
 
-def get_phases_intp(data,windows=1,q_lo=20,q_hi=90,peaks=None):
+def get_phases_intp(data,windows=1,q_lo=20,q_hi=90,peaks=None,givespline=False):
 
    if peaks==None:
       peak_keys=get_bursts_windowed(data,windows,q_lo=50,q_hi=90,smooth=False)
    else:
       peak_keys=peaks
    peak_keys.sort()
-   data_keys=np.array(range(len(data)))
    peak_keys=np.array(peak_keys)
 
    data=np.array(data)
    p_phases=np.arange(0,len(peak_keys))+0.5
 
-   spline=intp.PchipInterpolator(peak_keys, p_phases, extrapolate=False)
+   spline=intp.PchipInterpolator(peak_keys, p_phases, extrapolate=True)
+   if givespline:
+       return spline
    phases=spline(range(len(data)))
-   pl.plot(peak_keys,p_phases)
-   pl.plot(data_keys,phases)
-   pl.show(block=True)
    phases=np.remainder(phases,1)
-   return phases 
+   return phases
 
 #-----GTIMask----------------------------------------------------------------------------------------------------------
 
@@ -1012,19 +995,15 @@ def lbinify(x,y,ye,logres):
    -J.M.Court, 2015'''
 
    hinge=((x[1]-x[0])*10**logres)/((10**logres)-1)                        # Find the 'hinge' point at which to switch between linear and logarithmic binning
-   hingep=int((hinge-x[0])/(x[1]-x[0]))
 
    lbin=np.log10(x[0])
    xb =10**(np.arange(lbin,np.log10(x[-1]),logres))                       # Setting up arrays to append binned values into
    yb =np.zeros(len(xb))
    yeb=np.zeros(len(xb))
-   ct =np.zeros(len(xb))
 
    hingel=sum((xb)<=hinge)                                                # Getting the ID of the hinge-point in the log
 
    xbl=len(xb)
-
-   lx=(np.log10(x)-lbin)/logres
 
    for i in range(hingel,xbl):
 
@@ -1376,6 +1355,47 @@ def pdcolex3(y1,y2,y3,ye1,ye2,ye3,gmask):
 
    return flux,fluxe,y,ye,col,cole
 
+#-----PDload-----------------------------------------------------------------------------------------------------------
+
+def pdload(filename,isplotd):
+    
+   '''PlotDemon loader
+
+   Description:
+
+    Calls plotdld or csvload depending on the type of file to be opened  .
+    
+   Inputs:
+   
+    filename - STRING: The absolute or relative path to the location of the file that will be opened.
+    isplotd  - BOOL  : Whether the file to be opened has been identified as a .plotd file
+    
+   Outputs:
+
+    times    -      ARRAY: An array, the elements of which are the left-hand edges of the time bins
+                           into which counts have been binned.  Units of seconds.
+    counts   -      ARRAY: The number of counts in each bin defined in 'times'.
+    errors   -      ARRAY: The 1-sigma errors associated with each value in 'counts'
+    binsize  -      FLOAT: The size of each bin in 'times'.  Saved for speed upon loading.
+    gti      - FITS TABLE: The table of GTI values from the event data .fits file.
+    mxpcus   -        INT: The maximum number of PCUs active at any one time during the observation.
+    bgpcu    -      FLOAT: An estimate of the count rate of the background flux during the full 
+                           observation, in counts per second per PCU, multiplied by the number of
+                           PCUs.
+    flavour  -     STRING: A useful bit of text to put on plots to help identify them later on.
+    chanstr  -     STRING: A string containing the high and low channel numbers separated by a dash.
+    mission  -     STRING: The name of the satellite
+    obsdata  -      TUPLE: The first element is the name of the object, the second is the observation
+                           ID.
+    version  -     STRING: The Version of FITSGenie in which the file was created
+    
+   -J.M.Court, 2015'''
+    
+   if isplotd:
+       return plotdld(filename)
+   else:
+       return csvload(filename)
+
 
 #-----PlotdLd----------------------------------------------------------------------------------------------------------
 
@@ -1444,6 +1464,98 @@ def plotdld(filename):
    return times,rates,errors,tstart,binsize,gti,mxpcus,bgpcu,bgsub,bgdata,flavour,chanstr,mission,obsdata,version
 
 
+#-----csvLoad----------------------------------------------------------------------------------------------------------
+
+def csvload(filename):
+
+   '''.csv Loader
+   
+   Description:
+   
+    Extracts information from a csv file.  Column delimiters automatically set using python string object's
+    .split() function.  Assumes the file is of format 'time,rate' if two columns, 'time,rate,rate_error' if
+    three columns of 'time,time_error,rate,rate_error; if four or more columns.
+   
+   Inputs:
+
+    filename - STRING: The absolute or relative path to the location of the file that will be opened.
+
+   Outputs:
+
+    times    -      ARRAY: An array, the elements of which are the left-hand edges of the time bins
+                           into which counts have been binned.  Units of seconds.
+    counts   -      ARRAY: The number of counts in each bin defined in 'times'.
+    errors   -      ARRAY: The 1-sigma errors associated with each value in 'counts'
+    binsize  -      FLOAT: The size of each bin in 'times'.  Saved for speed upon loading.
+    gti      - FITS TABLE: The table of GTI values from the event data .fits file.
+    mxpcus   -        INT: The maximum number of PCUs active at any one time during the observation.
+    bgpcu    -      FLOAT: An estimate of the count rate of the background flux during the full 
+                           observation, in counts per second per PCU, multiplied by the number of
+                           PCUs.
+    flavour  -     STRING: A useful bit of text to put on plots to help identify them later on.
+    chanstr  -     STRING: A string containing the high and low channel numbers separated by a dash.
+    mission  -     STRING: The name of the satellite
+    obsdata  -      TUPLE: The first element is the name of the object, the second is the observation
+                           ID.
+    version  -     STRING: The Version of FITSGenie in which the file was created
+    
+   -J.M.Court, 2015'''
+   
+   f=open(filename,'r')
+
+   times=[]
+   rates=[]
+   errors=[]
+   got_firstline=False
+
+   for line in f:
+       l=line.split(',')
+       if not got_firstline:
+          if len(l)<2: continue                                           # Assume lines with <2 columns, or a non-number in col
+          try:                                                            #  zero are part of the header, skip 'em
+             float(l[0])
+          except:
+             continue
+          llen=len(l)
+          if llen<3:                                                      # Interpret csv data depending on how many columns
+             yind=1
+             haserrs=False
+          elif llen<4:
+             yind=1
+             haserrs=True
+             eind=2
+          else:
+             yind=2
+             haserrs=True
+             eind=3
+          got_firstline=True
+       times.append(float(l[0]))
+       rates.append(float(l[yind]))
+       if haserrs:
+          errors.append(float(l[eind]))
+
+   if not haserrs:
+       errors=np.sqrt(np.array(rates))                                    # Assume root flux errors if none in file     
+
+   times=np.array(times)
+   rates=np.array(rates)
+   errors=np.array(errors)
+
+   tstart=times[0]
+   binsize=times[1]-times[0]
+   gti=None
+   mxpcus=1
+   bgpcu=1
+   bgsub='N/A'
+   bgdata=None
+   flavour='csv'
+   chanstr='Unknown'
+   mission='Unknown'
+   obsdata=['Unknown','Unknown']
+   version='From csv'
+   return times,rates,errors,tstart,binsize,gti,mxpcus,bgpcu,bgsub,bgdata,flavour,chanstr,mission,obsdata,version
+
+   
 #-----PlotdSv----------------------------------------------------------------------------------------------------------
 
 @mjit()
