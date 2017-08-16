@@ -85,10 +85,22 @@ except ImportError:
 #-----Checking Validity of Filename------------------------------------------------------------------------------------
 
 args=sys.argv
-pan.argcheck(args,3)                                                      # Must give at least 3 args (Filename, products and the function call)
+pan.argcheck(args,1)                                                      # Must give at least 1 args (the function call)
 
-filename=args[1]                                                          # Fetch file name from arguments
-prod_req=args[2]                                                          # Fetch products request from arguments
+if len(args)<2:
+   filename=raw_input('Filename: ')
+   print ''
+else:
+   filename=args[1]                                                       # Fetch file name from arguments
+
+if len(args)<3:
+   print ''
+   print 'FitsGenie can produce [P]lotDemon files, [S]pecangel files or [B]oth.'
+   print ''
+   prod_req=raw_input('Select product(s): ')
+   print ''
+else:
+   prod_req=args[2]                                                       # Fetch products request from arguments
 
 
 #-----Identifying Products---------------------------------------------------------------------------------------------
@@ -116,7 +128,7 @@ try:
    assert filename[-6:] not in ('.speca','.plotd')                        # Don't try to open plotd/speca files please...
    event=fits.open(filename)                                              # Unleash the beast! [open the file]
 except:
-   print 'Could not open file '+filename+'!'
+   print 'Could not open file "'+filename+'"!'
    print 'Aborting!'
    pan.signoff()
    exit()

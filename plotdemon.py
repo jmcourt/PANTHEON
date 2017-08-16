@@ -68,7 +68,7 @@ except ImportError:
 #-----Opening Files----------------------------------------------------------------------------------------------------
 
 args=sys.argv                                                             # Fetching arguments; softest energy band first please
-pan.argcheck(args,2)
+pan.argcheck(args,1)
 
 try:
    float(args[-1])                                                        # If the final argument can be converted to integer, assume user intends it as a binning 
@@ -76,10 +76,13 @@ try:
 except:
    isbininp=False
 
-nfiles=len(args)-isbininp-1                                               # Fetch number of infiles (total args minus one or two iff binsize given)
+nfiles=max(len(args)-isbininp-1,1)                                        # Fetch number of infiles (total args minus one or two iff binsize given)
 if nfiles>3: nfiles=3
 
-file1=args[1]
+if len(args)<2:
+   file1=raw_input('Filename: ')
+else:
+   file1=args[1]
 isplotd1=pan.filenamecheck(file1,'plotd',continu=True)                    # Work out whether input file is a plotdemon file or a csv
 
 ch={}                                                                     # Save channel info in a library
