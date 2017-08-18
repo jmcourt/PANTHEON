@@ -777,7 +777,10 @@ while plotopt not in ['quit','exit']:                                     # If t
       ymask=ymask1&ymask2
 
       nbins=int(1.0/phase_res)
-      phases=(nbins*phases[gmask][ymask]).astype(int)
+      print len(phases),len(x1),len(times)
+      print len(gmask)
+
+      phases=(nbins*phases[ymask]).astype(int)
 
       x1=x1[gmask][ymask];y1=y1[gmask][ymask];ye1=ye1[gmask][ymask]       # Removing all data points outside of GTI
 
