@@ -911,7 +911,7 @@ def get_phases(data,windows=1,q_lo=20,q_hi=90):
 def get_phases_intp(data,windows=1,q_lo=20,q_hi=90,peaks=None,givespline=False):
 
    if peaks==None:
-      peak_keys=pan.get_bursts(data,q_lo=q_lo,q_hi=q_hi,just_peaks=True,smooth=False,savgol=5)
+      peak_keys=get_bursts(data,q_lo=q_lo,q_hi=q_hi,just_peaks=True,smooth=False,savgol=5)
    else:
       peak_keys=peaks
    peak_keys.sort()
@@ -1548,7 +1548,7 @@ def csvload(filename):
    gti=None
    mxpcus=1
    bgpcu=1
-   bgsub='N/A'
+   bgsub=0
    bgdata=None
    flavour='csv'
    chanstr='Unknown'
