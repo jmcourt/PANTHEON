@@ -1510,10 +1510,20 @@ def csvload(filename):
    errors=[]
    got_firstline=False
 
+   haserrs=False
+
+   xind=0
+
    for line in f:
-       l=line.split(',')
        if not got_firstline:
-          if len(l)<2: continue                                           # Assume lines with <2 columns, or a non-number in col
+          if len(l.split())<2 and len(l.split(',')<2: continue            # Assume lines with <2 columns, or a non-number in col
+          if ',' in line:
+             def linesplit(lx):
+                return lx.split(',')
+          else:
+             def linesplit(lx):
+                return lx.split()
+          l=linesplit(line)
           try:                                                            #  zero are part of the header, skip 'em
              float(l[0])
           except:
@@ -1531,7 +1541,8 @@ def csvload(filename):
              haserrs=True
              eind=3
           got_firstline=True
-       times.append(float(l[0]))
+       l=linesplit(line)
+       times.append(float(l[xind]))
        rates.append(float(l[yind]))
        if haserrs:
           errors.append(float(l[eind]))

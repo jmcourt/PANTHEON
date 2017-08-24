@@ -433,6 +433,7 @@ def give_inst():                                                          # Defi
    print 'DATA:'
    print '* "rebin" to reset the data and load it with a different binning.'
    print '* "clip" to clip the data.'
+   print '* "norm time" to renormalise the times by the start time of the data'
    print '* "mask" to remove a range of data.'
    print '* "rms" to return the fractional rms of the data.'
    print '* "fold" to fold data over a period of your choosing'+(' (requires PyAstronomy module!)' if not module_pyastro else '')+'.'
@@ -675,6 +676,18 @@ while plotopt not in ['quit','exit']:                                     # If t
 
       print 'Folding Complete!'
       print ''
+
+
+   #-----'norm time' Option------------------------------------------------------------------------------------------------
+
+   elif plotopt=='norm time':
+
+      if folded:
+         print 'Cannot renormalise time on folded data!'
+         continue
+
+      times=times-times[0]
+      print 'Renormalised times!'
 
 
    #-----'autofold' Option-------------------------------------------------------------------------------------------------
