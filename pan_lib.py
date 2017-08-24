@@ -1468,6 +1468,11 @@ def plotdld(filename):
 
 #-----csvLoad----------------------------------------------------------------------------------------------------------
 
+def linesplit(lx,iscomma):
+   if iscomma:
+      return lx.split(',')
+   return lx.split()
+
 def csvload(filename):
 
    '''.csv Loader
@@ -1516,14 +1521,13 @@ def csvload(filename):
 
    for line in f:
        if not got_firstline:
-          if len(l.split())<2 and len(l.split(',')<2: continue            # Assume lines with <2 columns, or a non-number in col
+          if ((len(line.split())<2) and (len(line.split(','))<2)):        # Assume lines with <2 columns, or a non-number in col
+             continue
           if ',' in line:
-             def linesplit(lx):
-                return lx.split(',')
+             iscomma=True
           else:
-             def linesplit(lx):
-                return lx.split()
-          l=linesplit(line)
+             iscomma=False
+          l=linesplit(line,iscomma)
           try:                                                            #  zero are part of the header, skip 'em
              float(l[0])
           except:
@@ -1541,7 +1545,7 @@ def csvload(filename):
              haserrs=True
              eind=3
           got_firstline=True
-       l=linesplit(line)
+       l=linesplit(line,iscomma)
        times.append(float(l[xind]))
        rates.append(float(l[yind]))
        if haserrs:
