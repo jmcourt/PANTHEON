@@ -109,8 +109,10 @@ import pylab as pl
 import warnings
 import scipy.optimize as optm
 import scipy.interpolate as intp
+import scipy.stats as stt
 import scipy.signal as sgnl
 import numpy as np
+import operator as ope
 try:
    import numba as nb
    gotnumba=True
@@ -253,7 +255,64 @@ def boolval(data,reverse=True):
    data=np.sum(data,axis=1)                                               # Multiply Boolean list by mult, sum per row
 
    return data
- 
+
+
+#-----CalcLoop---------------------------------------------------------------------------------------------------------
+
+def calcloop(flux,color,fluxe,colore):
+
+   y=flux
+   ye=fluxe
+   x=color
+   xe=colore
+
+   maxyp=y.tolist().index(max(y))
+   minyp=y.tolist().index(min(y))
+
+   if maxyp>minyp:
+      interv=(minyp,maxyp)
+   else:
+      interv=(maxyp,minyp)
+
+   newx={}
+   newxe={}
+   newy={}
+   newye={}
+
+   i1=1
+   i2=2
+
+   newx[False]=x[interv[0]:interv[1]+1]
+   newxe[False]=xe[interv[0]:interv[1]+1]
+   newy[False]=y[interv[0]:interv[1]+1]
+   newye[False]=ye[interv[0]:interv[1]+1]
+
+   newx[True]=np.append(x[interv[1]:],x[:interv[0]+1])
+   newxe[True]=np.append(xe[interv[1]:],xe[:interv[0]+1])
+   newy[True]=np.append(y[interv[1]:],y[:interv[0]+1])
+   newye[True]=np.append(ye[interv[1]:],ye[:interv[0]+1])
+
+   if len(newy[True])>=len(newy[False]):
+      master=True
+   else:
+      master=False
+   slave = not master
+
+   newmaster=[list(x) for x in zip(*sorted(zip(newy[master], newx[master],newxe[master]), key=ope.itemgetter(0)))]
+
+   sp=intp.UnivariateSpline(newmaster[0],newmaster[1],1/(np.array(newmaster[2])**2),ext=0,k=1)
+   se=intp.UnivariateSpline(newmaster[0],newmaster[2],ext=0,k=3)
+
+   aves=0.0
+
+   for q in range(len(newy[slave])-2):
+      i=q+1
+      aves+=( (sp(newy[slave][i])-newx[slave][i]) / np.sqrt(newxe[slave][i]**2+se(newy[slave][i])**2) )**2   
+
+   loopc=stt.chisqprob(aves,len(newy[slave])+len(newy[master])-2)
+
+   return loopc
+
 
 #-----Circfold---------------------------------------------------------------------------------------------------------
 
@@ -1559,6 +1618,7 @@ def csvload(filename):
    errors=np.array(errors)
 
    tstart=times[0]
+   times=times-times[0]
    binsize=times[1]-times[0]
    gti=None
    mxpcus=1

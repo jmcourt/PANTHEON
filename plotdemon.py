@@ -455,6 +455,7 @@ def give_inst():                                                          # Defi
       print '* "hardness12" to plot a hardness/time diagram of file1/file2 colour over time.'
       print '* "hid21" to plot a hardness-intensity diagram of file2/file1 colour against total flux.'
       print '* "hid12" to plot a hardness-intensity diagram of file1/file2 colour against total flux.'
+      print '* "calcloop21" to return the probability of a "loop" in the 12 HID.'
       print '* "col21" to plot file2/file1 colour against time.'
       print '* "col12" to plot file1/file2 colour against time.'
       print '* "band" to plot the lightcurve of a single energy band.'
@@ -473,8 +474,10 @@ def give_inst():                                                          # Defi
       print '* "hardness13" to plot a hardness/time diagram of file1/file3 colour over time.'
       print '* "hid32" to plot a hardness-intensity diagram of file3/file2 colour against total flux.'
       print '* "hid23" to plot a hardness-intensity diagram of file2/file3 colour against total flux.'
+      print '* "calcloop32" to return the probability of a "loop" in the 12 HID.'
       print '* "hid31" to plot a hardness-intensity diagram of file3/file1 colour against total flux.'
       print '* "hid13" to plot a hardness-intensity diagram of file1/file3 colour against total flux.'
+      print '* "calcloop31" to return the probability of a "loop" in the 12 HID.'
       print '* "col32" to plot file3/file2 colour against time.'
       print '* "col23" to plot file2/file3 colour against time.'
       print '* "col31" to plot file3/file1 colour against time.'
@@ -1510,6 +1513,46 @@ while plotopt not in ['quit','exit']:                                     # If t
             pl.title(fldtxt+'Hardness Intensity Diagram'+qflav)
             plot_save(saveplots,show_block)
             print 'File'+str(h1)+'/File'+str(h2)+' HID plotted!'
+
+      else:
+         print 'Not enough infiles for HID!'
+
+
+   #-----'calcloopxy' Option-------------------------------------------------------------------------------------------
+
+   elif plotopt[:8]=='calcloop':                                           # Calculate likelihood of loop in HID
+
+      ht=plotopt[8:]                                                       # Collect the xy token from the user
+
+      if nfiles>1:
+         if not (ht in ['12','13','21','23','31','32']):                   # Check that the token is 2 long and contains two different characters of the set [1,2,3]
+
+            print 'Invalid command!'
+            print ''
+            print 'Did you mean...'
+            print ''
+            print 'CalcLoop options:'
+            print '* "calcloop21" for 2/1 HID loop calculation'
+            print '* "calcloop12" for 1/2 HID loop calculation'
+            if nfiles==3:
+               print '* "calcloop32" for 3/2  HID loop calculation'
+               print '* "calcloop23" for 2/3  HID loop calculation'
+               print '* "calcloop31" for 3/1  HID loop calculation'
+               print '* "calcloop13" for 1/3  HID loop calculation'
+
+         elif ('3' in ht) and (nfiles<3):
+
+            print 'Not enough infiles for advanced HID!'                  # If token contains a 3 but only 2 infiles are used, abort!
+
+         else:
+
+            h1=int(ht[0])                                                 # Extract numerator file number
+            h2=int(ht[1])                                                 # Extract denominator file number
+            ht=int(ht)
+           
+            lkl=pan.calcloop(flux,col[ht],fluxe,cole[ht])                 # Collect likelihood of loop from pan_lib
+
+            print 'Null hypothesis (no hysteresis) probability = '+str(lkl)
 
       else:
          print 'Not enough infiles for HID!'
