@@ -206,7 +206,7 @@ except:
    pan.signoff()
    exit()
 
-if event[1].header['DATAMODE'] in ['B_2ms_4B_0_35_H','B_8ms_16A_0_35_H','SB_125us_14_35_1s','SB_125us_8_13_1s','SB_125us_0_13_1s']:
+if event[1].header['DATAMODE'][:2] in ['B_','SB']:
    spec_on=False
    bin_dat=True
    print 'No .speca file can be produced!'
@@ -329,15 +329,15 @@ datas=inst.discnev(datas,event[1].header['DATAMODE'])                     # Disc
 #   pan.signoff()
 #   exit()
 
-if event[1].header['DATAMODE'] in ['B_2ms_4B_0_35_H','B_8ms_16A_0_35_H']:
+if event[1].header['DATAMODE'][:2] == 'B_':
    olen=str(npsum(array(datas)))
 else:
    olen=str(len(datas))
 datas=inst.chrange(datas,lowc,highc,event[1].header)
 tstart=inst.getini(event)
 
-if event[1].header['DATAMODE'] in ['B_2ms_4B_0_35_H','B_8ms_16A_0_35_H']:
-   phcts=sum(datas)
+if event[1].header['DATAMODE'][:2] == 'B_':
+   phcts=npsum(datas)
 else:
    phcts=len(datas)
 
@@ -379,6 +379,7 @@ bsz=float(bsz)
 print 'SpecAngel binsize rounded to 2^'+str(n)+'s ('+str(bsz)+'s)!'
 print 'PlotDemon binsize rounded to 2^'+str(n+int(log(ptdbinfac,2)))+'s ('+str(bsz*ptdbinfac)+'s)!'
 times,datas=inst.gettim(datas,event[1].data,tstart,ores,event[1].header['DATAMODE']) # Extracting list of photon incident times as a separate object
+
 pcwrds=inst.getwrd(datas,event[1].header['DATAMODE'])
 sttim=times[0]
 times=times-sttim

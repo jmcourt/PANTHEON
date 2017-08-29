@@ -76,13 +76,10 @@ def chrange(data,low,high,header):
       chconv=header['TDDES2'].split('&')[2].split('[')[1].split(']')[0].split(',')
       low=bihchan(datamode,low,chconv)
       high=bihchan(datamode,high,chconv)+1
-
-      ndat=zeros(len(data[0]))
-
-      for i in range(low,high):
-         ndat+=array(data[i])
-
-      return ndat
+      data=data[:,low:high,:]
+      data=npsum(data,axis=1)
+      data=data.reshape([len(data)*len(data[0])])
+      return data
 
    elif datamode[:2]=='SB':
 
@@ -161,23 +158,7 @@ def discnevb(datamode,datas):
       datas=datas.reshape([len(datas)*len(datas[0])])
       return datas
 
-   chan={}
-
-   nbchan=int(datamode.split('_')[2][:-1])
-
-   for j in range(nbchan):
-      chan[j]=[]
-
-   for i in range(len(datas)):
-      for j in range(nbchan):
-         chan[j]+=datas[i][j].tolist()
-
-   outchan=[]
-
-   for j in range(nbchan):
-      outchan.append(chan[j])
-
-   return outchan
+   return datas
 
 
 #-----BiHChan----------------------------------------------------------------------------------------------------------
