@@ -1,3 +1,5 @@
+https://zenodo.org/badge/DOI/10.5281/zenodo.1040704.svg
+
 #PANTHEON
 _**P**ython **An**alysis **T**ools for **H**igh-energy **E**vent data Manipulati**on**_
 #####J.M.Court, 2015
