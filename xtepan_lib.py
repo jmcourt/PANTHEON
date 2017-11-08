@@ -437,7 +437,7 @@ def getpcu(words,header,t_pcus=None,pculist=False):
    if [False,True,True] in words: pcus[3]=1
    if [True,False,False] in words: pcus[4]=1
 
-   if pcus==0:
+   if sum(pcus)==0:
       print 'Error!  0 PCUs present in data!'
       return 1
    elif not pculist:
