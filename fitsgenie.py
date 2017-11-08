@@ -295,7 +295,9 @@ else:
 if len(args)>8:
    bgest=float(args[8])                                                   # Collect background estimate from inputs if given, else ask user, else use 30c/s
    print 'Background  =',bgest
-else:
+elif not spec_on:
+   bgest=0
+else:   
    try:
       bgest=float(raw_input("Estimate of background (c/s): "))
    except:

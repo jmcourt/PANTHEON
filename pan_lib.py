@@ -103,9 +103,9 @@
 import os
 try:
    import cPickle as pickle
-except:
+except ImportError:
    import pickle
-import pylab as pl
+from matplotlib import pyplot as pl
 import warnings
 import scipy.optimize as optm
 import scipy.interpolate as intp
@@ -116,11 +116,68 @@ import operator as ope
 try:
    import numba as nb
    gotnumba=True
-except:
+except ImportError:
    print 'Warning: numba module not found!  May run slow.'
    gotnumba=False
 from math import pi
 
+# =========== CLASSES =================================================================================================
+
+#-----ObsData----------------------------------------------------------------------------------------------------------
+
+class obsdata(object):
+
+   def __init__(self,filename,tcol,ycol,ecol,name=''):
+      self.name=name
+      xs=[]
+      ys=[]
+      es=[]
+      f=open(filename)
+      for line in f:
+         l=line.split()
+         try:
+            t=float(l[tcol])
+            y=float(l[ycol])
+            e=float(l[ecol])
+            xs.append(t)
+            ys.append(y)
+            es.append(e)
+         except (IndexError, ValueError):
+            pass
+
+      f.close()
+      xs=np.array(xs)
+      ys=np.array(ys)
+      es=np.array(es)
+
+      assert len(xs)==len(ys)
+      assert len(xs)==len(es)
+      self.t=xs
+      self.y=ys
+      self.e=es
+
+   def get_len(self):
+      return self.t[-1]-self.t[0]
+ 
+   def get_start(self):
+      return self.t[0]
+
+   def get_end(self):
+      return self.t[-1]
+
+   def plot(self):
+      pl.figure()
+      pl.errorbar(self.t,self.y,yerr=self.e,fmt='0.7',zorder=-1)
+      pl.plot(self.t,self.y,'k')
+      pl.title(self.name)
+      pl.show(block=True)
+
+   def plot_on_ax(self,ax,zorder=0,errcolor='0.7',color='k'):
+      ax.errorbar(self.t,self.y,yerr=self.e,fmt=errcolor,zorder=zorder-0.5)
+      ax.plot(self.t,self.y,color,zorder=zorder,label=self.name)
+
+
+# =========== FUNCTIONS ===============================================================================================
 
 #-----Setup Conditional Wrapper to use jit when available--------------------------------------------------------------
 
@@ -1110,7 +1167,7 @@ def leahyn(data,counts,datres):
 
    -J.M.Court, 2015'''
 
-   leahy=2*(abs(data[0:datres/2.0])**2)/counts
+   leahy=2*(abs(data[0:int(datres/2.0)])**2)/counts
    return leahy
 
 
