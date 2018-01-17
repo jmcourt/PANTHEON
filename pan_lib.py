@@ -120,6 +120,7 @@ except ImportError:
    print 'Warning: numba module not found!  May run slow.'
    gotnumba=False
 from math import pi
+from numpy import random as rn
 
 # =========== CLASSES =================================================================================================
 
@@ -1303,6 +1304,41 @@ def lomb_scargle(x,y,ye,freqs):
    return pgram
 
 
+#-----MCErrorCalc------------------------------------------------------------------------------------------------------
+
+@mjit()
+def mcerrorcalc(func,data,data_e,ntrials,verbose=False):
+
+   '''Monte Carlo Error Calculation
+
+   Description:
+
+    For a function which takes a set of 1-dimensional values, and for values with assoiciated
+    errors, simulates new datasets from the given datavalues and errors and uses these simulations
+    to estimate the error on the output value.
+
+   Inputs:
+
+    func    - FUNCTION: the function to be used.  MUST take arguments of the form (data,data_error).
+    data    -    ARRAY: the measured data from which new data is to be simulated.
+    data_e  -    ARRAY: the error on the measured data.
+    ntrials -      INT: the number of simulations to run.
+
+   -J.M.Court, 2017'''
+
+   vals=[]
+
+   for i in range(ntrials):
+      new_data=rn.normal(data,data_e)
+      val=(func(new_data,data_e))
+      if not np.isnan(val):
+         vals.append(val)
+      if verbose:
+         print ' Trial: '+str(i)+'/'+str(ntrials)
+   serr=np.std(vals)
+   return serr
+
+
 #-----MXRebin----------------------------------------------------------------------------------------------------------
 
 @mjit()
@@ -1645,7 +1681,7 @@ def csvload(filename):
              iscomma=False
           l=linesplit(line,iscomma)
           try:                                                            #  zero are part of the header, skip 'em
-             float(l[0])
+             float(l[0].strip('"'))
           except:
              continue
           llen=len(l)
@@ -1656,16 +1692,20 @@ def csvload(filename):
              yind=1
              haserrs=True
              eind=2
+          elif l[0][0]=='"':
+             yind=1
+             haserrs=True
+             eind=2
           else:
              yind=2
              haserrs=True
              eind=3
           got_firstline=True
        l=linesplit(line,iscomma)
-       times.append(float(l[xind]))
-       rates.append(float(l[yind]))
+       times.append(float(l[xind].strip('\n').strip('"')))
+       rates.append(float(l[yind].strip('\n').strip('"')))
        if haserrs:
-          errors.append(float(l[eind]))
+          errors.append(float(l[eind].strip('\n').strip('"')))
 
    if not haserrs:
        errors=np.sqrt(np.array(rates))                                    # Assume root flux errors if none in file     
@@ -1790,8 +1830,8 @@ def rms_n(data,counts,datres,rate,bg,const):
 
 #-----RMS--------------------------------------------------------------------------------------------------------------
 
-@mjit()
-def rms(data,data_err=[0]):
+#@mjit()
+def rms(data,data_err=None,with_err=False):
 
    '''RMS
 
@@ -1810,13 +1850,20 @@ def rms(data,data_err=[0]):
 
    -J.M.Court, 2015'''
 
+   if type(data_err)==type(None):
+      data_err=np.array([0]*len(data))
    if np.mean(data)==0:
       return 'div0'
    nr=1.0/len(data)
    mn=np.mean(data)
    vd=np.sum((data-mn)**2)-np.sum((data_err)**2)
-   rms= ((vd*nr)**0.5)/abs(mn) 
-   return rms
+   orms=((vd*nr)**0.5)/abs(mn)
+
+   if not with_err:
+      return orms
+   else:
+      rmserr=mcerrorcalc(rms,data,data_err,100,verbose=False)
+      return orms,rmserr
 
 
 #-----Safe_Div---------------------------------------------------------------------------------------------------------

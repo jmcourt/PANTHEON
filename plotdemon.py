@@ -448,6 +448,7 @@ def give_inst():                                                          # Defi
    print '* "circanim" to create an animation of the lightcurve circularly folded as the period is increased.'
    print '* "lombscargle" to create a Lomb-Scargle periodogram of the lightcurve.'
    print '* "autocor" to plot the auto-correlation function.'
+   print '* "rmsflux" to plot the rms-flux relationship of the data.'
    if nfiles>1:                                                           # Only display 2-data-set instructions if 2+ datasets given
       print ''
       print '2+ DATASET PLOTS:'
@@ -1067,6 +1068,64 @@ while plotopt not in ['quit','exit']:                                     # If t
       else:
          print 'rms =',str(rms*100)+'%'                                   # Otherwise, print RMS
 
+
+   #-----'rmsflux' Option----------------------------------------------------------------------------------------------
+
+   elif plotopt=='rmsflux':
+
+      try:
+         trmsbin=float(raw_input('Time binning: '))
+         frmsbin=float(raw_input('Rate binning: '))
+      except:
+         print 'Invalid value(s)!'
+         continue
+
+      ilen=int(trmsbin/binning)
+      numbins=int(len(times)/ilen)
+
+      frflux=[]
+      frrms_=[]
+      frrmse=[]
+
+      for i in range(numbins):
+         kst=i*ilen
+         ked=(i+1)*ilen
+         kflux=flux[kst:ked]
+         kfluxe=fluxe[kst:ked]
+         arms,armse=pan.rms(kflux,data_err=kfluxe,with_err=True)
+         frrms_.append(arms)
+         frrmse.append(armse)
+         frflux.append(np.mean(kflux))
+
+      frflux=np.array(frflux)
+      frrms_=np.array(frrms_)*frflux
+      frrmse=np.array(frrmse)*frflux
+
+      cflux=[]
+      crms_=[]
+      crmse=[]
+
+      top=int(max(frflux)/frmsbin) +1
+
+      for i in range(0,top):
+         flow=i*frmsbin
+         f_hi=(i+1)*frmsbin
+         mask=np.logical_and(frflux>=flow,frflux<f_hi)
+         if np.sum(mask)==0:
+            continue
+         mask=np.logical_and(mask,np.logical_not(np.isnan(frrms_)))
+         cflux.append((flow+f_hi)/2.0)
+         crms_.append(np.mean(frrms_[mask]))
+         crmse.append(np.sqrt(np.sum(frrmse[mask])**2 )/sum(mask))
+
+      pl.figure()      
+      pl.errorbar(cflux,crms_,yerr=crmse,fmt='x',color='0.7',zorder=20)
+      pl.plot(cflux,crms_,'kx',zorder=25)
+      pl.xlabel('Rate (cts s$^{-1}$')
+      pl.ylabel('RMS (cts s$^{-1}$')
+      plot_save(saveplots,show_block)
+      
+      
 
    #-----'lc' Option---------------------------------------------------------------------------------------------------
 
